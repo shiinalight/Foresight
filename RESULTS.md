@@ -329,6 +329,19 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 
 **Fallback:** unchanged. Claim C is already a stress test (gate failed). T5 is now the in-loop claim-B test and the source of demo traces.
 
+**T4 addendum, part 1: the offset update rule** (written Sun 22 Nov ~00:50 Berlin, before any T4 offset result was read; `tools/t4_offset.ps1`):
+- **Why:** in the loop the offset gets ~2,500 row updates per episode in 2 s batches of correlated rows. One update per row steps d by eta × batch, which can make the box oscillate and freeze the robot. Adaptive conformal assumes one update per time step.
+- **Test:** seeds 5100–5105 (outside T5 and T2), T5 config, box_q 0.15; tabpfn_split, tabpfn and lgbm_all; three settings:
+  - offset OFF, scored only (eta 0);
+  - **(i) per row:** d += 0.02 (miss − 0.2) for every completed row, as now;
+  - **(ii) per batch:** d += 0.05 (batch miss rate − 0.2) once per 2 s refresh.
+- **Gate, judged on the primary (tabpfn_split):**
+  - **Coverage metric:** mean over seeds of `inloop_cov90d_post`, the joint coverage at +2 s, against true positions, of the 5–95% box widened by the offset in force, after the switch.
+  - **A rule is stable** when its mean seconds_stopped is at most OFF's + 0.4 s and its mean freeze_rate at most OFF's + 0.02.
+  - **Choice:** among stable rules, the one with coverage closest to 80% (ties within 1 point go to the batch rule). The offset is ON in T5's primary only if that rule is also closer to 80% than OFF.
+  - **Otherwise:** the offset is OFF in the primary and is reported as a secondary arm only (the rule closer to 80%).
+- **The same rule** applies to every secondary arm that carries the offset.
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):

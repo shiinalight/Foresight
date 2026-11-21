@@ -53,12 +53,12 @@ HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
        "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode", "smooth",
-       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t", "offset", "offset_alpha", "offset_eta", "latency"]
+       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t", "offset", "offset_alpha", "offset_eta", "offset_rule", "offset_eta_b", "latency"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
             "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere", "smooth": False,
             "frozen_ctx": "random", "bank_exclude": "-", "switch_to": "-", "switch_all": False, "switch_t": -1.0,
-            "offset": False, "offset_alpha": -1.0, "offset_eta": 0.02, "latency": 0.0}
+            "offset": False, "offset_alpha": -1.0, "offset_eta": 0.02, "offset_rule": "row", "offset_eta_b": -1.0, "latency": 0.0}
 SPLIT_REC, SPLIT_THIN = 250, 20   # tabpfn_split: scene-model rows (most recent); fewer than SPLIT_THIN = frozen alone
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
@@ -89,6 +89,8 @@ class Predictor:
         self.offset = bool(getattr(args, "offset", False)) and kind.startswith(("lgbm", "tabpfn", "cv_band"))
         oa = getattr(args, "offset_alpha", None)
         self.eta = float(getattr(args, "offset_eta", 0.02))      # 0 = score the box only, never move it
+        self.rule = getattr(args, "offset_rule", "row")
+        self.eta_b = float(getattr(args, "offset_eta_b", 0.05))
         self.alpha = 0.2 if oa is None else oa
         self.d, self.pending, self.last_off, self.d_hist = 0.0, [], -1e9, []
         self.n_miss, self.n_scored, self.n_miss_late, self.n_late = 0.0, 0, 0.0, 0
@@ -142,10 +144,16 @@ class Predictor:
         m = m.dropna(subset=["ddx", "ddy"]).sort_values(["t_known", "agent_id", "h"], kind="stable")
         s = np.maximum.reduce([(m.q05a - m.ddx).to_numpy(), (m.ddx - m.q95a).to_numpy(),
                                (m.q05c - m.ddy).to_numpy(), (m.ddy - m.q95c).to_numpy()])   # raw 5-95% box
-        for si, du in zip(s, m.d_used.to_numpy()):
-            miss = float(si > du)
-            self.d += self.eta * (miss - self.alpha)
-            self.n_miss += miss
+        misses = (s > m.d_used.to_numpy()).astype(float)
+        if self.eta == 0:
+            pass                                                 # measure only
+        elif self.rule == "batch":                               # one step per refresh: d += eta_b (batch miss rate - alpha)
+            if len(misses):
+                self.d += self.eta_b * (float(misses.mean()) - self.alpha)
+        else:                                                    # per row, in order of t_known
+            for miss in misses:
+                self.d += self.eta * (miss - self.alpha)
+        self.n_miss += float(misses.sum())
         self.n_scored += len(m)
         st = getattr(self.args, "switch_t", None)
         late = (m.t >= (self.args.duration / 2 if st is None else st) + 2.0).to_numpy()   # predictions made after the switch has settled
@@ -156,9 +164,10 @@ class Predictor:
         if not self.offset:
             return {"offset": False, "offset_alpha": -1.0, "offset_final": np.nan, "offset_updates": 0,
                     "offset_mean": np.nan, "offset_miss": np.nan, "offset_miss_after_switch": np.nan,
-                    "offset_eta": np.nan}
+                    "offset_eta": np.nan, "offset_rule": "-", "offset_eta_b": np.nan}
         n = sum(h[2] for h in self.d_hist)
-        return {"offset": True, "offset_alpha": self.alpha, "offset_eta": self.eta, "offset_final": self.d, "offset_updates": n,
+        return {"offset": True, "offset_alpha": self.alpha, "offset_eta": self.eta, "offset_rule": self.rule,
+                "offset_eta_b": self.eta_b if self.rule == "batch" else np.nan, "offset_final": self.d, "offset_updates": n,
                 "offset_mean": float(np.mean([h[1] for h in self.d_hist])) if self.d_hist else 0.0,
                 "offset_miss": self.n_miss / max(self.n_scored, 1),
                 "offset_miss_after_switch": self.n_miss_late / self.n_late if self.n_late else np.nan}
@@ -219,12 +228,13 @@ class Predictor:
     def log_boxes(self, pr):
         if len(pr) and "q05a" in pr:
             self.agg.append(pr[["agent_id", "t", "h", "lo_a", "hi_a", "lo_c", "hi_c", "q05a", "q95a", "q05c", "q95c",
-                                "q50a", "q50c"]])
+                                "q50a", "q50c"]].assign(d_used=self.d if self.offset else 0.0))
 
     def inloop_stats(self, hist, obst_df, meta, seed, switch_t):
         """Episode aggregates at h = 2 s against TRUE positions: joint coverage, width and interval score of the
         5-95% box, joint coverage of the served (planner) box, median error; before and after the switch."""
-        keys = [f"inloop_{m}_{w}" for w in ("pre", "post") for m in ("n", "cov90", "w90", "is90", "served_cov", "err")]
+        keys = [f"inloop_{m}_{w}" for w in ("pre", "post")
+                for m in ("n", "cov90", "w90", "is90", "served_cov", "err", "cov90d")]
         out = dict.fromkeys(keys, np.nan)
         if not self.agg:
             return out
@@ -239,6 +249,8 @@ class Predictor:
         slo, shi = m[["lo_a", "lo_c"]].to_numpy(float), m[["hi_a", "hi_c"]].to_numpy(float)
         cov = ((y >= lo) & (y <= hi)).all(axis=1)
         scov = ((y >= slo) & (y <= shi)).all(axis=1)
+        dlo, dhi = CF.widen(lo, hi, m.d_used.to_numpy(float))     # 5-95% box widened by the offset in force
+        dcov = ((y >= dlo) & (y <= dhi)).all(axis=1)
         w = (hi - lo).mean(axis=1)
         isc = ((hi - lo) + 20 * (lo - y) * (y < lo) + 20 * (y - hi) * (y > hi)).mean(axis=1)
         err = np.linalg.norm(m[["q50a", "q50c"]].to_numpy(float) - y, axis=1)
@@ -248,7 +260,8 @@ class Predictor:
                 out |= {f"inloop_n_{wname}": int(mask.sum()), f"inloop_cov90_{wname}": float(cov[mask].mean()),
                         f"inloop_w90_{wname}": float(w[mask].mean()), f"inloop_is90_{wname}": float(isc[mask].mean()),
                         f"inloop_served_cov_{wname}": float(scov[mask].mean()),
-                        f"inloop_err_{wname}": float(np.median(err[mask]))}
+                        f"inloop_err_{wname}": float(np.median(err[mask])),
+                        f"inloop_cov90d_{wname}": float(dcov[mask].mean())}
         return out
 
 
@@ -463,6 +476,9 @@ def main():
     ap.add_argument("--offset", action="store_true", help="in-loop online conformal offset (learned planners)")
     ap.add_argument("--offset-alpha", type=float, default=None, help="target miss rate of the raw 5-95%% box (default 0.2)")
     ap.add_argument("--offset-eta", type=float, default=0.02, help="offset step; 0 = measure misses only")
+    ap.add_argument("--offset-rule", default="row", choices=["row", "batch"],
+                    help="row: d moves per scored row; batch: d += eta_b (miss rate of the refresh batch - alpha)")
+    ap.add_argument("--offset-eta-b", type=float, default=0.05, help="batch rule step per refresh")
     ap.add_argument("--latency", type=float, default=0.0, help="virtual-time latency of each command, s")
     ap.add_argument("--switch-t", type=float, default=None, help="with --switch: switch time in s (default mid-episode)")
     ap.add_argument("--switch-all", action="store_true", help="with --switch: every seed switches, not only odd ones")
