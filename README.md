@@ -9,7 +9,7 @@ From the tracks of the people around a robot, Foresight predicts where each pers
 ## Start here
 
 1. **This README:** what it is, how to run it.
-2. **`docs/CTO-REVIEW.md`:** direction, architecture, and what each claim needs as evidence.
+2. **`PLAN.md`:** the living plan: claims and their status, framework, timeline, document map. Then `docs/CTO-REVIEW.md` for the reasoning.
 3. **`docs/GATES.md`:** stage gates, the fair-comparison protocol, the ordered work list.
 4. **`RESULTS.md`:** every number so far, with limits, and the pre-registered rule for the closed-loop results.
 5. **`TEAM-PLAN.md`:** the original plan and schedule. Also see `SCENARIOS.md` for scenes and the data handover.
@@ -62,7 +62,7 @@ python -m pytest -q
 - **Row** = one agent, at time t, for horizon h. The horizon is a feature, and there is one model per axis.
 - **Target** = deviation from constant velocity, in the agent's own frame.
 - **Inputs:**
-  - observed positions with noise, smoothed by a forward-only Kalman filter;
+  - observed positions, smoothed by a forward-only Kalman filter tuned per dataset (`<dataset>/kalman.json`). In the simulator, 0.1 m sensor noise is added first; real data uses the annotations as observed;
   - the agent's own last 1 s;
   - its 3 nearest neighbours;
   - the robot;

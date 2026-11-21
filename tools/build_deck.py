@@ -135,7 +135,7 @@ def build():
 
     s = slide(prs, "TabPFN on real people it never saw", kicker="Demo",
               notes="Hotel scene; TabPFN saw 1,500 rows from the ETH scene only. Orange box: 80% range for the position "
-                    "2 s ahead. Black x: where the person actually was. Over this episode the box held the truth 94% "
+                    "2 s ahead. Black x: where the person actually was. (Coverage for this clip: see RESULTS.md; this clip predates f4.) "
                     "of the time, median error 0.26 m.")
     image(s, "demo_hotel_tabpfn.png")
 
