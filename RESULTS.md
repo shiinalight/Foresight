@@ -1,5 +1,7 @@
 # Results
 
+> **Numbers below are being rerun on feature version f4; see PLAN.md for status.**
+
 Live document: numbers update as experiments finish. The figures in `media/` carry only labels and legends; this file holds the explanations.
 
 ## Setup (R1 baselines on real pedestrians)
