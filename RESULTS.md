@@ -234,7 +234,7 @@ Both apply to every planner. Amendment 2 also names the 02:00 TabPFN setup and i
 
 **Fallback, written now:** if neither TabPFN planner beats every baseline curve under the rule above, the closed loop is reported as a stress test, not as evidence for claim C. Claims A and B then rest on the offline and real-data results.
 
-## Closed loop: pre-registration amendment 2, design and analysis (committed Sun 22 Nov ~00:40 Berlin)
+## Closed loop: pre-registration amendment 2, design and analysis (committed Sun 22 Nov 00:34 Berlin, 889bc36)
 
 Written before any planner ran on the T5 seeds (3000–3039). The settings T4 decides are named here. Their values follow in a short dated addendum before launch.
 
@@ -329,7 +329,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 
 **Fallback:** unchanged. Claim C is already a stress test (gate failed). T5 is now the in-loop claim-B test and the source of demo traces.
 
-**T4 addendum, part 1: the offset update rule** (written Sun 22 Nov ~00:50 Berlin, before any T4 offset result was read; `tools/t4_offset.ps1`):
+**T4 addendum, part 1: the offset update rule** (committed Sun 22 Nov 00:36 Berlin, bec10b7, before any T4 offset result was read; `tools/t4_offset.ps1`):
 - **Why:** in the loop the offset gets ~2,500 row updates per episode in 2 s batches of correlated rows. One update per row steps d by eta × batch, which can make the box oscillate and freeze the robot. Adaptive conformal assumes one update per time step.
 - **Test:** seeds 5100–5105 (outside T5 and T2), T5 config, box_q 0.15; tabpfn_split, tabpfn and lgbm_all; three settings:
   - offset OFF, scored only (eta 0);
