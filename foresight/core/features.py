@@ -117,7 +117,7 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
         Po = Pt + rng.normal(0, noise, Pt.shape)
         Ps = np.full_like(Pt, np.nan); Vs = np.full_like(Pt, np.nan)
         for a in range(A):
-            Ps[:, a], Vs[:, a] = _kalman_cv(Po[:, a], dt, r=max(noise, 1e-3))
+            Ps[:, a], Vs[:, a] = _kalman_cv(Po[:, a], dt, r=max(noise, 0.05))
         for s in range(N_HIST * k, S, every):
             alive = ~np.isnan(Ps[s, :, 0])
             for a in np.flatnonzero(alive):
@@ -155,7 +155,8 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                 density = sum(1 for d, _ in rel if d < 3.0)
                 base = [speed, acc[0], acc[1], turn, radius[a], *np.ravel(hist), *neigh, *robot,
                         *(R @ ov), od, density]
-                for h, hs in zip(horizons, hsteps):
+                for hs in hsteps:
+                    h = hs * dt                  # horizon snapped to the data's time grid
                     if s + hs >= S or np.isnan(Pt[s + hs, a, 0]):
                         continue
                     true_f = Pt[s + hs, a]

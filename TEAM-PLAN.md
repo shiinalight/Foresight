@@ -2,6 +2,10 @@
 
 Revised Sat 21 Nov, 16:00. **Submission deadline Sun 22 Nov 16:30** (tally.so/r/GexoxQ); we aim for 16:00. About 24 hours left, sleep included.
 
+## Feedback from Eddie (Prior Labs judge, Sat evening)
+
+Direction approved ("If that's what you want to aim for, go for it!"). His one recommendation: **aim for something visual you can show of how it works.** So the demo animation (ranges drawn on moving people, then the robot choosing its path) is the priority deliverable, not an afterthought. Every rung should end with a clip.
+
 ## What we must submit (all three, before 16:30)
 
 1. **A 3-minute video** (unlisted YouTube or Google Drive, open to anyone with the link). It must contain the pitch, an explanation of the solution, and the demo. Include at least one of us speaking to camera.
