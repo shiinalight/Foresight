@@ -133,7 +133,8 @@ Every model's 10–90% box (per axis) is widened or narrowed by one offset, so t
 - Only two real scenes.
 - The test sets are capped (CPU time).
 - Single seed for this table; a 5-seed table with intervals that resample whole people is next.
-- LightGBM is untuned; tuned and conformal versions are next.
+- LightGBM is untuned in the main table; tuned and conformal versions are next.
+- Adaptation comparisons against "best LightGBM" pick the best of five LightGBM settings on the test scene itself. That favours LightGBM, the conservative direction for any TabPFN claim.
 - No obstacles from the scene maps.
 - No robot in the real data.
 
