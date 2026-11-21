@@ -38,11 +38,11 @@ from run_offline import rows_for
 HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
-       "max_speed", "vo_w", "robot_repulsion", "ignore_robot",
+       "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode",
        "tabpfn_cfg"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
-            "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0}
+            "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere"}
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
 
@@ -129,7 +129,7 @@ def make_sim(name, seed, args):
         if (args.switch and seed % 2 == 1) else {}
     cfg = CrowdConfig(n_people=args.people, duration=args.duration, regime=regime,
                       robot_repulsion=args.robot_repulsion, ignore_robot=args.ignore_robot,
-                      robot_speed=args.max_speed, **switch)
+                      robot_speed=args.max_speed, goal_mode=getattr(args, "goal_mode", "anywhere"), **switch)
     return NCrowdSim(seed, cfg), cfg.dt, cfg.half_size
 
 
@@ -255,6 +255,7 @@ def main():
     ap.add_argument("--max-speed", type=float, default=1.0, help="robot top speed, every planner (= CrowdConfig.robot_speed)")
     ap.add_argument("--robot-repulsion", type=float, default=2.0, help="T2 knob: how hard people push away from the robot")
     ap.add_argument("--ignore-robot", type=float, default=0.0, help="T2 knob: share of people who ignore the robot")
+    ap.add_argument("--goal-mode", default="anywhere", choices=["anywhere", "cross"], help="crowd: goals anywhere, or cross the plaza and leave")
     ap.add_argument("--vo-w", type=float, default=1.0, help="velocity-obstacle collision weight")
     ap.add_argument("--vo-h", type=float, default=5.0, help="velocity-obstacle time horizon (s)")
     ap.add_argument("--tag", default="", help="suffix for the run id (parallel runs)")
@@ -288,7 +289,7 @@ def main():
                     "threads": a.threads, "max_speed": a.max_speed,
                     "vo_w": a.vo_w if kind == "vo" else np.nan, "vo_h": a.vo_h if kind == "vo" else np.nan,
                     "robot_repulsion": a.robot_repulsion, "ignore_robot": a.ignore_robot,
-                    "features_version": F.FEATURES_VERSION}
+                    "features_version": F.FEATURES_VERSION, "goal_mode": a.goal_mode}
             out.append(res)
             pd.DataFrame([res]).to_csv(csv_path, mode="a", header=not csv_path.exists(), index=False)   # checkpoint
             if len(rf):
