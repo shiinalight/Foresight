@@ -6,3 +6,4 @@ lightgbm
 tabpfn>=9.2
 highway-env>=1.12
 matplotlib
+python-pptx

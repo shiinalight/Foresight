@@ -1,0 +1,101 @@
+# Results
+
+Live document: numbers update as experiments finish. The figures in `media/` carry only labels and legends; this file holds the explanations.
+
+## Setup (R1 baselines on real pedestrians)
+
+**Data.** ETH Walking Pedestrians (Pellegrini et al. 2009), two Zurich scenes taken from OpenTraj:
+- **ETH:** 360 people.
+- **Hotel:** 390 people.
+
+Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s windows.
+
+**Protocol.** Context and training rows come from one scene; testing is on the other (ETH → Hotel and Hotel → ETH). The test place is never seen, which is stricter than a random split.
+
+**Horizons.** 1.2 s, 2.0 s and 4.8 s. 4.8 s is the standard horizon in published work on this data.
+
+**Rows.**
+- **Definition:** one row = one person, at one moment, for one horizon.
+- **Features:**
+  - the person's own speed, acceleration and turn rate;
+  - the last 2 s of their path;
+  - their 3 nearest neighbours (position and velocity);
+  - local density.
+
+  All are in the person's own frame of reference.
+- **Target:** where they actually are after h seconds, minus where constant velocity would put them.
+- **Leakage:** no feature uses the future.
+
+**Test set.** 900 random rows per direction across the three horizons (about 300 per horizon). TabPFN is slow on the laptop CPU, so the test set is capped. A GPU run with all rows is planned.
+
+## The predictors
+
+| Model | What it is | Example rows it uses |
+|---|---|---|
+| Constant velocity | Keeps the last (Kalman-filtered) velocity. Gives a point, no range | — |
+| Constant velocity + band | Constant velocity plus a fixed range: the 5–95% (etc.) quantiles of training residuals, per horizon. The same range for everyone | All training rows |
+| LightGBM (1,500 rows) | Gradient-boosted trees, quantile regression | Same 1,500 random rows TabPFN sees |
+| LightGBM (all rows) | Same, trained on every training row: its best case | All (14,223 from ETH; 7,640 from Hotel) |
+| **TabPFN (1,500 rows)** | Tabular foundation model (`tabpfn` 9.2, TabPFN-3.5, default settings). Reads the rows as context and returns quantiles. No training | 1,500 random rows |
+
+**How LightGBM is trained** (`foresight/core/models.py: LGBMQuantile`):
+- **Models:** one model per quantile per axis (11 quantiles × 2 axes = 22 models), objective `quantile` with `alpha` = the quantile.
+- **Settings:** 300 trees, learning rate 0.05, 31 leaves, at least 10 rows per leaf; LightGBM defaults otherwise. **No tuning**, so it is a reasonable baseline, not an optimised one.
+- **Inputs:** the same features as TabPFN, as raw numbers.
+- **Crossing:** predicted quantiles are sorted per row, so they never cross.
+
+**Why two LightGBM versions:**
+- the 1,500-row version is a like-for-like comparison with TabPFN;
+- the all-rows version answers "what if the classical model just gets all the data".
+
+## How to read the figures
+
+- **Demo (`media/demo_hotel_tabpfn.gif`):**
+  - **Blue dot:** a person now; the grey line is their last 2 s.
+  - **Orange dot:** the predicted position 2 s ahead (median).
+  - **Orange box:** the 80% range. It spans the 5–95% quantiles along and across the person's direction of travel, so it holds the truth about 80% of the time when the model is honest.
+  - **Black x:** where the person actually was 2 s later (shown for checking, never given to the model).
+  - **People without a box:** they just entered, or their position 2 s later is unknown.
+  - **Live numbers:** how often the x landed in its box so far, and the median error.
+- **Four predictors (`media/compare_hotel.png`):** the same moment and the same people, one panel per model, so the boxes can be compared directly. The panel titles give coverage and mean error over the whole episode.
+- **Error by horizon (`media/fig_error_by_horizon.png`):** mean distance between predicted and actual position. Lower is better.
+- **Calibration (`media/fig_calibration.png`):** for ranges that promise 20% to 90% coverage, how often the truth actually fell inside.
+  - **On the dotted line:** honest.
+  - **Below it:** overconfident, dangerous for a robot.
+  - **Above it:** too cautious, makes the robot slow.
+- **Data efficiency (`media/fig_data_efficiency.png`):** error at +2 s against the number of example rows (log scale), ETH → Hotel.
+
+## Numbers (run 21 Nov, 900 test rows per direction, 1,500 context rows)
+
+| Direction | Model | Rows seen | Error +1.2 s | Error +2 s | Error +4.8 s | 80% range holds truth (+2 s) | 80% range width (+2 s) | Time (s) |
+|---|---|---|---|---|---|---|---|---|
+| ETH → Hotel | Const. velocity | 1,500 | 0.219 m | 0.349 m | 0.858 m | — | — | 0 |
+| ETH → Hotel | Const. velocity + band | 14,223 | 0.219 m | 0.349 m | 0.858 m | 88% | 1.03 m | 0 |
+| ETH → Hotel | LightGBM (1,500 rows) | 1,500 | 0.203 m | 0.291 m | 0.673 m | 76% | 0.54 m | 7 |
+| ETH → Hotel | LightGBM (all rows) | 14,223 | 0.220 m | 0.323 m | 0.643 m | 79% | 0.61 m | 10 |
+| ETH → Hotel | TabPFN | 1,500 | 0.179 m | 0.276 m | 0.661 m | 86% | 0.76 m | 67 |
+| Hotel → ETH | Const. velocity | 1,500 | 0.336 m | 0.534 m | 1.442 m | — | — | 0 |
+| Hotel → ETH | Const. velocity + band | 7,640 | 0.336 m | 0.534 m | 1.442 m | 69% | 0.77 m | 0 |
+| Hotel → ETH | LightGBM (1,500 rows) | 1,500 | 0.273 m | 0.430 m | 1.246 m | 64% | 0.60 m | 8 |
+| Hotel → ETH | LightGBM (all rows) | 7,640 | 0.268 m | 0.428 m | 1.209 m | 67% | 0.60 m | 9 |
+| Hotel → ETH | TabPFN | 1,500 | 0.254 m | 0.407 m | 1.143 m | 81% | 0.81 m | 69 |
+
+Error = mean distance between predicted (median) and actual position. "80% range holds truth" should be about 80%: higher is too cautious, lower is overconfident. Time = fit plus predict on the laptop CPU (x64 under emulation); TabPFN is about 75 ms per row here, and a GPU is much faster.
+
+**What this says:**
+- **Error:** TabPFN has the lowest error in 5 of 6 cells. The exception is ETH → Hotel at 4.8 s, where LightGBM on all rows is 0.02 m better.
+- **Honest ranges:** only TabPFN's ranges are honest in both directions (86% and 81% where 80% is promised). LightGBM is overconfident going Hotel → ETH (64–67%), and so is the fixed band (69%). An overconfident range is the dangerous kind for a robot.
+- **Width:** TabPFN's ranges are wider than LightGBM's (0.76–0.81 m against 0.54–0.61 m). They are narrower than the fixed band's on ETH → Hotel (1.03 m), and only a little wider on Hotel → ETH (0.81 m against 0.77 m), where the band is badly overconfident. Width is the price of honesty; the planner will show whether it costs speed.
+- **More rows from another place stop helping** (data-efficiency figure, ETH → Hotel, +2 s).
+  - **Shape:** both models are best at 250–500 rows and get worse beyond that. At 4,000 rows both are worse than constant velocity.
+  - **Likely reason:** the two places differ (ETH: people crossing an entrance quickly; Hotel: many people standing). More rows from the wrong place teach the wrong habits. LightGBM on all rows being worse than on 1,500 at +2 s fits the same story.
+  - **Caveat:** this is one seed and 400 test rows.
+  - **Consequence:** it motivates R2. Choose context rows from the current place and similar situations, rather than adding more rows.
+- **Hotel is easy for constant velocity:** about 45% of people there stand still. ETH is harder: people walk and turn, and every learned model gains more there.
+
+**Limits:**
+- Only two scenes so far.
+- The test sets are capped (CPU time).
+- Single seed.
+- No obstacles from the scene maps.
+- No robot in this real data.
