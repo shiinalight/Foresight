@@ -238,10 +238,8 @@ def test_wider_box_spreads_probability():
     assert (wide > 1e-3).sum() > (narrow > 1e-3).sum()
 
 
-@pytest.mark.xfail(strict=True, reason="BUG: occupancy cell mass = density x area breaks when sd << res: "
-                                       "a zero-width (cv) box at the default res=0.25 puts ~1 on a cell centre "
-                                       "but ~0.03 at a cell corner")
 def test_occupancy_mass_does_not_depend_on_subcell_position():
+    # fixed in f4e103c: narrow boxes are supersampled within each cell
     # cv model -> zero-width box -> sd = min_sd = 0.05 m; default grid res = 0.25 (cell centres at 0.125 + 0.25 k)
     masses = [O.occupancy(occ_row(0.125 + d, 0.125 + d, 0.0), 1.0, BOUNDS)[0].sum() for d in (0.0, 0.06, 0.125)]
     assert np.allclose(masses, 1.0, atol=0.1), masses
@@ -524,9 +522,7 @@ def test_robot_never_faster_than_max_speed_default(RC, runs, kind):
 
 @pytest.mark.parametrize("kind", [
     "cv", "reactive", "vo",
-    pytest.param("stop_go", marks=pytest.mark.xfail(
-        strict=True, reason="BUG: make_sim never sets CrowdConfig.robot_speed from args.max_speed, so the "
-                            "simulator's stop-and-go policy drives at 1.0 m/s whatever --max-speed says")),
+    "stop_go",       # fixed in 9f04ab1: make_sim forwards --max-speed to the simulator's own policy
 ])
 def test_robot_never_faster_than_max_speed_nondefault(RC, kind):
     args = loop_args(max_speed=0.5, duration=4.0)

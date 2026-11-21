@@ -96,9 +96,7 @@ TRANSFORMS = [(0.7, (3.0, -5.0)), (np.pi * 0.93, (-40.0, 12.5))]
 @pytest.mark.parametrize("phi,shift", TRANSFORMS)
 @pytest.mark.parametrize("obstacles", [
     "rotated_pillars",
-    pytest.param("none", marks=pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
-        "BUG: with no wall bounds and no obstacles the padding vector [FAR, 0] is rotated by "
-        "R(theta) (features.py _obstacle_vec / base), so obst_x, obst_y encode the world heading"))),
+    "none",          # was a bug in f1: the no-obstacle padding rotated with the world heading (fixed in f2)
 ])
 def test_features_and_targets_invariant_to_rigid_motion(phi, shift, obstacles):
     n_obst = 2 if obstacles == "rotated_pillars" else 0
@@ -120,10 +118,8 @@ def test_features_and_targets_invariant_to_rigid_motion(phi, shift, obstacles):
     assert not bad.any(), f"columns that change: {sorted({cols[j] for j in np.flatnonzero(bad.any(0))})}"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
-    "BUG: a standing agent (speed <= 0.2, displacement <= 0.05 over 1 s) gets theta = 0.0, the world "
-    "x axis (features.py theta fallback), so its neighbour / robot features rotate with the world"))
 def test_standing_agent_features_invariant_to_rotation():
+    # f1 bug, fixed in f2: a standing agent's frame fell back to the world x axis
     n = 15
     tracks = _hand_tracks({1: (0, _stander((0.0, 0.0), n)),           # stands still the whole time
                            2: (0, _walker((-3.0, 1.5), (1.0, 0.0), n))})  # walks past it
@@ -240,11 +236,8 @@ def test_late_and_short_lived_agents():
     assert (a1[~alone].n0_dist < F.FAR).all() and (a1.n1_dist == F.FAR).all()
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
-    "BUG: build_rows only checks that the agent is seen at s and s - N_HIST*k (features.py history "
-    "check), so an agent occluded in between yields NaN history/acceleration features and a "
-    "zero-velocity Kalman restart"))
 def test_track_gap_gives_no_nan_features():
+    # f1 bug, fixed in f2: only the window's first and last steps were checked
     n = 30
     arr = _walker((0, 0), (1.0, 0.2), n)
     keep = np.r_[0:10, 13:n]                                      # occluded for steps 10..12
@@ -308,11 +301,8 @@ def test_cv_band_is_constant_per_horizon_with_zero_median(train_test):
     assert not np.allclose(Q[np.isclose(Xte[:, 0], 1.0)][0], Q[np.isclose(Xte[:, 0], 2.0)][0])
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
-    "BUG: ConstantBand forces the 0.5 quantile to 0 without clamping (models.py ConstantBand."
-    "predict_quantiles), so a training residual distribution that does not straddle 0 gives "
-    "q10 > q50 (crossing quantiles)"))
 def test_cv_band_monotone_when_residuals_are_biased():
+    # fixed in 9f04ab1: the band is clamped to straddle the zero median
     rng = np.random.default_rng(0)
     X = np.c_[np.full(200, 1.0), rng.normal(size=(200, 3))]
     Y = rng.normal(0.8, 0.2, (200, 2))                  # e.g. everyone systematically lagging CV
@@ -320,10 +310,8 @@ def test_cv_band_monotone_when_residuals_are_biased():
     assert (np.diff(Q, axis=2) >= 0).all()
 
 
-@pytest.mark.xfail(strict=True, raises=ValueError, reason=(
-    "BUG (latent, every caller passes 0.5): ConstantBand evaluates list(qs).index(0.5) in the "
-    "assignment target even when 0.5 is not in qs, so qs=(0.1, 0.9) raises ValueError"))
 def test_cv_band_accepts_quantiles_without_median(train_test):
+    # fixed in 9f04ab1 (was a latent ValueError)
     Xtr, Ytr, Xte = train_test
     Q = M.make("cv_band").fit(Xtr, Ytr).predict_quantiles(Xte, (0.1, 0.9))
     assert Q.shape == (len(Xte), 2, 2) and (Q[:, :, 0] <= Q[:, :, 1]).all()
@@ -371,10 +359,7 @@ def test_select_cold_start_uses_bank(ctx_setup, live_kind):
 
 @pytest.mark.parametrize("budget", [
     40,
-    pytest.param(41, marks=pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
-        "BUG: Bank.knn returns np.unique(idx) (sorted by bank row index, distance order lost) and "
-        "select truncates it with [:n_knn] (context.py), so when k*len(queries) > n_knn the rows "
-        "dropped are the highest bank indices, not the farthest neighbours: a query's own 1-NN can go"))),
+    41,              # fixed in 9f04ab1: truncation used to drop the highest bank indices, not the farthest rows
 ])
 def test_select_keeps_each_querys_nearest_bank_row(budget):
     """kNN share is meant to give each query its most similar situations: when the kNN budget
