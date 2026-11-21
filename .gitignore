@@ -1,0 +1,9 @@
+data/
+results/
+.env
+*.parquet
+__pycache__/
+*.pyc
+project.yaml
+*.ckpt
+*.pt

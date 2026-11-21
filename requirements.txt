@@ -1,0 +1,8 @@
+numpy
+pandas
+pyarrow
+scikit-learn
+lightgbm
+tabpfn>=9.2
+highway-env>=1.12
+matplotlib
