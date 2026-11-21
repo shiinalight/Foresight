@@ -234,6 +234,101 @@ Both apply to every planner. Amendment 2 also names the 02:00 TabPFN setup and i
 
 **Fallback, written now:** if neither TabPFN planner beats every baseline curve under the rule above, the closed loop is reported as a stress test, not as evidence for claim C. Claims A and B then rest on the offline and real-data results.
 
+## Closed loop: pre-registration amendment 2, design and analysis (committed Sun 22 Nov ~00:40 Berlin)
+
+Written before any planner ran on the T5 seeds (3000–3039). The settings T4 decides are named here. Their values follow in a short dated addendum before launch.
+
+**Runs in this cell before this text, all disclosed:**
+- T2 baselines and the oracle gate (seeds 4100–4119).
+- A logging and timing check (seed 5199: lgbm_all, reactive, tabpfn_split).
+- The T4 offset test and timing smoke (seeds 5100–5103, running).
+- Before that, one split smoke run on the old bank (seed 9001, 16 people).
+
+From the learned-planner runs only ms per plan, the logging check and the offset's behaviour are read.
+
+**What changed since amendment 1, disclosed in full:**
+- **The oracle gate failed** (`results/oracle_gate_cross.csv`, `tools/curve_compare.py --a oracle`, 20 seeds, every baseline dial). The open-loop oracle beats stop_go, and it fails cv, reactive and vo. Against cv m0.2 it is 1.59 s faster [0.86, 2.39], short of the 2 s margin. vo w0.5 (19.24 s) is faster than every oracle point, so it is outside the oracle's front and not comparable.
+- **Claim C is therefore reported as a stress test.** No co-primary is added.
+- **The gate was hardly passable.** The time floor (straight start-to-goal distance minus the 0.5 m arrive radius, at 1.0 m/s) averages 17.74 s over the 20 seeds (range 17.50–19.13). vo w0.5 runs 1.50 s above that floor and cv m0.2 3.70 s above it. D-14's 2 s was a detectability margin (from the pilot's paired spread), not an estimate of the headroom.
+- **The cell is mild:** it qualifies by one seed. The best baseline, cv m0.4, collides while moving in 2 of 20 seeds (10%); the next milder cell has 0% (D-32).
+- **The live setup was chosen on simulated data** (D-30). It came from `tools/live_variants.py` and the WP-J2 rule (`tools/live_variants_cp.py`, `results/live_variants_cp.csv`). In Setting B, after the switch, with paired person bootstrap:
+  - **split2k+offset vs frozen2k+offset:** interval score −1.29 [−1.70, −0.94], coverage +12.6 points [+9.0, +16.3], median error −0.057 m [−0.092, −0.021], pinball −0.034. Before the switch the two are level.
+  - **split2k+offset vs lgbm_all+offset:** interval score −1.72, coverage +19.6 points, error not different.
+  - **Limits:** no variant reaches 80% after the switch (best 68.4%). The offline offset barely moved (8 update rounds per episode), so whether frozen+offset could match split on sharpness stays open. Cost: split ~3.0 s per moment offline, against 0.27 s for frozen.
+  - **On real data** (Setting A, Hotel → ETH, n = 137 moments), no variant beat constant velocity.
+- **T3** is live_variants Setting B: 6 episodes instead of 12 (D-30).
+- **Frozen context:** the first version of `context.frozen` forced up to half rare moves. It was corrected to natural frequency (D-31) before any learned planner ran in the cell.
+
+**Scene and data:**
+- **Cell:** robot_repulsion 2, ignore_robot 0.2, people 24, crossing crowd, features f4, top speed 1.0 m/s for every planner, duration 40 s.
+- **Bank:** `data/crowd_cross_t2`, 120 episodes generated in that cell (seed 24).
+  - The Kalman filter was retuned on its training split: q 0.01, r 0.05, at the grid edge as in D-26. CV error at +2 s is 0.827 m.
+  - Every episode with erratic behaviour before or after a switch is excluded (`--bank-exclude-regime erratic`), so erratic is new to every model.
+- **Gates rerun in the cell:**
+  - **S0 passes narrowly.** On 2,000 test rows at +2 s: CV 0.848 m; LightGBM on all rows 0.712 m (16.0% better), 5–95 box 80%; TabPFN fast-1 on 1,000 rows 0.777 m (8.4%), box 82%.
+  - **check_shift:** the robot features of the live queries match the bank. robot_dist quantiles: bank 1.91 / 4.29 / 6.62 / 9.20 / 13.24 m, live 2.08 / 4.46 / 6.86 / 9.56 / 13.83 m. Robot within 2 m: bank 5.6%, live 4.5%.
+- **Switch:** every seed starts calm or hurried (alternating by seed) and switches the whole crowd into erratic at t = 5 s (`--switch --switch-all --switch-to erratic --switch-t 5`). Why: so the scene model can receive erratic labels while the robot is still crossing. The value was chosen before any learned planner ran in the cell, on timing arguments only.
+
+**Planners (flags common to all learned arms: `--frozen-ctx fill --context 2000`, TabPFN 3.5-Fast with 1 estimator, `tabpfn_cfg = fast1-est1`):**
+- **Primary:** `tabpfn_split` at box_q {0.10, 0.15, 0.20}, with the online offset if the in-loop offset passes its reproduction test by 03:00, otherwise without it. The addendum states which.
+  - `tabpfn_split` is the frozen bank model (2,000 rows at natural move frequency, fitted once) plus a scene model.
+  - The scene model is refit every 2 s on at most 250 of this episode's most recent completed rows, labelled from observed (filtered) positions.
+  - Quantiles are averaged per axis, then sorted. The frozen model runs alone while fewer than 20 recent rows exist.
+- **Secondary (exploratory, no claim), box_q {0.10, 0.15}:** frozen `tabpfn`, `lgbm_all` and `lgbm` (lgbm on the same 2,000 rows). Each gets the offset as well if it is built.
+- **Baselines** (each over its own dial):
+  - cv at margin {0.2, 0.4, 0.6, 0.8};
+  - reactive at margin {0.2, 0.4, 0.6, 0.8};
+  - vo at weight {0.5, 1, 2};
+  - stop_go once.
+- **Open-loop oracle** at margin {0.2, 0.4, 0.6}.
+- **Secondary arms on the loop itself:**
+  - reactive m0.4 and vo w1 replanning every 0.1 s (industry brief);
+  - the primary with a virtual-time latency (`--latency`, value from T4).
+  - The primary arm itself runs at zero latency.
+- **Online offset spec** (as offline, so it stays pre-specified):
+  - alpha 0.2, eta 0.02, d0 0, scored on the raw 5–95% box: d ← d + eta (miss − alpha), per completed row in order of t_known, updated every 2 s.
+  - Labels come from OBSERVED (filtered) positions (deployment-realistic). Offline used truth; this is a deliberate difference.
+  - The box the planner reads, [box_q, 1 − box_q], is widened by the same d, so the caution dial keeps its meaning.
+  - In the loop it gets far more updates than offline (24 people × 2 horizons every 0.4 s). eta stays 0.02.
+- **Deadline takeover:** designed, not built.
+
+**Primary analysis:** amendment 1's rule, unchanged:
+- matched-safety curves on min_gap and moving-collision rate;
+- D-14 margin of 2 s;
+- 95% paired-seed bootstrap;
+- dominance only outside a curve's range;
+- Holm–Bonferroni across the four baselines.
+
+Implementation: `tools/curve_compare.py --glob "*t5-*" --seeds 3000-3039 --a tabpfn_split --holm`.
+
+**Each planner's curve is read on its Pareto front: dominated dial points are dropped, interpolation runs along the front, outside its range only dominance counts, and a bootstrap resample with no comparison counts against the planner under test.**
+
+A consequence to state: a baseline point faster than the primary's fastest arm can only be beaten by dominance.
+
+**Exploratory analyses, added after the oracle gate was seen, carrying no claim-C verdict:**
+- **(a) Safety at matched time.** The same Pareto-front rule with the axes swapped (`--matched safety`): A's min_gap and moving-collision rate at each baseline point's time_capped, read along A's front (faster never safer).
+  - **Margins**, set from baseline rows only (the T2 cell's 12 baseline arms, all 66 pairs, median paired SD): min_gap 0.356 m, moving-collision indicator 0.550. The detectable differences at 40 seeds (80% power, 5% two-sided) are **0.158 m** and **0.244** (24 points). A must beat each baseline point by more than these on both axes, with the paired interval excluding 0.
+  - **Order:** the oracle is tested against each baseline first, on T5's fresh seeds. The primary is tested only against the baselines the oracle beats.
+  - **Hint only:** on the 20 T2 seeds the oracle's 0% vs cv's 15% is 3 crowds, on seeds selected for baseline collisions.
+- **(b) In-loop claim B.** `tabpfn_split` vs frozen `tabpfn` vs `lgbm_all`, all at box_q 0.15.
+  - **Metrics:** joint coverage of the raw 5–95% box, its width, and its interval score (alpha 0.1), at +2 s against true positions. Also the served box's coverage.
+  - **Before** the switch (t < 5 s) and **after** it, as per-episode aggregates (`inloop_*` columns in every result row), paired by seed, with 95% paired-seed bootstrap intervals.
+  - Reported without multiplicity correction, as exploratory.
+
+**Run:**
+- seeds 3000–3039;
+- one process per primary caution level, run in parallel;
+- baselines, oracle and secondary loop arms in further processes;
+- **order:** seed-outer, planner-inner, each seed checkpointed as it finishes. The analysis uses common seeds only, so a run that is cut short still yields paired comparisons;
+- **hard stop at 08:00 Berlin:** the analysis uses whatever has completed by then.
+
+**Named for the T4 addendum** (before launch; values only, no new mechanisms):
+- smoothing on or off (D-28 gate, every planner using the shared planner);
+- online offset on or off (reproduction test);
+- the latency value of the secondary latency arm.
+
+**Fallback:** unchanged. Claim C is already a stress test (gate failed). T5 is now the in-loop claim-B test and the source of demo traces.
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):

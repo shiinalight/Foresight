@@ -17,6 +17,13 @@ Planners (same seeds = same crowd, start and goal for all):
 --bank-exclude-regime erratic: drop every bank episode with that regime before or after a switch.
 --switch-to erratic --switch-all: every seed switches into that regime at mid-episode, from a start regime
                other than it (start = the other regimes in turn by seed).
+--offset: in-loop online conformal offset on any learned planner's box (Gibbs & Candes additive form,
+               d <- d + eta (miss - alpha), d0 = 0, eta 0.02): every --refit s, predictions whose outcome is now
+               known (t + h <= now) are scored against OBSERVED (filtered) positions, in order of t_known. As
+               offline (conformal_eval.py): the score is on the RAW 5-95% box, target miss alpha = 0.2. The box the
+               planner reads ([box_q, 1 - box_q]) is widened by the same d, so the caution dial keeps its meaning.
+--latency L:   virtual-time latency: a command planned at t applies at t + L; the robot keeps its previous
+               command meanwhile.
 Short 0.4 s check: constant velocity from the filtered state for cv, cv_band, lgbm* and tabpfn*; people frozen for
 reactive; true positions for the open-loop oracle; none for vo (time-to-collision penalty) and stop_go (sim policy).
 
@@ -34,7 +41,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from foresight import viz as V
+from foresight.core import conformal as CF
 from foresight.core import context as C
 from foresight.core import features as F
 from foresight.core import models as M
@@ -46,11 +53,12 @@ HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
        "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode", "smooth",
-       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t"]
+       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t", "offset", "offset_alpha", "offset_eta", "latency"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
             "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere", "smooth": False,
-            "frozen_ctx": "random", "bank_exclude": "-", "switch_to": "-", "switch_all": False, "switch_t": -1.0}
+            "frozen_ctx": "random", "bank_exclude": "-", "switch_to": "-", "switch_all": False, "switch_t": -1.0,
+            "offset": False, "offset_alpha": -1.0, "offset_eta": 0.02, "latency": 0.0}
 SPLIT_REC, SPLIT_THIN = 250, 20   # tabpfn_split: scene-model rows (most recent); fewer than SPLIT_THIN = frozen alone
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
@@ -77,6 +85,13 @@ class Predictor:
         self.split = kind.endswith("_split")
         self.base = kind.replace("_live", "").replace("_all", "").replace("_split", "")
         self.frozen_model, self.n_rec = None, 0
+        self.agg = []                                            # boxes served this episode (in-loop aggregates)
+        self.offset = bool(getattr(args, "offset", False)) and kind.startswith(("lgbm", "tabpfn", "cv_band"))
+        oa = getattr(args, "offset_alpha", None)
+        self.eta = float(getattr(args, "offset_eta", 0.02))      # 0 = score the box only, never move it
+        self.alpha = 0.2 if oa is None else oa
+        self.d, self.pending, self.last_off, self.d_hist = 0.0, [], -1e9, []
+        self.n_miss, self.n_scored, self.n_miss_late, self.n_late = 0.0, 0, 0.0, 0
         self.last_fit, self.model, self.n_live = -1e9, None, 0
         self.ctx_rows, self.refit_at = None, None                  # for the trace: what the model last read
         if kind in ("stop_go", "reactive", "vo", "oracle"):
@@ -106,10 +121,68 @@ class Predictor:
     def reset(self):
         """Start of an episode: live and split models forget the last episode's scene."""
         self.last_fit, self.n_live, self.n_rec = -1e9, 0, 0
+        self.d, self.pending, self.last_off, self.d_hist = 0.0, [], -1e9, []
+        self.n_miss, self.n_scored, self.n_miss_late, self.n_late = 0.0, 0, 0.0, 0
+        self.agg = []
         if self.split:
             self.model = self.frozen_model
 
+    def _update_offset(self, t, live):
+        """Score every stored prediction whose outcome is known by t against observed labels; d moves per row."""
+        if not self.pending:
+            return
+        P_ = pd.concat(self.pending, ignore_index=True)
+        P_["t_known"] = P_.t + P_.h
+        done = P_[P_.t_known <= t + 1e-9]
+        self.pending = [P_[P_.t_known > t + 1e-9].drop(columns="t_known")]
+        if not len(done):
+            return
+        lab = live[["agent_id", "t", "h", "ddx", "ddy"]].assign(t=live.t.round(6), h=live.h.round(6))
+        m = done.assign(t=done.t.round(6), h=done.h.round(6)).merge(lab, on=["agent_id", "t", "h"], how="inner")
+        m = m.dropna(subset=["ddx", "ddy"]).sort_values(["t_known", "agent_id", "h"], kind="stable")
+        s = np.maximum.reduce([(m.q05a - m.ddx).to_numpy(), (m.ddx - m.q95a).to_numpy(),
+                               (m.q05c - m.ddy).to_numpy(), (m.ddy - m.q95c).to_numpy()])   # raw 5-95% box
+        for si, du in zip(s, m.d_used.to_numpy()):
+            miss = float(si > du)
+            self.d += self.eta * (miss - self.alpha)
+            self.n_miss += miss
+        self.n_scored += len(m)
+        st = getattr(self.args, "switch_t", None)
+        late = (m.t >= (self.args.duration / 2 if st is None else st) + 2.0).to_numpy()   # predictions made after the switch has settled
+        self.n_miss_late += float((s > m.d_used.to_numpy())[late].sum()); self.n_late += int(late.sum())
+        self.d_hist.append((t, self.d, int(len(m))))
+
+    def offset_stats(self):
+        if not self.offset:
+            return {"offset": False, "offset_alpha": -1.0, "offset_final": np.nan, "offset_updates": 0,
+                    "offset_mean": np.nan, "offset_miss": np.nan, "offset_miss_after_switch": np.nan,
+                    "offset_eta": np.nan}
+        n = sum(h[2] for h in self.d_hist)
+        return {"offset": True, "offset_alpha": self.alpha, "offset_eta": self.eta, "offset_final": self.d, "offset_updates": n,
+                "offset_mean": float(np.mean([h[1] for h in self.d_hist])) if self.d_hist else 0.0,
+                "offset_miss": self.n_miss / max(self.n_scored, 1),
+                "offset_miss_after_switch": self.n_miss_late / self.n_late if self.n_late else np.nan}
+
     def predict(self, q, t, hist_df, obst_df, meta, seed):
+        pr = self._predict(q, t, hist_df, obst_df, meta, seed)
+        if not self.offset:
+            self.log_boxes(pr)
+            return pr
+        if t - self.last_off >= self.args.refit - 1e-9:
+            # rows at every step (row_every = dt), so each stored prediction (made every --replan s) finds its label
+            live = F.build_rows(hist_df, obst_df, meta, horizons=self.args.hz, noise=self.args.noise, seed=seed,
+                                label_from="observed", row_every=meta["dt"])
+            self._update_offset(t, live)
+            self.last_off = t
+        if len(pr):
+            # store the RAW box with the offset in force: a miss is s(raw) > d_used, i.e. outside the served box
+            self.pending.append(pr[["agent_id", "t", "h", "q05a", "q95a", "q05c", "q95c"]].assign(d_used=self.d))
+            lo, hi = CF.widen(pr[["lo_a", "lo_c"]].to_numpy(float), pr[["hi_a", "hi_c"]].to_numpy(float), self.d)
+            pr = pr.assign(lo_a=lo[:, 0], lo_c=lo[:, 1], hi_a=hi[:, 0], hi_c=hi[:, 1])
+        self.log_boxes(pr)
+        return pr
+
+    def _predict(self, q, t, hist_df, obst_df, meta, seed):
         if self.split and t - self.last_fit >= self.args.refit - 1e-9:
             live = F.build_rows(hist_df, obst_df, meta, horizons=self.args.hz, noise=self.args.noise, seed=seed,
                                 label_from="observed")
@@ -129,7 +202,54 @@ class Predictor:
                            mix=(0.6, 0.3, 0.1))
             self.model, self.last_fit, self.n_live = self._fit(ctx), t, int(len(live))
             self.ctx_rows, self.refit_at = ctx, t
-        return V.predict_rows(self.model, q, (self.args.box_q, 0.5, 1 - self.args.box_q))
+        return self._rows(q)
+
+    def _rows(self, q):
+        """Planner box [box_q, 1 - box_q] plus the 5-95% box (q05*/q95*, for the in-loop claim-B aggregates),
+        from one predict_quantiles call."""
+        bq = self.args.box_q
+        Q = self.model.predict_quantiles(F.X_of(q), (0.05, bq, 0.5, 1 - bq, 0.95))
+        q = q.copy()
+        q["mx"], q["my"] = F.to_world(q, Q[:, 0, 2], Q[:, 1, 2])
+        q["lo_a"], q["hi_a"], q["lo_c"], q["hi_c"] = Q[:, 0, 1], Q[:, 0, 3], Q[:, 1, 1], Q[:, 1, 3]
+        q["q05a"], q["q95a"], q["q05c"], q["q95c"] = Q[:, 0, 0], Q[:, 0, 4], Q[:, 1, 0], Q[:, 1, 4]
+        q["q50a"], q["q50c"] = Q[:, 0, 2], Q[:, 1, 2]
+        return q
+
+    def log_boxes(self, pr):
+        if len(pr) and "q05a" in pr:
+            self.agg.append(pr[["agent_id", "t", "h", "lo_a", "hi_a", "lo_c", "hi_c", "q05a", "q95a", "q05c", "q95c",
+                                "q50a", "q50c"]])
+
+    def inloop_stats(self, hist, obst_df, meta, seed, switch_t):
+        """Episode aggregates at h = 2 s against TRUE positions: joint coverage, width and interval score of the
+        5-95% box, joint coverage of the served (planner) box, median error; before and after the switch."""
+        keys = [f"inloop_{m}_{w}" for w in ("pre", "post") for m in ("n", "cov90", "w90", "is90", "served_cov", "err")]
+        out = dict.fromkeys(keys, np.nan)
+        if not self.agg:
+            return out
+        A = pd.concat(self.agg, ignore_index=True)
+        A = A[np.isclose(A.h, 2.0)]
+        hist_df = pd.DataFrame([r for s in hist for r in s])
+        tr = F.build_rows(hist_df, obst_df, meta, horizons=(2.0,), noise=self.args.noise, seed=seed, row_every=meta["dt"])
+        lab = tr[["agent_id", "t", "ddx", "ddy"]].assign(t=tr.t.round(6))
+        m = A.assign(t=A.t.round(6)).merge(lab, on=["agent_id", "t"], how="inner").dropna(subset=["ddx", "ddy"])
+        y = m[["ddx", "ddy"]].to_numpy(float)
+        lo, hi = m[["q05a", "q05c"]].to_numpy(float), m[["q95a", "q95c"]].to_numpy(float)
+        slo, shi = m[["lo_a", "lo_c"]].to_numpy(float), m[["hi_a", "hi_c"]].to_numpy(float)
+        cov = ((y >= lo) & (y <= hi)).all(axis=1)
+        scov = ((y >= slo) & (y <= shi)).all(axis=1)
+        w = (hi - lo).mean(axis=1)
+        isc = ((hi - lo) + 20 * (lo - y) * (y < lo) + 20 * (y - hi) * (y > hi)).mean(axis=1)
+        err = np.linalg.norm(m[["q50a", "q50c"]].to_numpy(float) - y, axis=1)
+        post = (m.t >= switch_t - 1e-9).to_numpy() if switch_t is not None else np.zeros(len(m), bool)
+        for wname, mask in (("pre", ~post), ("post", post)):
+            if mask.any():
+                out |= {f"inloop_n_{wname}": int(mask.sum()), f"inloop_cov90_{wname}": float(cov[mask].mean()),
+                        f"inloop_w90_{wname}": float(w[mask].mean()), f"inloop_is90_{wname}": float(isc[mask].mean()),
+                        f"inloop_served_cov_{wname}": float(scov[mask].mean()),
+                        f"inloop_err_{wname}": float(np.median(err[mask]))}
+        return out
 
 
 class AvgQuantiles:
@@ -210,8 +330,9 @@ def run_episode(pred, seed, args, log=False):
     obstacles = getattr(sim, "obst", None) or getattr(sim, "obstacles", [])
     obst_df = pd.DataFrame([dict(episode=seed, obstacle_id=i, shape="circle", **o) for i, o in enumerate(obstacles)])
     every = max(1, round(args.replan / dt))
-    if pred.live or pred.split:
-        pred.reset()
+    pred.reset()
+    lag = int(round(getattr(args, "latency", 0.0) / dt))
+    queue, applied = [], np.zeros(2)                         # (apply step, command) for the latency budget
     frames, plans, robotfeat = [], [], []
     collided_steps, moving_collisions, min_gap, t_goal, t_pred = 0, 0, np.inf, None, 0.0
     n_plans, n_fallback, k = 0, 0, 0
@@ -267,7 +388,14 @@ def run_episode(pred, seed, args, log=False):
                                          "plan_ms": 1000 * (t1 - (tp1 if pred.kind not in ("vo",) else t0)),
                                          "refit": bool(refit)}})
         prev = state
-        state, info = sim.step(cmd)
+        if cmd is None or lag == 0:
+            applied = cmd
+        else:
+            if k % every == 0:
+                queue.append((k + lag, np.array(cmd, float)))
+            while queue and queue[0][0] <= k:
+                applied = queue.pop(0)[1]
+        state, info = sim.step(applied)
         state = [dict(r, episode=seed) for r in state]
         k += 1
         hist.append(state)
@@ -302,7 +430,11 @@ def run_episode(pred, seed, args, log=False):
            "people_decel": float(np.mean(decels)) if decels else 0.0, "episode_s": t_end,
            **zigzag(headings, path_len),
            "fallback_rate": n_fallback / max(n_plans, 1),
-           "pred_seconds": t_pred, "pred_ms_per_plan": 1000 * t_pred / max(n_plans, 1)}
+           "pred_seconds": t_pred, "pred_ms_per_plan": 1000 * t_pred / max(n_plans, 1),
+           **pred.offset_stats(),
+           **pred.inloop_stats(hist, obst_df, meta, seed,
+                               (args.duration / 2 if getattr(args, "switch_t", None) is None else args.switch_t)
+                               if (args.switch and (getattr(args, "switch_all", False) or seed % 2 == 1)) else None)}
     logd = {"frames": frames, "plans": plans, "obst": obstacles, "bounds": meta["bounds"]} if log else None
     if log:
         from foresight import trace
@@ -328,6 +460,10 @@ def main():
     ap.add_argument("--horizons", type=float, nargs="*", default=list(HZ), help="planner checks the boxes at these")
     ap.add_argument("--switch", action="store_true", help="odd seeds: crowd-wide regime switch at mid-episode")
     ap.add_argument("--switch-to", default=None, help="with --switch: always switch into this regime (start = another)")
+    ap.add_argument("--offset", action="store_true", help="in-loop online conformal offset (learned planners)")
+    ap.add_argument("--offset-alpha", type=float, default=None, help="target miss rate of the raw 5-95%% box (default 0.2)")
+    ap.add_argument("--offset-eta", type=float, default=0.02, help="offset step; 0 = measure misses only")
+    ap.add_argument("--latency", type=float, default=0.0, help="virtual-time latency of each command, s")
     ap.add_argument("--switch-t", type=float, default=None, help="with --switch: switch time in s (default mid-episode)")
     ap.add_argument("--switch-all", action="store_true", help="with --switch: every seed switches, not only odd ones")
     ap.add_argument("--frozen-ctx", default="random", choices=["random", "fill"], help="frozen lgbm/tabpfn context")
@@ -384,7 +520,7 @@ def main():
                     "refit": a.refit if kind.endswith(("_live", "_split")) else 0.0, "switch": a.switch, "run_id": run_id,
                     "frozen_ctx": a.frozen_ctx if kind.startswith(("lgbm", "tabpfn")) and kind != "lgbm_all" else "-",
                     "bank_exclude": a.bank_exclude_regime or "-", "switch_to": a.switch_to or "-",
-                    "switch_all": bool(a.switch_all),
+                    "switch_all": bool(a.switch_all), "latency": a.latency,
                     "switch_t": (a.duration / 2 if a.switch_t is None else a.switch_t) if a.switch else -1.0,
                     "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
                     "threads": a.threads, "max_speed": a.max_speed,
