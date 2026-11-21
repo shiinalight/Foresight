@@ -66,6 +66,9 @@ class CrowdConfig:
     robot_speed: float = 1.0
     # difficulty knobs (T2 in docs/DECISIONS.md). Defaults reproduce the original crowd exactly.
     robot_repulsion: float = ROBOT_REPULSION   # how much harder people push away from the robot
+    goal_mode: str = "anywhere"      # "anywhere": next goal is any free point (original; people turn
+                                     # often). "cross": people walk across to the far side of the plaza,
+                                     # like through-walkers in the ETH/Hotel scenes (docs/DATA.md)
     ignore_robot: float = 0.0        # share of people who do not react to the robot at all
                                      # (looking at a phone); drawn from a separate random stream, so
                                      # the rest of the episode is the same crowd as with 0.0
@@ -89,6 +92,8 @@ class CrowdSim:
             raise ValueError(f"ignore_robot must be in [0, 1], got {config.ignore_robot}")
         if config.robot_repulsion < 0:
             raise ValueError(f"robot_repulsion must be >= 0, got {config.robot_repulsion}")
+        if config.goal_mode not in ("anywhere", "cross"):
+            raise ValueError(f"goal_mode must be 'anywhere' or 'cross', got {config.goal_mode!r}")
         self.seed, self.cfg = seed, config
 
     # ---------- setup ----------
@@ -120,8 +125,11 @@ class CrowdSim:
         for i in range(1, n):
             self.P[i] = self._free_point(self.P[:i], self.radius[i])
         self.V = np.zeros((n, 2))
-        self.G = np.array([self.robot_goal] + [self._free_point(np.empty((0, 2)), PERSON_R)
-                                               for _ in range(1, n)])
+        if c.goal_mode == "cross":
+            self.G = np.array([self.robot_goal] + [self._far_side_goal(self.P[i]) for i in range(1, n)])
+        else:
+            self.G = np.array([self.robot_goal] + [self._free_point(np.empty((0, 2)), PERSON_R)
+                                                   for _ in range(1, n)])
         self.jit = rng.normal(1.0, c.jitter, (n, 4)).clip(0.7, 1.3)   # v0, A, B, rates
         self.stop_left = np.zeros(n)
         # who ignores the robot: a separate stream keyed on the seed, so self.rng (and with it every
@@ -130,6 +138,8 @@ class CrowdSim:
         if c.ignore_robot > 0:
             u = np.random.default_rng([self.seed, 7919]).random(n)
             self.ignores_robot[1:] = u[1:] < c.ignore_robot
+        self.ids = np.arange(n)                  # agent_id per slot; changes only when someone respawns
+        self.next_id = n
         self.k = 0
         return self._state(np.zeros(n, bool))
 
@@ -141,6 +151,35 @@ class CrowdSim:
                     and np.all(np.hypot(*(self._obs_xy - p).T) > self._obs_r + r + 0.3)):
                 return p
         raise RuntimeError("plaza too crowded to place an agent")
+
+    def _respawn(self, i, speed):
+        """goal_mode 'cross': person i has walked out of the scene. A new person (new agent_id) enters
+        at a random edge, already walking towards the far side, as tracks start and end in real data."""
+        L = self.cfg.half_size
+        inset = L - 1.0
+        for _ in range(100):
+            side, u = self.rng.integers(4), self.rng.uniform(-0.8 * inset, 0.8 * inset)
+            p = np.array([[-inset, u], [inset, u], [u, -inset], [u, inset]][side])
+            others = np.delete(self.P, i, axis=0)
+            if np.all(np.hypot(*(others - p).T) > 2 * PERSON_R + 0.3):
+                break
+        self.P[i] = p
+        self.G[i] = self._far_side_goal(p)
+        e = (self.G[i] - p) / max(np.linalg.norm(self.G[i] - p), 1e-9)
+        self.V[i] = e * speed
+        self.stop_left[i] = 0.0
+        self.ids[i] = self.next_id
+        self.next_id += 1
+
+    def _far_side_goal(self, p):
+        """A goal on the side of the plaza opposite the side this person is nearest to (goal_mode
+        'cross'): long, mostly straight walks across the scene."""
+        L = self.cfg.half_size
+        inset = L - 1.0
+        d = np.array([p[0] + L, L - p[0], p[1] + L, L - p[1]])          # to left, right, bottom, top
+        side = int(np.argmin(d))
+        u = self.rng.uniform(-0.8 * inset, 0.8 * inset)
+        return np.array([[inset, u], [-inset, u], [u, inset], [u, -inset]][side])  # the opposite side
 
     # ---------- dynamics ----------
     def step(self, robot_cmd: tuple[float, float] | None = None) -> tuple[list[dict], dict]:
@@ -158,7 +197,10 @@ class CrowdSim:
         v_des = v0.copy()
         for i in range(1, n):
             if np.linalg.norm(self.G[i] - P[i]) < ARRIVE:
-                self.G[i] = self._free_point(np.empty((0, 2)), PERSON_R)
+                if c.goal_mode == "cross":                    # leaves the scene; a new person enters
+                    self._respawn(i, v0[i])
+                else:
+                    self.G[i] = self._free_point(np.empty((0, 2)), PERSON_R)
             if p["turn"] and rng.random() < p["turn"] * rate[i]:
                 self.G[i] = self._turn_goal(i)
             if self.stop_left[i] > 0:
@@ -266,7 +308,7 @@ class CrowdSim:
     def _state(self, collided) -> list[dict]:
         t = round(self.k * self.cfg.dt, 6)
         regime = self.cfg.regime_at(t)
-        return [dict(t=t, agent_id=i, kind="robot" if i == 0 else "person", is_ego=int(i == 0),
+        return [dict(t=t, agent_id=int(self.ids[i]), kind="robot" if i == 0 else "person", is_ego=int(i == 0),
                      x=self.P[i, 0], y=self.P[i, 1], vx=self.V[i, 0], vy=self.V[i, 1],
                      radius=self.radius[i], regime="robot" if i == 0 else regime,
                      goal_x=self.G[i, 0], goal_y=self.G[i, 1], collided=int(collided[i]))
@@ -381,10 +423,12 @@ def main():
     ap.add_argument("--robot-repulsion", type=float, default=ROBOT_REPULSION,
                     help="how much harder people push away from the robot than from each other")
     ap.add_argument("--ignore-robot", type=float, default=0.0, help="share of people who ignore the robot")
+    ap.add_argument("--goal-mode", default="anywhere", choices=["anywhere", "cross"],
+                    help="cross: people walk across the plaza and leave; new people enter (closer to ETH/Hotel)")
     ap.add_argument("--out", help="write tracks.csv, obstacles.csv, meta.json here")
     a = ap.parse_args()
     cfg = CrowdConfig(n_people=a.people, duration=a.duration, robot_repulsion=a.robot_repulsion,
-                      ignore_robot=a.ignore_robot)
+                      ignore_robot=a.ignore_robot, goal_mode=a.goal_mode)
     tracks, obstacles, meta = generate(a.episodes, a.seed, cfg, a.switch_prob)
     obs = observe(tracks, seed=a.seed)
     pd.set_option("display.width", 160)

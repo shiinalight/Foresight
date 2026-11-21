@@ -82,3 +82,43 @@ def test_knobs_recorded_in_dataset_meta():
     _, _, meta = generate(2, seed=0, config=CrowdConfig(duration=4.0, robot_repulsion=1.0, ignore_robot=0.2))
     assert meta["config"]["robot_repulsion"] == 1.0 and meta["config"]["ignore_robot"] == 0.2
     json.dumps(meta)                                                  # still serialisable for meta.json
+
+
+# ---------------------------------------------------------------- goal_mode "cross" (realism, docs/DATA.md)
+def test_cross_mode_rejects_unknown_mode():
+    with pytest.raises(ValueError):
+        CrowdSim(0, CrowdConfig(goal_mode="wander"))
+
+
+def test_cross_mode_people_leave_and_new_ids_enter():
+    tracks, _, _ = simulate(7, CrowdConfig(goal_mode="cross", duration=40.0, regime="hurried"))
+    ppl = tracks[tracks["kind"] == "person"]
+    assert ppl["agent_id"].nunique() > 16                    # people walked out, new people came in
+    assert tracks.groupby("t")["agent_id"].apply(lambda s: s.is_unique).all()
+    assert (tracks.groupby("t").size() == 17).all()          # constant head count: 16 people + robot
+    L = CrowdConfig().half_size
+    assert (ppl["x"].abs() < L).all() and (ppl["y"].abs() < L).all()
+
+
+def test_cross_mode_tracks_have_no_teleports():
+    tracks, _, _ = simulate(8, CrowdConfig(goal_mode="cross", duration=40.0, regime="hurried"))
+    ppl = tracks[tracks["kind"] == "person"].sort_values(["agent_id", "t"])
+    g = ppl.groupby("agent_id")
+    step = np.hypot(g["x"].diff(), g["y"].diff()).dropna()
+    assert step.max() < 0.6                                  # 0.2 s steps: < 3 m/s, never a jump
+    first = g.head(1)                                        # newcomers enter near an edge
+    new = first[first["agent_id"] > 16]
+    near_edge = np.maximum(new["x"].abs(), new["y"].abs()) > CrowdConfig().half_size - 1.5
+    assert near_edge.all()
+
+
+def test_cross_mode_turns_less_than_anywhere():
+    def turn_share(mode):
+        tr, _, _ = simulate(9, CrowdConfig(goal_mode=mode, regime="calm", duration=30.0))
+        p = tr[tr["kind"] == "person"].sort_values(["agent_id", "t"])
+        g = p.groupby("agent_id")
+        fvx, fvy = g["vx"].shift(-10), g["vy"].shift(-10)
+        ok = (np.hypot(p["vx"], p["vy"]) > 0.5) & (np.hypot(fvx, fvy) > 0.5)
+        d = np.abs((np.arctan2(fvy, fvx) - np.arctan2(p["vy"], p["vx"]) + np.pi) % (2 * np.pi) - np.pi)
+        return float((d[ok] > np.radians(30)).mean())
+    assert turn_share("cross") < turn_share("anywhere")
