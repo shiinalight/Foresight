@@ -56,6 +56,7 @@ def scores(P, T):
     pos, neg = p[t == 1], p[t == 0]
     if len(pos) == 0 or len(neg) == 0:
         return brier, np.nan
-    ranks = np.argsort(np.argsort(np.concatenate([pos, neg])))
-    auc = (ranks[: len(pos)].sum() - len(pos) * (len(pos) - 1) / 2) / (len(pos) * len(neg))
+    from scipy.stats import rankdata
+    ranks = rankdata(np.concatenate([pos, neg]))                 # ties get their average rank
+    auc = (ranks[: len(pos)].sum() - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg))
     return brier, float(auc)

@@ -38,11 +38,11 @@ from run_offline import rows_for
 HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
-       "max_speed", "vo_w",
+       "max_speed", "vo_w", "robot_repulsion", "ignore_robot",
        "tabpfn_cfg"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
-            "max_speed": 1.2, "vo_w": -1.0}
+            "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0}
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
 
@@ -109,7 +109,8 @@ def make_sim(name, seed, args):
     regime = names[seed % len(names)]                            # vary the crowd across seeds
     switch = dict(switch_t=round(args.duration / 2, 6), switch_to=names[(seed + 1) % len(names)]) \
         if (args.switch and seed % 2 == 1) else {}
-    cfg = CrowdConfig(n_people=args.people, duration=args.duration, regime=regime, **switch)
+    cfg = CrowdConfig(n_people=args.people, duration=args.duration, regime=regime,
+                      robot_repulsion=args.robot_repulsion, ignore_robot=args.ignore_robot, **switch)
     return NCrowdSim(seed, cfg), cfg.dt, cfg.half_size
 
 
@@ -231,6 +232,8 @@ def main():
     ap.add_argument("--tabpfn-est", type=int, default=1, help="TabPFN ensemble members")
     ap.add_argument("--threads", type=int, default=0, help="cap torch/OpenMP threads (parallel runs)")
     ap.add_argument("--max-speed", type=float, default=1.0, help="robot top speed, every planner (= CrowdConfig.robot_speed)")
+    ap.add_argument("--robot-repulsion", type=float, default=2.0, help="T2 knob: how hard people push away from the robot")
+    ap.add_argument("--ignore-robot", type=float, default=0.0, help="T2 knob: share of people who ignore the robot")
     ap.add_argument("--vo-w", type=float, default=1.0, help="velocity-obstacle collision weight")
     ap.add_argument("--vo-h", type=float, default=5.0, help="velocity-obstacle time horizon (s)")
     ap.add_argument("--tag", default="", help="suffix for the run id (parallel runs)")
@@ -262,7 +265,8 @@ def main():
                     "refit": a.refit if kind.endswith("_live") else 0.0, "switch": a.switch, "run_id": run_id,
                     "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
                     "threads": a.threads, "max_speed": a.max_speed,
-                    "vo_w": a.vo_w if kind == "vo" else np.nan, "vo_h": a.vo_h if kind == "vo" else np.nan}
+                    "vo_w": a.vo_w if kind == "vo" else np.nan, "vo_h": a.vo_h if kind == "vo" else np.nan,
+                    "robot_repulsion": a.robot_repulsion, "ignore_robot": a.ignore_robot}
             out.append(res)
             pd.DataFrame([res]).to_csv(csv_path, mode="a", header=not csv_path.exists(), index=False)   # checkpoint
             if len(rf):
