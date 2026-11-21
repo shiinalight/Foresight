@@ -36,11 +36,13 @@ from foresight.domains.toy_crowd import BOUND, CrowdSim
 from run_offline import rows_for
 
 HZ = (1.0, 2.0)
-VERSION = "v3"          # v3: train/serve parity (full history, fixed noise seed), live planners
+VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
+       "max_speed", "vo_w",
        "tabpfn_cfg"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
-            "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0}
+            "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
+            "max_speed": 1.2, "vo_w": -1.0}
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
 
@@ -65,6 +67,8 @@ class Predictor:
         self.live = kind.endswith("_live")
         self.base = kind.replace("_live", "").replace("_all", "")
         self.last_fit, self.model, self.n_live = -1e9, None, 0
+        if kind in ("stop_go", "reactive", "vo"):
+            return                                              # navigation baselines: no predictor
         if not self.live:
             if kind == "cv":
                 self.model = M.make("cv")
@@ -118,44 +122,73 @@ def run_episode(pred, seed, args, log=False):
         pred.last_fit = -1e9
     frames, plans, robotfeat = [], [], []
     collided_steps, moving_collisions, min_gap, t_goal, t_pred = 0, 0, np.inf, None, 0.0
-    n_plans, n_freeze, n_fallback, k = 0, 0, 0, 0
+    n_plans, n_fallback, k = 0, 0, 0
+    path_len, stopped_steps, intrusion_steps, decels = 0.0, 0, 0, []
+    start = np.array([state[0]["x"], state[0]["y"]]); goal0 = np.array([state[0]["goal_x"], state[0]["goal_y"]])
+    speeds = tuple(s * args.max_speed for s in (0.0, 1 / 3, 2 / 3, 1.0))   # one top speed for every planner
     cmd = np.zeros(2)
     while k * dt < args.duration:
         p_robot = np.array([state[0]["x"], state[0]["y"]])
         goal = np.array([state[0]["goal_x"], state[0]["goal_y"]])
-        if k % every == 0:
+        if pred.kind == "stop_go":
+            cmd = None                                          # the simulator's own stop-and-go policy
+        elif k % every == 0:
             # full history + fixed noise seed: same observations and Kalman state as the offline rows
             hist_df = pd.DataFrame([r for s in hist for r in s])
             q = F.build_rows(hist_df, obst_df, meta, horizons=args.hz, noise=args.noise, seed=seed, query_only=True)
             t0 = time.perf_counter()
-            pr = pred.predict(q, k * dt, hist_df, obst_df, meta, seed) if len(q) else q
+            if pred.kind == "vo":
+                v_robot = np.array([state[0]["vx"], state[0]["vy"]])
+                cmd, info = P.choose_vo(p_robot, v_robot, goal, q.drop_duplicates("agent_id") if len(q) else q,
+                                        max_speed=args.max_speed, w=args.vo_w, horizon=args.vo_h,
+                                        bounds=meta["bounds"], obstacles=obstacles)
+                pr = q
+            else:
+                if pred.kind == "reactive":                     # people frozen where they are: no prediction at all
+                    pr = q.assign(vx=0.0, vy=0.0, lo_a=0.0, hi_a=0.0, lo_c=0.0, hi_c=0.0) if len(q) else q
+                else:
+                    pr = pred.predict(q, k * dt, hist_df, obst_df, meta, seed) if len(q) else q
+                cmd, info = P.choose(p_robot, goal, pr, margin=args.margin, bounds=meta["bounds"],
+                                     obstacles=obstacles, horizons=args.hz, speeds=speeds)
             t_pred += time.perf_counter() - t0
-            cmd, info = P.choose(p_robot, goal, pr, margin=args.margin, bounds=meta["bounds"],
-                                 obstacles=obstacles, horizons=args.hz)
-            n_plans += 1; n_freeze += int(np.hypot(*cmd) < 0.05); n_fallback += int(info["fallback"])
+            n_plans += 1; n_fallback += int(info.get("fallback", False))
             if len(q):
                 robotfeat.append(q[["robot_dist", "robot_closing"]].assign(t=k * dt))
             if log:
                 plans.append({"t": k * dt, "pred": pr, "cmd": cmd, "n_live": pred.n_live, **info})
+        prev = state
         state, info = sim.step(cmd)
         state = [dict(r, episode=seed) for r in state]
         k += 1
         hist.append(state)
         rob = state[0]
-        gaps = [np.hypot(r["x"] - rob["x"], r["y"] - rob["y"]) - r["radius"] - rob["radius"] for r in state[1:]]
-        min_gap = min(min_gap, min(gaps))
+        v_act = float(np.hypot(rob["vx"], rob["vy"]))           # the robot's actual velocity, every planner
+        path_len += float(np.hypot(rob["x"] - prev[0]["x"], rob["y"] - prev[0]["y"]))
+        stopped_steps += int(v_act < 0.05)
+        gaps = np.array([np.hypot(r["x"] - rob["x"], r["y"] - rob["y"]) - r["radius"] - rob["radius"] for r in state[1:]])
+        min_gap = min(min_gap, float(gaps.min()))
+        intrusion_steps += int((gaps < 0.5).any())
+        for r0, r1, g in zip(prev[1:], state[1:], gaps):        # how much the robot makes nearby people brake
+            if g < 2.0:
+                decels.append(max(0.0, (np.hypot(r0["vx"], r0["vy"]) - np.hypot(r1["vx"], r1["vy"])) / dt))
         if info["collided"]:
             collided_steps += 1
-            moving_collisions += int(np.hypot(*cmd) >= 0.05)
+            moving_collisions += int(v_act >= 0.05)
         if log:
             frames.append({"t": k * dt, "state": state, "info": info})
         if np.hypot(goal[0] - rob["x"], goal[1] - rob["y"]) < 0.5:
             t_goal = k * dt
             break
+    t_end = k * dt
     res = {"seed": seed, "reached": t_goal is not None, "time_to_goal": t_goal if t_goal else np.nan,
+           "time_capped": t_goal if t_goal else args.duration,
            "collision_steps": collided_steps, "collided": collided_steps > 0,
            "moving_collision_steps": moving_collisions, "min_gap": min_gap, "near_miss": min_gap < 0.2,
-           "freeze_rate": n_freeze / max(n_plans, 1), "fallback_rate": n_fallback / max(n_plans, 1),
+           "freeze_rate": stopped_steps / max(k, 1), "seconds_stopped": stopped_steps * dt,
+           "intrusion_s": intrusion_steps * dt, "path_length": path_len,
+           "path_efficiency": float(max(np.linalg.norm(goal0 - start) - 0.5, 0) / path_len) if (t_goal and path_len > 0) else np.nan,
+           "people_decel": float(np.mean(decels)) if decels else 0.0, "episode_s": t_end,
+           "fallback_rate": n_fallback / max(n_plans, 1),
            "pred_seconds": t_pred, "pred_ms_per_plan": 1000 * t_pred / max(n_plans, 1)}
     logd = {"frames": frames, "plans": plans, "obst": obstacles, "bounds": meta["bounds"]} if log else None
     rf = pd.concat(robotfeat) if robotfeat else pd.DataFrame()
@@ -181,6 +214,9 @@ def main():
     ap.add_argument("--tabpfn-fast", type=int, default=1, help="1 = TabPFN-3.5-Fast")
     ap.add_argument("--tabpfn-est", type=int, default=1, help="TabPFN ensemble members")
     ap.add_argument("--threads", type=int, default=0, help="cap torch/OpenMP threads (parallel runs)")
+    ap.add_argument("--max-speed", type=float, default=1.0, help="robot top speed, every planner (= CrowdConfig.robot_speed)")
+    ap.add_argument("--vo-w", type=float, default=1.0, help="velocity-obstacle collision weight")
+    ap.add_argument("--vo-h", type=float, default=5.0, help="velocity-obstacle time horizon (s)")
     ap.add_argument("--tag", default="", help="suffix for the run id (parallel runs)")
     ap.add_argument("--log", action="store_true")
     a = ap.parse_args()
@@ -209,7 +245,8 @@ def main():
                     "context": a.context, "people": a.people, "bank": bank_path,
                     "refit": a.refit if kind.endswith("_live") else 0.0, "switch": a.switch, "run_id": run_id,
                     "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
-                    "threads": a.threads}
+                    "threads": a.threads, "max_speed": a.max_speed,
+                    "vo_w": a.vo_w if kind == "vo" else np.nan, "vo_h": a.vo_h if kind == "vo" else np.nan}
             out.append(res)
             pd.DataFrame([res]).to_csv(csv_path, mode="a", header=not csv_path.exists(), index=False)   # checkpoint
             if len(rf):

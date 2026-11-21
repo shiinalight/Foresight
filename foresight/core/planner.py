@@ -44,14 +44,14 @@ def gap_to_box(pt, rows):
 
 
 def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin=0.2, bounds=None,
-           obstacles=(), horizons=(1.0, 2.0), short_h=0.4, stop_bias=0.15):
+           obstacles=(), horizons=(1.0, 2.0), short_h=0.4, stop_bias=0.15, speeds=SPEEDS):
     """Return (cmd, info). pred_rows: predicted boxes for the people at this moment.
 
     Besides the predicted boxes at `horizons`, a hard short-range check: at `short_h` seconds
     people are assumed to keep their velocity (too short for behaviour to change), and any
     candidate that would touch someone then is vetoed. If no candidate is safe, the robot
     stops unless some move keeps a clearly larger worst-case gap (by `stop_bias` metres)."""
-    cands = candidates(p_robot, goal)
+    cands = candidates(p_robot, goal, speeds=speeds)
     worst = np.full(len(cands), np.inf)
     ok = np.ones(len(cands), bool)
     now = pred_rows.drop_duplicates("agent_id") if len(pred_rows) else pred_rows
@@ -86,3 +86,47 @@ def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin
         best = int(np.argmax(np.where(ok, worst, -np.inf))) if ok.any() else 0
         i = 0 if (not ok[best] or worst[0] >= worst[best] - stop_bias) else best     # 0 = stop
     return cands[i], {"n_safe": int(safe.sum()), "fallback": fallback, "worst_gap": float(worst[i])}
+
+
+def time_to_collision(p_rel, v_rel, R):
+    """Smallest t > 0 with |p_rel + v_rel t| = R (constant velocities); inf if never; 0 if overlapping now.
+    p_rel = other - robot, v_rel = other_velocity - robot_velocity."""
+    c = p_rel @ p_rel - R * R
+    if c <= 0:
+        return 0.0
+    a = v_rel @ v_rel
+    b = 2 * (p_rel @ v_rel)
+    disc = b * b - 4 * a * c
+    if a < 1e-12 or disc < 0 or b >= 0:
+        return np.inf
+    return (-b - np.sqrt(disc)) / (2 * a)
+
+
+def choose_vo(p_robot, v_robot, goal, people, max_speed=1.0, w=1.0, horizon=5.0, radius_robot=0.4,
+              radius_person=0.3, margin=0.1, bounds=None, obstacles=(), n_speeds=5, n_dirs=16):
+    """Velocity-obstacle (sampling) planner: no learned prediction, people assumed to keep their
+    current velocity. Each candidate velocity v gets
+        penalty = w / ttc(v) (over people with ttc < horizon) + |v - v_pref|
+    where v_pref = max_speed towards the goal; the lowest penalty wins. Not ORCA (no reciprocity)."""
+    g = np.asarray(goal) - p_robot
+    dist = np.linalg.norm(g)
+    v_pref = g / max(dist, 1e-9) * min(max_speed, dist / 0.4)
+    cands = [np.zeros(2)] + [s * np.array([np.cos(a), np.sin(a)])
+                             for s in np.linspace(max_speed / n_speeds, max_speed, n_speeds)
+                             for a in np.linspace(0, 2 * np.pi, n_dirs, endpoint=False)] + [v_pref]
+    R = radius_robot + radius_person + margin
+    P = people[["px", "py"]].to_numpy() if len(people) else np.zeros((0, 2))
+    Vp = people[["vx", "vy"]].to_numpy() if len(people) else np.zeros((0, 2))
+    best, best_pen, best_ttc = np.zeros(2), np.inf, np.inf
+    for v in cands:
+        pt = p_robot + v * 1.0
+        if bounds is not None and not (bounds[0] + radius_robot < pt[0] < bounds[2] - radius_robot
+                                       and bounds[1] + radius_robot < pt[1] < bounds[3] - radius_robot):
+            continue
+        if any(np.hypot(pt[0] - o["x"], pt[1] - o["y"]) < o["r"] + radius_robot + margin for o in obstacles):
+            continue
+        ttc = min((time_to_collision(P[j] - p_robot, Vp[j] - v, R) for j in range(len(P))), default=np.inf)
+        pen = (w / max(ttc, 1e-3) if ttc < horizon else 0.0) + np.linalg.norm(v - v_pref)
+        if pen < best_pen:
+            best, best_pen, best_ttc = v, pen, ttc
+    return best, {"fallback": False, "ttc": float(best_ttc), "n_safe": -1}
