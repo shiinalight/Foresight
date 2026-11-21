@@ -18,3 +18,5 @@ fig_incontext_hotel_to_eth.png,tools/incontext_eval.py,pilot (98 rows),aea8af6,s
 fig_incontext_eth_to_hotel.png,tools/incontext_eval.py,pilot (73 rows),aea8af6,superseded,dense rerun running
 fig_tier_grid.png,tools/tier_grid.py,API v3.5 / v3.5-fast / v2; hotel->eth and crowd,67d7b3d,current,ETH->Hotel direction not yet in the grid
 sample_3d_crowd_1001.json,tools/export_3d.py,results/trace/crowd_lgbm_all_1001 (v4 trace),33a445d,current,3D viewer sample (lgbm_all planner; not a showcase seed)
+fig_data_overview.png,tools/data_cards.py,data/* (crowd, eth, hotel, crowd_c2e),8d6635a,current,docs/DATA.md
+fig_data_scenes.png,tools/data_cards.py,data/*,8d6635a,current,docs/DATA.md

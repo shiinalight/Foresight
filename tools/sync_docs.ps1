@@ -7,7 +7,7 @@
 # by fast-forward (never force). Afterwards merge origin/main into darshak/core before the next code
 # promotion; the files are identical on both sides, so that merge is clean.
 $ErrorActionPreference = "Stop"
-$paths = @("PLAN.md", "docs", "SCENARIOS.md", "INTERFACE.md", "TEAM-PLAN.md", "tools/sync_docs.ps1")
+$paths = @("PLAN.md", "docs", "SCENARIOS.md", "INTERFACE.md", "TEAM-PLAN.md", "tools/sync_docs.ps1", "media/fig_data_*.png")
 $repo = (git rev-parse --show-toplevel).Trim()
 Set-Location $repo
 git fetch -q origin
