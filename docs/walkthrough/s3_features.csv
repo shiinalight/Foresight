@@ -1,0 +1,40 @@
+feature,group,h = 1 s,h = 2 s,meaning
+h_f,Own motion,1.0,2.0,horizon asked about (s)
+speed,Own motion,1.5554846887483753,1.5554846887483753,filtered speed (m/s)
+a_lon,Own motion,-0.18533563045932291,-0.18533563045932291,acceleration along heading (m/s²)
+a_lat,Own motion,0.0063123607769320885,0.0063123607769320885,"acceleration sideways (m/s², + = left)"
+turn_rate,Own motion,0.003963676029763441,0.003963676029763441,"turning rate (rad/s, + = left)"
+radius,Own motion,0.3,0.3,body radius (m)
+hist_x1,Recent path,-0.29335121100495276,-0.29335121100495276,"where P was 0.2 s ago, along its heading, from now (m)"
+hist_y1,Recent path,-0.0006044030993063778,-0.0006044030993063778,"where P was 0.2 s ago, across its heading, from now (m)"
+hist_x2,Recent path,-0.5492648415901557,-0.5492648415901557,"where P was 0.4 s ago, along its heading, from now (m)"
+hist_y2,Recent path,0.10103320537364341,0.10103320537364341,"where P was 0.4 s ago, across its heading, from now (m)"
+hist_x3,Recent path,-0.8931330254511985,-0.8931330254511985,"where P was 0.6 s ago, along its heading, from now (m)"
+hist_y3,Recent path,0.05560714264185126,0.05560714264185126,"where P was 0.6 s ago, across its heading, from now (m)"
+hist_x4,Recent path,-1.2324599958451956,-1.2324599958451956,"where P was 0.8 s ago, along its heading, from now (m)"
+hist_y4,Recent path,0.05899307375020171,0.05899307375020171,"where P was 0.8 s ago, across its heading, from now (m)"
+hist_x5,Recent path,-1.6141184964501782,-1.6141184964501782,"where P was 1.0 s ago, along its heading, from now (m)"
+hist_y5,Recent path,-0.0037135327758707056,-0.0037135327758707056,"where P was 1.0 s ago, across its heading, from now (m)"
+n0_x,Neighbours,0.14720681423003676,0.14720681423003676,nearest person: offset along P's heading (m)
+n0_y,Neighbours,3.2215101150070913,3.2215101150070913,"nearest person: offset across (m, + = left)"
+n0_vx,Neighbours,-0.1365080682097751,-0.1365080682097751,"nearest person: velocity relative to P, along (m/s)"
+n0_vy,Neighbours,0.3528880240909038,0.3528880240909038,"nearest person: relative velocity, across (m/s)"
+n0_dist,Neighbours,3.2248716667874957,3.2248716667874957,nearest person: distance (m; 99 = nobody)
+n1_x,Neighbours,-3.3700232289434933,-3.3700232289434933,2nd nearest person: offset along P's heading (m)
+n1_y,Neighbours,1.3261692080684555,1.3261692080684555,"2nd nearest person: offset across (m, + = left)"
+n1_vx,Neighbours,-2.898643088695938,-2.898643088695938,"2nd nearest person: velocity relative to P, along (m/s)"
+n1_vy,Neighbours,-0.37891288291805525,-0.37891288291805525,"2nd nearest person: relative velocity, across (m/s)"
+n1_dist,Neighbours,3.621571666010165,3.621571666010165,2nd nearest person: distance (m; 99 = nobody)
+n2_x,Neighbours,1.0730512519201054,1.0730512519201054,3rd nearest person: offset along P's heading (m)
+n2_y,Neighbours,3.746287987652043,3.746287987652043,"3rd nearest person: offset across (m, + = left)"
+n2_vx,Neighbours,-1.708514420491514,-1.708514420491514,"3rd nearest person: velocity relative to P, along (m/s)"
+n2_vy,Neighbours,0.8830819992356274,0.8830819992356274,"3rd nearest person: relative velocity, across (m/s)"
+n2_dist,Neighbours,3.896936319170907,3.896936319170907,3rd nearest person: distance (m; 99 = nobody)
+robot_x,Robot,2.527848236488761,2.527848236488761,robot offset along P's heading (m)
+robot_y,Robot,0.5742823951587583,0.5742823951587583,"robot offset across (m, + = left)"
+robot_dist,Robot,2.592260977623322,2.592260977623322,distance to robot centre (m)
+robot_closing,Robot,0.9287188669355423,0.9287188669355423,"speed at which robot and P approach (m/s, + = closing)"
+obst_x,Surroundings,0.9429843101952031,0.9429843101952031,"nearest pillar or wall surface, along (m)"
+obst_y,Surroundings,-4.923938151057139,-4.923938151057139,"nearest pillar or wall surface, across (m)"
+obst_dist,Surroundings,5.01342062116379,5.01342062116379,distance to that surface (m)
+density_3m,Surroundings,0.0,0.0,people within 3 m

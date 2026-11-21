@@ -1,0 +1,23 @@
+{
+ "seed": 6001,
+ "reached": true,
+ "time_to_goal": 21.400000000000002,
+ "time_capped": 21.400000000000002,
+ "collision_steps": 0,
+ "collided": false,
+ "moving_collision_steps": 0,
+ "min_gap": 0.5494606663152516,
+ "near_miss": false,
+ "freeze_rate": 0.0,
+ "seconds_stopped": 0.0,
+ "intrusion_s": 0.0,
+ "path_length": 20.066666666666627,
+ "path_efficiency": 0.8831405642312125,
+ "people_decel": 0.13088958413994692,
+ "episode_s": 21.400000000000002,
+ "heading_change_per_m": 0.7007024465857813,
+ "reversals_45": 2,
+ "fallback_rate": 0.037037037037037035,
+ "pred_seconds": 125.84502539993264,
+ "pred_ms_per_plan": 2330.463433332086
+}
