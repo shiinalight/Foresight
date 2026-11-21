@@ -45,20 +45,22 @@ def select(queries, bank: Bank, live=None, budget=1500, mix=(0.6, 0.3, 0.1), rar
     n_rec = 0
     if live is not None and mix[0] > 0:
         rec = live[live["t_known"] <= t_now].sort_values("t_known").tail(int(budget * mix[0]))
-        parts.append(rec); n_rec = len(rec)
+        parts.append(rec.assign(source="recent")); n_rec = len(rec)
     rest = budget - n_rec
     share_knn = mix[1] / max(mix[1] + mix[2], 1e-9)
     n_knn = int(rest * share_knn); n_rand = rest - n_knn
     if n_knn > 0:
         k = max(1, int(np.ceil(n_knn / max(len(queries), 1))))
         idx = bank.knn(queries, k)[:n_knn]
-        parts.append(bank.df.iloc[idx])
+        parts.append(bank.df.iloc[idx].assign(source="knn"))
     if n_rand > 0:
         rare = bank.df[bank.df[rare_col].isin(rare_values)]
         n_r = min(len(rare), n_rand // 2)
         if n_r:
-            parts.append(rare.sample(n_r, random_state=seed))
-        parts.append(bank.df.sample(min(len(bank.df), n_rand - n_r), random_state=seed + 1))
+            parts.append(rare.sample(n_r, random_state=seed).assign(source="fill-rare"))
+        parts.append(bank.df.sample(min(len(bank.df), n_rand - n_r), random_state=seed + 1).assign(source="fill-random"))
     import pandas as pd
-    ctx = pd.concat(parts).drop_duplicates()
+    ctx = pd.concat(parts)
+    # same rows as before (first occurrence wins); `source` records where each row came from
+    ctx = ctx[~ctx.drop(columns="source").duplicated()]
     return ctx

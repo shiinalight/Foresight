@@ -54,6 +54,7 @@ def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin
     cands = candidates(p_robot, goal, speeds=speeds)
     worst = np.full(len(cands), np.inf)
     ok = np.ones(len(cands), bool)
+    reason = np.array(["none"] * len(cands), dtype=object)        # first reason a candidate is vetoed
     now = pred_rows.drop_duplicates("agent_id") if len(pred_rows) else pred_rows
     for i, cmd in enumerate(cands):
         if len(now):                                   # short-range constant-velocity check
@@ -62,6 +63,7 @@ def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin
                          now.py.to_numpy() + now.vy.to_numpy() * short_h - pt[1]) - radius_robot - radius_person
             if d.min() < 0.05:
                 ok[i] = False
+                reason[i] = "short check"
             worst[i] = min(worst[i], d.min())
         for h in horizons:
             pt = p_robot + cmd * h
@@ -72,10 +74,13 @@ def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin
             if bounds is not None and not (bounds[0] + radius_robot < pt[0] < bounds[2] - radius_robot
                                            and bounds[1] + radius_robot < pt[1] < bounds[3] - radius_robot):
                 ok[i] = False
+                reason[i] = reason[i] if reason[i] != "none" else "bounds"
             for o in obstacles:
                 if np.hypot(pt[0] - o["x"], pt[1] - o["y"]) < o["r"] + radius_robot + margin:
                     ok[i] = False
+                    reason[i] = reason[i] if reason[i] != "none" else "obstacle"
     safe = ok & (worst >= margin)
+    reason[ok & (worst < margin)] = "box"
     end = p_robot + cands * max(horizons)
     progress = np.linalg.norm(goal - p_robot) - np.linalg.norm(goal - end, axis=1)
     if safe.any():
@@ -85,7 +90,10 @@ def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin
         fallback = True
         best = int(np.argmax(np.where(ok, worst, -np.inf))) if ok.any() else 0
         i = 0 if (not ok[best] or worst[0] >= worst[best] - stop_bias) else best     # 0 = stop
-    return cands[i], {"n_safe": int(safe.sum()), "fallback": fallback, "worst_gap": float(worst[i])}
+    cand_table = {"vx": cands[:, 0], "vy": cands[:, 1], "worst_gap": worst, "progress": progress,
+                  "veto_reason": reason, "chosen": np.arange(len(cands)) == i}
+    return cands[i], {"n_safe": int(safe.sum()), "fallback": fallback, "worst_gap": float(worst[i]),
+                      "candidates": cand_table}
 
 
 def time_to_collision(p_rel, v_rel, R):

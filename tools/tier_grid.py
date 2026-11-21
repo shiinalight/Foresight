@@ -32,13 +32,16 @@ MODELS = [("v3.5_default", e) for e in (1, 2, 4, 8)] + [("v3.5-fast_default", e)
 CTX = [250, 500, 1000, 2000]
 
 
-def setups():
+def setups(which=("hotel->eth", "crowd")):
     hz = (1.2, 2.0, 4.8)
-    src = rows_for("data/hotel", 0.0, horizons=hz); dst = rows_for("data/eth", 0.0, horizons=hz)
-    yield "hotel->eth", src[np.isclose(src.h, 2.0)], dst[np.isclose(dst.h, 2.0)].sample(600, random_state=0)
-    cr = rows_for("data/crowd", 0.1, horizons=(1.0, 2.0)); cr = cr[np.isclose(cr.h, 2.0)]
-    tr, _, te = F.split_by_episode(cr)
-    yield "crowd", cr[tr], cr[te].sample(600, random_state=0)
+    for a, b in (("hotel", "eth"), ("eth", "hotel")):
+        if f"{a}->{b}" in which:
+            src = rows_for(f"data/{a}", 0.0, horizons=hz); dst = rows_for(f"data/{b}", 0.0, horizons=hz)
+            yield f"{a}->{b}", src[np.isclose(src.h, 2.0)], dst[np.isclose(dst.h, 2.0)].sample(600, random_state=0)
+    if "crowd" in which:
+        cr = rows_for("data/crowd", 0.1, horizons=(1.0, 2.0)); cr = cr[np.isclose(cr.h, 2.0)]
+        tr, _, te = F.split_by_episode(cr)
+        yield "crowd", cr[tr], cr[te].sample(600, random_state=0)
 
 
 def score(Q, Y):
@@ -50,13 +53,15 @@ def score(Q, Y):
 
 
 def main():
-    n_calls = 2 * len(MODELS) * len(CTX) * 2          # setups x models x contexts x 2 axes
+    which = tuple(sys.argv[1:]) or ("hotel->eth", "crowd")
+    out = "results/tier_grid.csv" if which == ("hotel->eth", "crowd") else f"results/tier_grid_{'_'.join(w.replace('->', '_to_') for w in which)}.csv"
+    n_calls = len(which) * len(MODELS) * len(CTX) * 2          # setups x models x contexts x 2 axes
     print(f"API predict calls: {n_calls} (= {10_000 * n_calls:,} credits)", flush=True)
     import tabpfn_client
     from tabpfn_client import TabPFNRegressor
     tabpfn_client.set_access_token(os.environ["TABPFN_TOKEN"])
     rows = []
-    for name, src, te in setups():
+    for name, src, te in setups(which):
         Y = te[["ddx", "ddy"]].to_numpy(); Xte = F.X_of(te)
         for n in CTX:
             ctx = src.sample(min(n, len(src)), random_state=0)
@@ -74,10 +79,12 @@ def main():
                                  err=err, pinball=pin, joint90=joint, width80=width, seconds=time.perf_counter() - t0))
                 print(f"{name:<11} {path:<18} est {str(est or 'def'):<4} ctx {n:<5} err {err:.3f}  pinball {pin:.4f}  "
                       f"joint90 {100 * joint:.0f}%  width {width:.2f}  ({rows[-1]['seconds']:.0f} s)", flush=True)
-                pd.DataFrame(rows).to_csv("results/tier_grid.csv", index=False)     # checkpoint
+                pd.DataFrame(rows).to_csv(out, index=False)     # checkpoint
     R = pd.DataFrame(rows)
     fig, axes = plt.subplots(2, 2, figsize=(11, 7.4), facecolor="white")
-    for i, name in enumerate(("hotel->eth", "crowd")):
+    if len(which) != 2:
+        print(f"wrote {out}"); return
+    for i, name in enumerate(which):
         g = R[R.setup == name]
         for (model, est), h in g.groupby(["model", "n_estimators"]):
             col = {"v3.5": "#e8590c", "v3.5-fast": "#2a6fdb", "v2": "#7a3fb5"}[model]

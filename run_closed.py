@@ -67,6 +67,7 @@ class Predictor:
         self.live = kind.endswith("_live")
         self.base = kind.replace("_live", "").replace("_all", "")
         self.last_fit, self.model, self.n_live = -1e9, None, 0
+        self.ctx_rows, self.refit_at = None, None                  # for the trace: what the model last read
         if kind in ("stop_go", "reactive", "vo"):
             return                                              # navigation baselines: no predictor
         if not self.live:
@@ -75,6 +76,7 @@ class Predictor:
             else:
                 rows = bank if kind in ("cv_band", "lgbm_all") else bank.sample(min(args.context, len(bank)), random_state=0)
                 self.model = self._fit(rows)
+                self.ctx_rows, self.refit_at = rows.assign(source="bank-random" if len(rows) < len(bank) else "bank-all"), 0.0
 
     def _fit(self, rows):
         kw = {}
@@ -93,6 +95,7 @@ class Predictor:
             ctx = C.select(q, self.bank_obj, live=live if len(live) else None, budget=self.args.context,
                            mix=(0.6, 0.3, 0.1))
             self.model, self.last_fit, self.n_live = self._fit(ctx), t, int(len(live))
+            self.ctx_rows, self.refit_at = ctx, t
         return V.predict_rows(self.model, q, (self.args.box_q, 0.5, 1 - self.args.box_q))
 
 
@@ -134,9 +137,11 @@ def run_episode(pred, seed, args, log=False):
             cmd = None                                          # the simulator's own stop-and-go policy
         elif k % every == 0:
             # full history + fixed noise seed: same observations and Kalman state as the offline rows
+            tf0 = time.perf_counter()
             hist_df = pd.DataFrame([r for s in hist for r in s])
             q = F.build_rows(hist_df, obst_df, meta, horizons=args.hz, noise=args.noise, seed=seed, query_only=True)
             t0 = time.perf_counter()
+            refit_before = pred.refit_at
             if pred.kind == "vo":
                 v_robot = np.array([state[0]["vx"], state[0]["vy"]])
                 cmd, info = P.choose_vo(p_robot, v_robot, goal, q.drop_duplicates("agent_id") if len(q) else q,
@@ -148,14 +153,22 @@ def run_episode(pred, seed, args, log=False):
                     pr = q.assign(vx=0.0, vy=0.0, lo_a=0.0, hi_a=0.0, lo_c=0.0, hi_c=0.0) if len(q) else q
                 else:
                     pr = pred.predict(q, k * dt, hist_df, obst_df, meta, seed) if len(q) else q
+                tp1 = time.perf_counter()
                 cmd, info = P.choose(p_robot, goal, pr, margin=args.margin, bounds=meta["bounds"],
                                      obstacles=obstacles, horizons=args.hz, speeds=speeds)
-            t_pred += time.perf_counter() - t0
+            t1 = time.perf_counter()
+            t_pred += t1 - t0
             n_plans += 1; n_fallback += int(info.get("fallback", False))
             if len(q):
                 robotfeat.append(q[["robot_dist", "robot_closing"]].assign(t=k * dt))
-            if log:
-                plans.append({"t": k * dt, "pred": pr, "cmd": cmd, "n_live": pred.n_live, **info})
+            if log:                                              # capture outside the timed region
+                refit = pred.refit_at is not None and pred.refit_at != refit_before
+                plans.append({"t": k * dt, "pred": pr, "q": q, "cmd": cmd, "n_live": pred.n_live, **info,
+                              "ctx": pred.ctx_rows if (refit or not plans) else None,
+                              "timing": {"features_ms": 1000 * (t0 - tf0),
+                                         "predict_ms": 1000 * ((tp1 if pred.kind not in ("vo",) else t1) - t0),
+                                         "plan_ms": 1000 * (t1 - (tp1 if pred.kind not in ("vo",) else t0)),
+                                         "refit": bool(refit)}})
         prev = state
         state, info = sim.step(cmd)
         state = [dict(r, episode=seed) for r in state]
@@ -191,6 +204,9 @@ def run_episode(pred, seed, args, log=False):
            "fallback_rate": n_fallback / max(n_plans, 1),
            "pred_seconds": t_pred, "pred_ms_per_plan": 1000 * t_pred / max(n_plans, 1)}
     logd = {"frames": frames, "plans": plans, "obst": obstacles, "bounds": meta["bounds"]} if log else None
+    if log:
+        from foresight import trace
+        trace.write(args, pred, seed, hist, plans, obstacles, meta, res)
     rf = pd.concat(robotfeat) if robotfeat else pd.DataFrame()
     return res, logd, rf
 
