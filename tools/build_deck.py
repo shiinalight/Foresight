@@ -56,7 +56,8 @@ def bullets(s, lines, top=Inches(1.8), size=22):
 
 
 def results_table(s, ev):
-    rows = [("Direction", "Model", "Rows seen", "Error +1.2 s", "Error +2 s", "Error +4.8 s", "80% range holds truth")]
+    rows = [("Direction", "Model", "Rows seen", "Error +1.2 s", "Error +2 s", "Error +4.8 s",
+             "Box holds truth (~80%)", "Pinball")]
     label = {"cv": "Const. velocity", "cv_band": "Const. velocity + band", "lgbm": "LightGBM (1,500)",
              "lgbm_all": "LightGBM (all)", "tabpfn": "TabPFN (1,500)"}
     for pair, r in ev["results"].items():
@@ -65,7 +66,8 @@ def results_table(s, ev):
             v = r[k]
             rows.append((f"{a} → {b}", label[k], f"{v['2']['train_rows']:,}",
                          *(f"{v[h]['err_mean']:.2f} m" for h in ("1.2", "2", "4.8")),
-                         "—" if k == "cv" else f"{100 * v['2']['cov80']:.0f}%"))
+                         "—" if k == "cv" else f"{100 * v['2'].get('joint90', float('nan')):.0f}%",
+                         f"{v['2'].get('pinball', float('nan')):.3f}"))
     shape = s.shapes.add_table(len(rows), len(rows[0]), Inches(0.6), Inches(1.6), Inches(12.1), Inches(0.38) * len(rows))
     for i, row in enumerate(rows):
         for j, val in enumerate(row):
@@ -153,14 +155,15 @@ def build():
     image(s, "fig_calibration.png")
 
     s = slide(prs, "How many examples does it need?", kicker="Results",
-              notes="Error at +2 s against the number of example rows, ETH to Hotel (one seed). TabPFN leads at every size. "
-                    "Both models are best at 250-500 rows from the other place and get worse with more: see next slide.")
+              notes="Error at +2 s against the number of example rows, ETH to Hotel (one seed). TabPFN is ahead with few "
+                    "rows (50-500); from 1,000 rows on LightGBM catches up. One seed: indicative only.")
     image(s, "fig_data_efficiency.png")
 
-    s = slide(prs, "Which rows, not how many", kicker="Finding",
-              notes="LightGBM, 5 seeds, +2 s. Rows from another place help up to ~500, then hurt (0.32 to 0.39 m). Rows "
-                    "from the same place keep helping (0.37 to 0.28 m). The test sets differ, so compare shapes. This is why "
-                    "the next step chooses context rows per moment: from this scene and similar situations.")
+    s = slide(prs, "Rows from this place are worth more", kicker="Finding",
+              notes="LightGBM, 5 seeds, +2 s. Rows from another place level off at about 0.30 m from 1,000 rows on; rows "
+                    "from the same place keep improving, to 0.27 m at 2,000. (An earlier version showed rows from another "
+                    "place making things worse; that came from a leaking feature and is gone.) The test sets differ, so "
+                    "compare shapes. This is why context rows are chosen from the current scene.")
     image(s, "fig_rows_place.png")
 
     s = slide(prs, "Robot crossing a crowd: two planners", kicker="Closed loop",

@@ -104,10 +104,10 @@ def main():
     res["bin"] = pd.cut(res.since, [b[0] for b in BINS] + [BINS[-1][1]], labels=[b[2] for b in BINS], right=False)
     tab = res.groupby(["model", "strategy", "bin"], observed=True).err.mean().unstack("bin").round(3)
     jtab = res.groupby(["model", "strategy", "bin"], observed=True).joint.mean().unstack("bin").round(3)
-    print("mean error (m)
-", tab)
-    print("joint coverage of the 10-90% box (per-axis 80% -> ~64% if independent)
-", jtab)
+    print("mean error (m)")
+    print(tab)
+    print("joint coverage of the 10-90% box (per-axis 80% -> ~64% if independent)")
+    print(jtab)
     print(res.groupby(["model", "strategy"]).agg(err=("err", "mean"), cov=("cov", "mean"), joint=("joint", "mean")).round(3))
 
     fig, axes2 = plt.subplots(2, len(a.models), figsize=(5.5 * len(a.models), 7.6), sharey="row", facecolor="white",

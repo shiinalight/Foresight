@@ -65,38 +65,46 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
   - **Above it:** too cautious, makes the robot slow.
 - **Data efficiency (`media/fig_data_efficiency.png`):** error at +2 s against the number of example rows (log scale), ETH → Hotel.
 
-## Numbers (run 21 Nov, 900 test rows per direction, 1,500 context rows)
+## Numbers (rerun 21 Nov evening, after the leakage fix; 900 test rows per direction, 1,500 context rows)
 
-| Direction | Model | Rows seen | Error +1.2 s | Error +2 s | Error +4.8 s | 80% range holds truth (+2 s) | 80% range width (+2 s) | Time (s) |
-|---|---|---|---|---|---|---|---|---|
-| ETH → Hotel | Const. velocity | 1,500 | 0.219 m | 0.349 m | 0.858 m | — | — | 0 |
-| ETH → Hotel | Const. velocity + band | 14,223 | 0.219 m | 0.349 m | 0.858 m | 88% | 1.03 m | 0 |
-| ETH → Hotel | LightGBM (1,500 rows) | 1,500 | 0.203 m | 0.291 m | 0.673 m | 76% | 0.54 m | 7 |
-| ETH → Hotel | LightGBM (all rows) | 14,223 | 0.220 m | 0.323 m | 0.643 m | 79% | 0.61 m | 10 |
-| ETH → Hotel | TabPFN | 1,500 | 0.179 m | 0.276 m | 0.661 m | 86% | 0.76 m | 67 |
-| Hotel → ETH | Const. velocity | 1,500 | 0.336 m | 0.534 m | 1.442 m | — | — | 0 |
-| Hotel → ETH | Const. velocity + band | 7,640 | 0.336 m | 0.534 m | 1.442 m | 69% | 0.77 m | 0 |
-| Hotel → ETH | LightGBM (1,500 rows) | 1,500 | 0.273 m | 0.430 m | 1.246 m | 64% | 0.60 m | 8 |
-| Hotel → ETH | LightGBM (all rows) | 7,640 | 0.268 m | 0.428 m | 1.209 m | 67% | 0.60 m | 9 |
-| Hotel → ETH | TabPFN | 1,500 | 0.254 m | 0.407 m | 1.143 m | 81% | 0.81 m | 69 |
+| Direction | Model | Rows seen | Error +1.2 s | Error +2 s | Error +4.8 s | Per-axis coverage of 10–90% (+2 s) | Joint coverage of the 5–95% box (+2 s, target ~80% if the axes are independent) | 10–90% width (+2 s) | Pinball (+2 s) |
+|---|---|---|---|---|---|---|---|---|---|
+| ETH → Hotel | Const. velocity | — | 0.219 m | 0.349 m | 0.858 m | — | — | — | 0.1085 |
+| ETH → Hotel | Const. velocity + band | 14,223 | 0.219 m | 0.349 m | 0.858 m | 88% | 91% | 1.03 m | 0.0872 |
+| ETH → Hotel | LightGBM (1,500 rows) | 1,500 | 0.206 m | 0.284 m | 0.665 m | 77% | 76% | 0.57 m | 0.0659 |
+| ETH → Hotel | LightGBM (all rows) | 14,223 | 0.188 m | 0.289 m | 0.662 m | 79% | 80% | 0.56 m | **0.0636** |
+| ETH → Hotel | **TabPFN** | 1,500 | **0.168 m** | **0.274 m** | 0.673 m | 89% | 92% | 0.91 m | 0.0661 |
+| Hotel → ETH | Const. velocity | — | 0.336 m | 0.534 m | 1.442 m | — | — | — | 0.1696 |
+| Hotel → ETH | Const. velocity + band | 7,640 | 0.336 m | 0.534 m | 1.442 m | 69% | 70% | 0.77 m | 0.1253 |
+| Hotel → ETH | LightGBM (1,500 rows) | 1,500 | 0.285 m | 0.451 m | 1.240 m | 55% | 46% | 0.54 m | 0.1073 |
+| Hotel → ETH | LightGBM (all rows) | 7,640 | 0.274 m | **0.428 m** | 1.216 m | 65% | 62% | 0.60 m | 0.1028 |
+| Hotel → ETH | **TabPFN** | 1,500 | **0.264 m** | 0.431 m | **1.189 m** | 81% | **83%** | 0.96 m | **0.1007** |
 
-Error = mean distance between predicted (median) and actual position. "80% range holds truth" should be about 80%: higher is too cautious, lower is overconfident. Time = fit plus predict on the laptop CPU (x64 under emulation); TabPFN is about 75 ms per row here, and a GPU is much faster.
+- **Error:** mean distance between the predicted (median) and actual position.
+- **Joint coverage:** how often the actual position falls inside the 2D box the robot uses, both axes at once.
+- **Pinball:** the average quantile loss over 11 levels. It is a proper score for the whole predicted distribution; lower is better.
+- **Compute:** the laptop CPU (x64 under emulation). Fit plus predict takes about 70 s for TabPFN and under 10 s for the others.
 
 **What this says:**
-- **Error:** TabPFN has the lowest error in 5 of 6 cells. The exception is ETH → Hotel at 4.8 s, where LightGBM on all rows is 0.02 m better.
-- **Honest ranges:** only TabPFN's ranges are honest in both directions (86% and 81% where 80% is promised). LightGBM is overconfident going Hotel → ETH (64–67%), and so is the fixed band (69%). An overconfident range is the dangerous kind for a robot.
-- **Width:** TabPFN's ranges are wider than LightGBM's (0.76–0.81 m against 0.54–0.61 m). They are narrower than the fixed band's on ETH → Hotel (1.03 m), and only a little wider on Hotel → ETH (0.81 m against 0.77 m), where the band is badly overconfident. Width is the price of honesty; the planner will show whether it costs speed.
-- **Which rows matter more than how many** (`media/fig_rows_place.png`; LightGBM, 5 seeds, +2 s; `tools/check_efficiency.py`):
-  - **Rows from another place** (ETH, testing on Hotel): error falls to about 0.32 m at 250–500 rows, then *rises* to 0.39 m at 4,000 rows, outside the seed-to-seed spread. TabPFN shows the same shape on one seed (`media/fig_data_efficiency.png`).
-  - **Rows from the same place** (Hotel, other episodes): error keeps falling, 0.37 m to 0.28 m.
-  - **Likely reason:** the places differ. ETH has people crossing an entrance quickly; Hotel has many standing. More rows from the wrong place teach the wrong habits.
-  - **Caveat:** the two test sets differ (all of Hotel against held-out Hotel episodes), so compare the shapes, not the levels.
-  - **Consequence:** this is exactly what R2 is for. Pick context rows from the current scene and from similar situations, instead of piling up rows.
-- **Hotel is easy for constant velocity:** about 45% of people there stand still. ETH is harder: people walk and turn, and every learned model gains more there.
+- **Calibration is the finding that holds.** TabPFN's box holds the truth 92% and 83% of the time where about 80% is promised. LightGBM's holds it 76–80% going to Hotel but only 46–62% going to ETH: overconfident in the new place, the dangerous kind of error for a robot. The fixed band is also overconfident going to ETH (70%).
+- **Error:** TabPFN is **level with LightGBM on all rows**, not better. Hotel → ETH at +2 s: 0.431 against 0.428 m. ETH → Hotel: 0.274 against 0.284 and 0.289 m. The gaps are within what a single seed can show, so we claim comparable error, not lower.
+- **Pinball** (the whole distribution): TabPFN is best going to ETH (0.1007 against 0.1028). Going to Hotel, LightGBM on all rows is slightly better (0.0636 against 0.0661), because TabPFN's ranges are wider there than needed.
+- **Width:** TabPFN's ranges are wider (0.91–0.96 m against 0.54–0.60 m). Going to ETH, that width is what keeps them honest. Going to Hotel, they are more cautious than needed (92%). Recalibrating on the scene's own rows is the next step (`docs/GATES.md`, S5).
+- **Leakage fix.** Real data no longer gets a "distance to the edge of the area" feature: that edge was the camera's field of view, computed from all recorded positions, including future ones.
+  - Removing it changed errors by up to 0.03 m in either direction: lower going to Hotel, higher going to ETH. A feature that helps one way and hurts the other is the signature of scene-specific leakage.
+  - TabPFN's coverage going to ETH stayed at 81% with or without it. LightGBM's moved from 64% to 55%.
+  - All numbers here are without the feature.
+- **Rows from the same place are worth more than rows from another place** (`media/fig_rows_place.png`; LightGBM, 5 seeds, +2 s):
+  - **Rows from another place** (ETH, testing on Hotel): error levels off at about 0.30 m from 1,000 rows on.
+  - **Rows from the same place** (Hotel, other episodes): error keeps falling, to 0.27 m at 2,000.
+  - **Correction:** an earlier version of this figure showed error *rising* with more rows from another place. That came from the leaking feature above and is gone.
+  - **Caveat:** the two test sets differ, so compare the shapes. This is the reason for choosing context rows from the current scene (adaptation experiment, next).
+- **Hotel is easy for constant velocity:** about 45% of people there stand still. ETH is harder, and every learned model gains more there.
 
 **Limits:**
-- Only two scenes so far.
+- Only two real scenes.
 - The test sets are capped (CPU time).
-- Single seed.
+- Single seed for this table; a 5-seed table with intervals that resample whole people is next.
+- LightGBM is untuned; tuned and conformal versions are next.
 - No obstacles from the scene maps.
-- No robot in this real data.
+- No robot in the real data.

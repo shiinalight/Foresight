@@ -60,7 +60,7 @@ def main():
         ax.plot(xs, m, marker="o", lw=2, color=col, label=name); ax.fill_between(xs, m - s, m + s, color=col, alpha=0.15)
     ax.set_xscale("log"); ax.set_xlabel("Example rows (log scale)", color=V.C_MUTED)
     ax.set_ylabel("Mean error at +2 s (m)", color=V.C_MUTED)
-    ax.set_title("Which rows, not how many", fontsize=12, weight="bold", color=V.C_INK, loc="left")
+    ax.set_title("Rows from this place are worth more", fontsize=12, weight="bold", color=V.C_INK, loc="left")
     ax.legend(frameon=False, fontsize=9, labelcolor=V.C_INK)
     fig.tight_layout(); fig.savefig("media/fig_rows_place.png", dpi=150); print("wrote media/fig_rows_place.png")
 
