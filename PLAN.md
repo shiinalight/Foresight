@@ -41,11 +41,11 @@ Rule: small tests with gates written in advance come first; the big run comes af
 
 | When | Item | Owner | Status |
 |---|---|---|---|
-| Sat night | T1: can the plaza separate the planners? | builder session | running |
+| Sat night | T1: can the plaza separate the planners? | builder session | **done: no.** 100 common seeds: lgbm q0.15 23.3 s / 0.80 s intrusion sits on the cv-margin curve (cv m0.6 23.8 s / 0.87 s); vo w0.5 fastest (18.8 s, 2.05 s). No learned config beats every baseline by 2 s or 1 s (`results/t1_gate.csv`, `media/fig_t1_gate.png`) |
 | Sat night | T3: does live context recover when behaviour is new (crowd without erratic in the bank)? | builder session | running |
 | Sat night | Real-data adaptation, Hotel → ETH (local) | builder session | running |
 | After 01:00 | Real-data adaptation, ETH → Hotel (API, about 20M credits), then the model-size repeats (about 5M) | builder session | queued |
-| If T1 overlaps | T2: difficulty settings, chosen from the baselines alone by a rule fixed in advance; regenerate the bank | knobs: CTO session (done, `d123543`); sweep: builder session | knobs in; sweep waits on T1 |
+| If T1 overlaps | T2: difficulty settings, chosen from the baselines alone by a rule fixed in advance; regenerate the bank | knobs: CTO session (done, `d123543`); sweep: builder session | **running** since Sat 23:10: 27 cells x 20 fresh seeds (4000-4019), stop_go, cv m0.4, reactive m0.4, vo w1 (`tools/t2.ps1`) |
 | Sat night | Robustness tests: simulator (done, 11 tests), core pipeline, closed loop | CTO session + 2 subagents | running |
 | Sat night | Data cards for every dataset (`docs/DATA.md`) | CTO subagent | running |
 | Sun early | T4: refit interval, latency budget and calibration in the loop, 10 seeds each | builder session | waiting |
