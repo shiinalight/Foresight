@@ -73,6 +73,7 @@ Rule: small tests with gates written in advance come first; the big run comes af
 | Document | What it holds |
 |---|---|
 | `PLAN.md` (this page) | Current strategy, roadmap, framework, rules |
+| `docs/explainer.html` | Picture-first explainer for a third person: problem, pipeline, where TabPFN works, planner, comparisons, results, testing, deployment. Open it in a browser |
 | `docs/DECISIONS.md` | Every chosen value, its evidence, the small tests T1–T5 |
 | `docs/GATES.md` | Pass/fail check per stage, fair-comparison protocol |
 | `docs/DEPLOYMENT.md` | Refits, compute, model tiers, licence, Mac |
