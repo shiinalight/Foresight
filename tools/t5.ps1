@@ -13,12 +13,14 @@ $off = switch ($Offset) { "row" { " --offset --offset-rule row --offset-eta 0.02
 $base = "run_closed.py --sim crowd --seeds $seeds --robot-repulsion 2.0 --ignore-robot 0.2 --people 24 --goal-mode cross --bank data/crowd_cross_t2 --bank-exclude-regime erratic --switch --switch-all --switch-to erratic --switch-t 5 --frozen-ctx fill --context 2000$sm"
 $procs = [ordered]@{
   # primary: one process per caution level
-  "t5-split-q10" = @("--threads 3 --planners tabpfn_split --box-q 0.10$off --tag t5-split-q10")
-  "t5-split-q15" = @("--threads 3 --planners tabpfn_split --box-q 0.15$off --tag t5-split-q15")
-  "t5-split-q20" = @("--threads 3 --planners tabpfn_split --box-q 0.20$off --tag t5-split-q20")
+  "t5-split-q10" = @("--threads 2 --planners tabpfn_split --box-q 0.10$off --tag t5-split-q10")
+  "t5-split-q15" = @("--threads 2 --planners tabpfn_split --box-q 0.15$off --tag t5-split-q15")
+  "t5-split-q20" = @("--threads 2 --planners tabpfn_split --box-q 0.20$off --tag t5-split-q20")
   # secondary learned arms (exploratory), same offset setting
-  "t5-sec-q10" = @("--threads 2 --planners tabpfn lgbm_all lgbm --box-q 0.10$off --tag t5-sec-q10")
-  "t5-sec-q15" = @("--threads 2 --planners tabpfn lgbm_all lgbm --box-q 0.15$off --tag t5-sec-q15")
+  "t5-tabpfn-q10" = @("--threads 2 --planners tabpfn --box-q 0.10$off --tag t5-tabpfn-q10")
+  "t5-tabpfn-q15" = @("--threads 2 --planners tabpfn --box-q 0.15$off --tag t5-tabpfn-q15")
+  "t5-lgbm-q10" = @("--threads 2 --planners lgbm_all lgbm --box-q 0.10$off --tag t5-lgbm-q10")
+  "t5-lgbm-q15" = @("--threads 2 --planners lgbm_all lgbm --box-q 0.15$off --tag t5-lgbm-q15")
   # baselines over their dials, and the open-loop oracle (two chains)
   "t5-base-a" = @("--threads 1 --planners stop_go --tag t5-stopgo",
                   "--threads 1 --planners cv --margin 0.2 --tag t5-cvm02", "--threads 1 --planners cv --margin 0.4 --tag t5-cvm04",
@@ -29,10 +31,10 @@ $procs = [ordered]@{
                   "--threads 1 --planners reactive --margin 0.6 --tag t5-rea06", "--threads 1 --planners reactive --margin 0.8 --tag t5-rea08",
                   "--threads 1 --planners oracle --margin 0.2 --tag t5-orm02", "--threads 1 --planners oracle --margin 0.4 --tag t5-orm04",
                   "--threads 1 --planners oracle --margin 0.6 --tag t5-orm06")
-  # secondary loop arms: 0.1 s replanning baselines, and the primary at q 0.15 with a virtual-time latency
-  "t5-loop" = @("--threads 1 --planners reactive --margin 0.4 --replan 0.1 --tag t5-rea04-r01",
-                "--threads 1 --planners vo --vo-w 1.0 --replan 0.1 --tag t5-vo10-r01",
-                "--threads 2 --planners tabpfn_split --box-q 0.15$off --latency $Latency --tag t5-split-q15-lat")
+  # secondary loop arms: baselines replanning every simulation step (0.2 s; 0.1 s is below the sim step), and the primary at q 0.15 with a virtual-time latency
+  "t5-r02" = @("--threads 1 --planners reactive --margin 0.4 --replan 0.2 --tag t5-rea04-r02",
+               "--threads 1 --planners vo --vo-w 1.0 --replan 0.2 --tag t5-vo10-r02")
+  "t5-split-lat" = @("--threads 2 --planners tabpfn_split --box-q 0.15$off --latency $Latency --tag t5-split-q15-lat")
 }
 New-Item -ItemType Directory -Force results\overnight | Out-Null
 foreach ($k in $procs.Keys) {
