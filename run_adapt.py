@@ -45,6 +45,10 @@ def main():
     ap.add_argument("--train-data", default=None,
                     help="bank from another dataset; x axis becomes seconds in the scene (e.g. --train-data data/hotel --data data/eth)")
     ap.add_argument("--horizons", type=float, nargs="*", default=[1.0, 2.0])
+    ap.add_argument("--bank-exclude-regime", default=None,
+                    help="drop bank episodes that ever show this regime (T3: a behaviour the bank never saw)")
+    ap.add_argument("--axis", default=None, choices=[None, "time", "switch"],
+                    help="x axis with --train-data: seconds in the scene (default) or since the regime switch")
     ap.add_argument("--tabpfn-fast", type=int, default=1, help="TabPFN-3.5-Fast, 1 estimator: same accuracy, ~13x faster")
     a = ap.parse_args()
 
@@ -53,12 +57,21 @@ def main():
     if a.train_data:
         src = rows_for(a.train_data, a.noise, horizons=tuple(a.horizons))
         src = src[np.isclose(src.h, a.h)]
+        if a.bank_exclude_regime:
+            bad = src[src.regime == a.bank_exclude_regime].episode.unique()
+            src = src[~src.episode.isin(bad)]
+            print(f"bank: {src.episode.nunique()} episodes without '{a.bank_exclude_regime}'", flush=True)
         bank, glob, test = C.Bank(src), src.sample(min(a.budget, len(src)), random_state=0), df.copy()
-        test["since_switch"] = test["t"]                       # seconds since the robot entered this scene
+        if a.axis != "switch":
+            test["since_switch"] = test["t"]                   # seconds since the robot entered this scene
         frozen = M.make("lgbm").fit(F.X_of(src), src[["ddx", "ddy"]].to_numpy())
         global BINS
-        BINS = [(0, 5, "0-5 s"), (5, 10, "5-10 s"), (10, 20, "10-20 s"), (20, 40, "20-40 s"), (40, 61, "40-60 s")]
-        xlabel = "Seconds in the new scene"
+        if a.axis == "switch":
+            BINS = [(-20, 0, "before"), (0, 5, "0-5 s"), (5, 10, "5-10 s"), (10, 21, "10-20 s")]
+            xlabel = "Seconds since the crowd switched to a behaviour the bank never saw"
+        else:
+            BINS = [(0, 5, "0-5 s"), (5, 10, "5-10 s"), (10, 20, "10-20 s"), (20, 40, "20-40 s"), (40, 61, "40-60 s")]
+            xlabel = "Seconds in the new scene"
     else:
         tr, _, te = F.split_by_episode(df)
         bank = C.Bank(df[tr])
