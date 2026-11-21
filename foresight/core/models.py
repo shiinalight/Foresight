@@ -76,17 +76,20 @@ class LGBMQuantile:
 class TabPFNQuantile:
     name = "tabpfn"
 
-    def __init__(self, device=None, n_estimators=None, fast=False):
+    def __init__(self, device=None, n_estimators=None, fast=False, fit_mode=None):
         import torch
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.n_estimators = n_estimators
         self.fast = fast
+        self.fit_mode = fit_mode      # "fit_with_cache" for many small predicts (closed loop)
 
     def _new(self):
         from tabpfn import TabPFNRegressor
         kw = {"device": self.device}
         if self.n_estimators:
             kw["n_estimators"] = self.n_estimators
+        if self.fit_mode:
+            kw["fit_mode"] = self.fit_mode
         if self.fast:
             from tabpfn.constants import ModelVersion
             return TabPFNRegressor.create_default_for_version(ModelVersion.V3_5_FAST, **kw)

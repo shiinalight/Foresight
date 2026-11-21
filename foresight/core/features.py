@@ -82,8 +82,11 @@ def _obstacle_vec(p, obst, bounds):
 
 
 def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, noise=0.1, seed=0,
-               episodes=None):
-    """Return a DataFrame with META_COLS + feature_names() columns."""
+               episodes=None, query_only=False):
+    """Return a DataFrame with META_COLS + feature_names() columns.
+
+    query_only=True: live use. Rows only for the last time step in `tracks`, one per agent and
+    horizon, with no target (ddx, ddy, true_x, true_y are NaN). Pass a short recent window."""
     dt = float(meta["dt"])
     k = max(1, round(OBS_STEP / dt))
     hsteps = [round(h / dt) for h in horizons]
@@ -118,7 +121,10 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
         Ps = np.full_like(Pt, np.nan); Vs = np.full_like(Pt, np.nan)
         for a in range(A):
             Ps[:, a], Vs[:, a] = _kalman_cv(Po[:, a], dt, r=max(noise, 0.05))
-        for s in range(N_HIST * k, S, every):
+        step_iter = [S - 1] if query_only else range(N_HIST * k, S, every)
+        for s in step_iter:
+            if s < N_HIST * k:
+                continue
             alive = ~np.isnan(Ps[s, :, 0])
             for a in np.flatnonzero(alive):
                 if a == ego or np.isnan(Ps[s - N_HIST * k, a, 0]):
@@ -157,14 +163,19 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                         *(R @ ov), od, density]
                 for hs in hsteps:
                     h = hs * dt                  # horizon snapped to the data's time grid
-                    if s + hs >= S or np.isnan(Pt[s + hs, a, 0]):
+                    if query_only:
+                        true_f, dd, mode = np.array([np.nan, np.nan]), np.array([np.nan, np.nan]), ""
+                    elif s + hs >= S or np.isnan(Pt[s + hs, a, 0]):
                         continue
-                    true_f = Pt[s + hs, a]
-                    dd = R @ (true_f - p - v * h)
+                    else:
+                        true_f = Pt[s + hs, a]
+                        dd = R @ (true_f - p - v * h)
                     # mode label from ground truth over the next 2 s (or the horizon)
                     s2 = min(S - 1, s + round(2.0 / dt))
                     vt0, vt2 = Vt[s, a], Vt[s2, a]
-                    if np.isnan(vt2[0]) or np.nanmean(np.hypot(*Vt[s:s2 + 1, a].T)) < 0.2:
+                    if query_only:
+                        pass
+                    elif np.isnan(vt2[0]) or np.nanmean(np.hypot(*Vt[s:s2 + 1, a].T)) < 0.2:
                         mode = "stop"
                     else:
                         dth = np.arctan2(vt2[1], vt2[0]) - np.arctan2(vt0[1], vt0[0])

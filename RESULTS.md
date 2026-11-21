@@ -86,11 +86,12 @@ Error = mean distance between predicted (median) and actual position. "80% range
 - **Error:** TabPFN has the lowest error in 5 of 6 cells. The exception is ETH → Hotel at 4.8 s, where LightGBM on all rows is 0.02 m better.
 - **Honest ranges:** only TabPFN's ranges are honest in both directions (86% and 81% where 80% is promised). LightGBM is overconfident going Hotel → ETH (64–67%), and so is the fixed band (69%). An overconfident range is the dangerous kind for a robot.
 - **Width:** TabPFN's ranges are wider than LightGBM's (0.76–0.81 m against 0.54–0.61 m). They are narrower than the fixed band's on ETH → Hotel (1.03 m), and only a little wider on Hotel → ETH (0.81 m against 0.77 m), where the band is badly overconfident. Width is the price of honesty; the planner will show whether it costs speed.
-- **More rows from another place stop helping** (data-efficiency figure, ETH → Hotel, +2 s).
-  - **Shape:** both models are best at 250–500 rows and get worse beyond that. At 4,000 rows both are worse than constant velocity.
-  - **Likely reason:** the two places differ (ETH: people crossing an entrance quickly; Hotel: many people standing). More rows from the wrong place teach the wrong habits. LightGBM on all rows being worse than on 1,500 at +2 s fits the same story.
-  - **Caveat:** this is one seed and 400 test rows.
-  - **Consequence:** it motivates R2. Choose context rows from the current place and similar situations, rather than adding more rows.
+- **Which rows matter more than how many** (`media/fig_rows_place.png`; LightGBM, 5 seeds, +2 s; `tools/check_efficiency.py`):
+  - **Rows from another place** (ETH, testing on Hotel): error falls to about 0.32 m at 250–500 rows, then *rises* to 0.39 m at 4,000 rows, outside the seed-to-seed spread. TabPFN shows the same shape on one seed (`media/fig_data_efficiency.png`).
+  - **Rows from the same place** (Hotel, other episodes): error keeps falling, 0.37 m to 0.28 m.
+  - **Likely reason:** the places differ. ETH has people crossing an entrance quickly; Hotel has many standing. More rows from the wrong place teach the wrong habits.
+  - **Caveat:** the two test sets differ (all of Hotel against held-out Hotel episodes), so compare the shapes, not the levels.
+  - **Consequence:** this is exactly what R2 is for. Pick context rows from the current scene and from similar situations, instead of piling up rows.
 - **Hotel is easy for constant velocity:** about 45% of people there stand still. ETH is harder: people walk and turn, and every learned model gains more there.
 
 **Limits:**

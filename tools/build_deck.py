@@ -74,6 +74,31 @@ def results_table(s, ev):
             para.font.bold = (i == 0) or (row[1].startswith("TabPFN"))
 
 
+def _closed_table(s):
+    import pandas as pd
+    p = RESULTS / "closed.csv"
+    if not p.exists():
+        _text(s, "[results/closed.csv to come]", Inches(0.6), Inches(3.2), Inches(12), Inches(1), 18, color=MUTED)
+        return
+    df = pd.read_csv(p)
+    df = df[df.get("sim", "crowd") == "crowd"] if "sim" in df else df
+    g = df.groupby("planner").agg(n=("seed", "nunique"), reached=("reached", "mean"), t=("time_to_goal", "mean"),
+                                  coll=("collided", "mean"), gap=("min_gap", "mean"), freeze=("freeze_rate", "mean"))
+    order = [k for k in ("cv", "cv_band", "lgbm", "tabpfn") if k in g.index]
+    label = {"cv": "Const. velocity", "cv_band": "Const. velocity + band", "lgbm": "LightGBM", "tabpfn": "TabPFN"}
+    rows = [("Planner", "Crowds", "Reached goal", "Time to goal", "Runs with a collision", "Closest gap (mean)", "Frozen")]
+    for k in order:
+        r = g.loc[k]
+        rows.append((label[k], f"{int(r.n)}", f"{100 * r.reached:.0f}%", f"{r.t:.1f} s", f"{100 * r.coll:.0f}%",
+                     f"{r.gap:.2f} m", f"{100 * r.freeze:.0f}%"))
+    shape = s.shapes.add_table(len(rows), len(rows[0]), Inches(0.6), Inches(1.8), Inches(12.1), Inches(0.45) * len(rows))
+    for i, row in enumerate(rows):
+        for j, val in enumerate(row):
+            c = shape.table.cell(i, j); c.text = val
+            para = c.text_frame.paragraphs[0]; para.font.size = Pt(14); para.font.name = "Segoe UI"
+            para.font.bold = (i == 0) or row[0] == "TabPFN"
+
+
 def build():
     prs = Presentation(); prs.slide_width, prs.slide_height = W, H
     ev = json.loads((RESULTS / "eval.json").read_text()) if (RESULTS / "eval.json").exists() else None
@@ -125,9 +150,33 @@ def build():
     image(s, "fig_calibration.png")
 
     s = slide(prs, "How many examples does it need?", kicker="Results",
-              notes="Error at +2 s against the number of example rows, ETH to Hotel. TabPFN's in-context learning is "
-                    "strongest with few examples; the gap closes with more data.")
+              notes="Error at +2 s against the number of example rows, ETH to Hotel (one seed). TabPFN leads at every size. "
+                    "Both models are best at 250-500 rows from the other place and get worse with more: see next slide.")
     image(s, "fig_data_efficiency.png")
+
+    s = slide(prs, "Which rows, not how many", kicker="Finding",
+              notes="LightGBM, 5 seeds, +2 s. Rows from another place help up to ~500, then hurt (0.32 to 0.39 m). Rows "
+                    "from the same place keep helping (0.37 to 0.28 m). The test sets differ, so compare shapes. This is why "
+                    "the next step chooses context rows per moment: from this scene and similar situations.")
+    image(s, "fig_rows_place.png")
+
+    s = slide(prs, "Robot crossing a crowd: two planners", kicker="Closed loop",
+              notes="Same simulated crowd (Nooshin's social-force simulator), same start and goal. Left: constant-velocity "
+                    "predictions with a safety margin. Right: TabPFN 80% ranges. The robot picks, every 0.4 s, the move "
+                    "that gets closest to its goal while keeping clear of the predicted ranges at +1 s and +2 s.")
+    image(s, "closed_crowd_1001_cv_vs_tabpfn.png")
+
+    s = slide(prs, "Fast, safe, or both?", kicker="Closed loop",
+              notes="Six crowds per planner (seeds 1000-1005), the same for every planner. Collision = robot touching a "
+                    "person while moving. Freeze = share of decisions where the robot stood still.")
+    _closed_table(s)
+
+    s = slide(prs, "Any agent: people, cars, robots", kicker="Scenarios",
+              notes="Every scenario writes the same track format. Done: simulated plaza, real ETH/Hotel pedestrians. Next: "
+                    "mixed street (cars in lanes, pedestrians on pavements, a delivery robot crossing). Pitch only: "
+                    "warehouse floor robots, drone swarms.")
+    bullets(s, ["Plaza crowd + robot (simulated)", "Real pedestrians, Zurich", "Next: street with cars, people, delivery robot",
+                "Same layer: warehouse robots, drones"])
 
     s = slide(prs, "Numbers", kicker="Results",
               notes="Mean position error at three horizons; coverage of the 80% range at +2 s. TabPFN and LightGBM "
