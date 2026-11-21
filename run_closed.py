@@ -37,10 +37,10 @@ from run_offline import rows_for
 
 HZ = (1.0, 2.0)
 VERSION = "v3"          # v3: train/serve parity (full history, fixed noise seed), live planners
-KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit",
+KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
        "tabpfn_cfg"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
-            "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default"}
+            "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0}
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
 
@@ -180,27 +180,38 @@ def main():
     ap.add_argument("--switch", action="store_true", help="odd seeds: crowd-wide regime switch at mid-episode")
     ap.add_argument("--tabpfn-fast", type=int, default=1, help="1 = TabPFN-3.5-Fast")
     ap.add_argument("--tabpfn-est", type=int, default=1, help="TabPFN ensemble members")
+    ap.add_argument("--threads", type=int, default=0, help="cap torch/OpenMP threads (parallel runs)")
+    ap.add_argument("--tag", default="", help="suffix for the run id (parallel runs)")
     ap.add_argument("--log", action="store_true")
     a = ap.parse_args()
+    if a.threads:
+        import os
+        import torch
+        os.environ["OMP_NUM_THREADS"] = str(a.threads)
+        torch.set_num_threads(a.threads)
 
     a.hz = tuple(a.horizons)
     bank_path = a.bank or f"data/{a.sim}"
     bank = rows_for(bank_path, a.noise, horizons=a.hz)
     bank_obj = C.Bank(bank) if any(p.endswith("_live") for p in a.planners) else None
-    run_id = time.strftime("%Y%m%d-%H%M%S")
+    run_id = time.strftime("%Y%m%d-%H%M%S") + (f"-{a.tag}" if a.tag else "")
     out, feats = [], []
     Path("results/closed").mkdir(parents=True, exist_ok=True)
-    for kind in a.planners:
-        pred = Predictor(kind, bank, bank_obj, a)
-        for seed in a.seeds:
+    csv_path = Path(f"results/closed/{run_id}.csv")
+    preds = {kind: Predictor(kind, bank, bank_obj, a) for kind in a.planners}
+    # seed outer, planner inner: a run cut short still holds complete, paired seeds
+    for seed in a.seeds:
+        for kind, pred in preds.items():
             t0 = time.perf_counter()
             res, logd, rf = run_episode(pred, seed, a, log=a.log)
             res |= {"sim": a.sim, "planner": kind, "wall_s": time.perf_counter() - t0, "margin": a.margin,
                     "box_q": a.box_q, "version": VERSION, "horizons": " ".join(f"{h:g}" for h in a.hz),
                     "context": a.context, "people": a.people, "bank": bank_path,
                     "refit": a.refit if kind.endswith("_live") else 0.0, "switch": a.switch, "run_id": run_id,
-                    "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-")}
+                    "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
+                    "threads": a.threads}
             out.append(res)
+            pd.DataFrame([res]).to_csv(csv_path, mode="a", header=not csv_path.exists(), index=False)   # checkpoint
             if len(rf):
                 feats.append(rf.assign(planner=kind, seed=seed))
             print(f"{kind:<12} seed {seed}  reached {res['reached']}  t_goal {res['time_to_goal']}  "
@@ -211,7 +222,6 @@ def main():
                 with open(f"results/closed/{a.sim}_{kind}_{seed}.pkl", "wb") as f:
                     pickle.dump(logd, f)
     df = pd.DataFrame(out)
-    df.to_csv(f"results/closed/{run_id}.csv", index=False)
     if feats:
         pd.concat(feats).to_csv(f"results/closed/robotfeat_{run_id}.csv", index=False)
     print(df.groupby("planner")[["reached", "time_to_goal", "collided", "moving_collision_steps", "near_miss", "min_gap",
