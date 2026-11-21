@@ -86,7 +86,7 @@ dt { font-weight: 600 } dd { margin: 0 }
   <div class="eyebrow">HackLab Berlin 2026 · Prior Labs track</div>
   <h1>Inside Foresight</h1>
   <p class="lede">A robot predicts where each person will be in 2 s, as a range, using TabPFN. Then it picks a move that stays clear.</p>
-  <p class="meta">State as of Sat 21 Nov, 23:55 Berlin · numbers from the repository's result files</p>
+  <p class="meta">State as of Sun 22 Nov, 00:05 Berlin · numbers from the repository's result files</p>
 </header>
 
 <!-- 1. The scene -->
@@ -335,7 +335,7 @@ dt { font-weight: 600 } dd { margin: 0 }
           <rect x="150" width="10" height="10" class="person-soft"/><text x="164" y="9" class="t-s">LightGBM, all rows</text>
           <rect x="270" width="10" height="10" class="muted-fill"/><text x="284" y="9" class="t-s">fixed band</text></g>
       </svg>
-      <figcaption><b>New place, real pedestrians:</b> TabPFN's box never under-covers. LightGBM's drops to 46% in the hard direction.</figcaption>
+      <figcaption><b>New place, real pedestrians (feature set f1):</b> TabPFN's box stayed at or above target; LightGBM's dropped to 46% in the hard direction. <b>Being re-checked:</b> our tests found a feature that leaked walking direction, so these numbers are being rerun on the fixed features.</figcaption>
     </figure>
     <figure>
       <svg viewBox="0 0 400 300" role="img" aria-label="Bar chart of error in the first five seconds in a new scene: TabPFN reading the scene 0.425 metres, TabPFN with fixed examples 0.485, frozen LightGBM 0.536. Trial run.">
@@ -382,7 +382,7 @@ dt { font-weight: 600 } dd { margin: 0 }
     <figcaption><b>Robot runs, default plaza, 100 crowds.</b> The learned planner lands on the same curve as walking-straight prediction with a bigger margin. So in this scene, prediction doesn't win yet. People here dodge the robot strongly, so the next test uses a harder crowd.</figcaption>
   </figure>
   <div class="verdict">
-    <div class="card"><span class="pill ok">Supported</span><h3>Safe in a new place</h3><p>Ranges keep their promise where LightGBM's collapse.</p></div>
+    <div class="card"><span class="pill warn">Re-checking</span><h3>Safe in a new place</h3><p>Held on the first feature set. Rerun on fixed features in progress.</p></div>
     <div class="card"><span class="pill warn">Promising</span><h3>Adapts in seconds</h3><p>Lower error right after arriving. Confirmation running.</p></div>
     <div class="card"><span class="pill no">Not shown yet</span><h3>Beats standard navigation</h3><p>Same curve in the easy plaza. Harder scene running.</p></div>
     <div class="card"><span class="pill part">Partly</span><h3>Deployable</h3><p>Model size chosen. Mac and GPU timing pending.</p></div>
