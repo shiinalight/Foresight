@@ -52,6 +52,30 @@ COLUMNS = ["episode", "t", "agent_id", "kind", "is_ego", "x", "y", "vx", "vy", "
 OBSERVED = ["episode", "t", "agent_id", "x", "y", "vx", "vy", "regime", "robot_x", "robot_y"]
 
 
+def interaction_force(P, V, e, radius, A, B, strong):
+    """Social-force repulsion on every agent i from every agent j (shared with domains/street.py).
+
+    Repulsion comes from the closest approach in the next LOOKAHEAD s (anticipation) and is weaker
+    for what is behind you. P, V: [n, 2]; e: [n, 2] desired walking directions; radius, A, B: [n];
+    strong: bool [n], agents everyone keeps extra distance from (the robot). Returns [n, 2].
+    """
+    d = P[:, None, :] - P[None, :, :]                     # i minus j
+    dv = V[:, None, :] - V[None, :, :]
+    t_ca = np.clip(-(d * dv).sum(axis=2) / np.maximum((dv * dv).sum(axis=2), 1e-9), 0, LOOKAHEAD)
+    d_ca = d + dv * t_ca[..., None]
+    d = np.where(np.linalg.norm(d_ca, axis=2, keepdims=True) > 1e-3, d_ca, d)
+    dist = np.maximum(np.linalg.norm(d, axis=2), 1e-6)
+    nrm = d / dist[..., None]
+    cos_phi = -(e[:, None, :] * nrm).sum(axis=2)          # 1 when j is straight ahead of i
+    w = LAMBDA + (1 - LAMBDA) * (1 + cos_phi) / 2
+    is_strong = np.asarray(strong)[None, :]
+    strength = A[:, None] * np.where(is_strong, ROBOT_REPULSION, 1.0)
+    rng_ = np.where(is_strong, np.maximum(B[:, None], ROBOT_B), B[:, None])
+    mag = strength * np.exp((radius[:, None] + radius[None, :] - dist) / rng_) * w
+    np.fill_diagonal(mag, 0.0)
+    return (mag[..., None] * nrm).sum(axis=1)
+
+
 @dataclass(frozen=True)
 class CrowdConfig:
     n_people: int = 16
@@ -156,23 +180,7 @@ class CrowdSim:
         e = to_g / np.maximum(np.linalg.norm(to_g, axis=1, keepdims=True), 1e-9)
         F = (e * v_des[:, None] - V) / p["tau"]
 
-        # agent-agent repulsion from the closest approach in the next LOOKAHEAD s (anticipation),
-        # weaker for what is behind you
-        d = P[:, None, :] - P[None, :, :]                     # i minus j
-        dv = V[:, None, :] - V[None, :, :]
-        t_ca = np.clip(-(d * dv).sum(axis=2) / np.maximum((dv * dv).sum(axis=2), 1e-9), 0, LOOKAHEAD)
-        d_ca = d + dv * t_ca[..., None]
-        d = np.where(np.linalg.norm(d_ca, axis=2, keepdims=True) > 1e-3, d_ca, d)
-        dist = np.maximum(np.linalg.norm(d, axis=2), 1e-6)
-        nrm = d / dist[..., None]
-        cos_phi = -(e[:, None, :] * nrm).sum(axis=2)          # 1 when j is straight ahead of i
-        w = LAMBDA + (1 - LAMBDA) * (1 + cos_phi) / 2
-        is_robot = np.arange(n)[None, :] == 0
-        strength = A[:, None] * np.where(is_robot, ROBOT_REPULSION, 1.0)
-        rng_ = np.where(is_robot, np.maximum(B[:, None], ROBOT_B), B[:, None])
-        mag = strength * np.exp((self.radius[:, None] + self.radius[None, :] - dist) / rng_) * w
-        np.fill_diagonal(mag, 0.0)
-        F += (mag[..., None] * nrm).sum(axis=1)
+        F += interaction_force(P, V, e, self.radius, A, B, strong=np.arange(n) == 0)
 
         # obstacles and walls
         if len(self._obs_r):

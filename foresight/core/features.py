@@ -92,6 +92,8 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
     bounds = meta.get("bounds")
     out = []
     eps = sorted(tracks["episode"].unique()) if episodes is None else episodes
+    # domain extras (INTERFACE.md): numeric ext_* columns become features as they are, e.g. agent type
+    ext_cols = [c for c in tracks.columns if c.startswith("ext_") and pd.api.types.is_numeric_dtype(tracks[c])]
     for ep in eps:
         tr = tracks[tracks["episode"] == ep]
         em = meta.get("episodes", {}).get(str(ep), {}) or {}
@@ -109,6 +111,7 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
         ai = tr["agent_id"].map(aidx).to_numpy()
         Pt[steps, ai] = tr[["x", "y"]].to_numpy(); Vt[steps, ai] = tr[["vx", "vy"]].to_numpy()
         reg = np.full((S, A), "", dtype=object); reg[steps, ai] = tr["regime"].to_numpy()
+        Et = np.zeros((S, A, len(ext_cols))); Et[steps, ai] = tr[ext_cols].to_numpy(dtype=float) if ext_cols else 0.0
         info = tr.groupby("agent_id").first()
         radius = info.loc[agents, "radius"].to_numpy()
         is_ego = info.loc[agents, "is_ego"].to_numpy().astype(bool)
@@ -154,7 +157,7 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                 ov, od = _obstacle_vec(p, obst, bounds)
                 density = sum(1 for d, _ in rel if d < 3.0)
                 base = [speed, acc[0], acc[1], turn, radius[a], *np.ravel(hist), *neigh, *robot,
-                        *(R @ ov), od, density]
+                        *(R @ ov), od, density, *Et[s, a]]
                 for h, hs in zip(horizons, hsteps):
                     if s + hs >= S or np.isnan(Pt[s + hs, a, 0]):
                         continue
@@ -175,12 +178,13 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                                 p[0], p[1], v[0], v[1], theta, dd[0], dd[1], true_f[0], true_f[1],
                                 h, *base])
     # META already holds "h"; the model's copy of the horizon is the feature column "h_f"
-    return pd.DataFrame(out, columns=META_COLS + ["h_f"] + feature_names()[1:])
+    return pd.DataFrame(out, columns=META_COLS + ["h_f"] + feature_names()[1:] + ext_cols)
 
 
 def X_of(df):
-    """Model input matrix: the feature columns (horizon included)."""
-    return df[["h_f"] + feature_names()[1:]].to_numpy(dtype=float)
+    """Model input matrix: the feature columns (horizon included), then any ext_* domain extras."""
+    ext = [c for c in df.columns if c.startswith("ext_")]
+    return df[["h_f"] + feature_names()[1:] + ext].to_numpy(dtype=float)
 
 
 def to_world(df, ddx, ddy):

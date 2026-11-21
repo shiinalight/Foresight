@@ -47,6 +47,36 @@ class ConstantBand:
         return out
 
 
+class ConstantBox:
+    """Constant velocity plus a fixed-size box centred on it, one box per horizon.
+
+    Fit it on VALIDATION rows (never test): the box's along/across half-widths keep the shape of
+    the residuals' per-axis 80th percentiles and are scaled so `target` of the validation
+    positions fall inside the box (both axes at once). predict_quantiles returns -half, 0, +half
+    whatever qs asks for: it is a box, not quantiles.
+    """
+    name = "cv_box"
+
+    def __init__(self, target=0.8):
+        self.target = target
+
+    def fit(self, X, Y):
+        self.half = {}
+        for h in np.unique(X[:, 0]):
+            Yh = np.abs(Y[np.isclose(X[:, 0], h)])
+            shape = np.maximum(np.quantile(Yh, 0.8, axis=0), 1e-6)
+            scale = np.quantile((Yh / shape).max(axis=1), self.target)
+            self.half[float(h)] = shape * scale
+        return self
+
+    def predict_quantiles(self, X, qs=QS):
+        out = np.zeros((len(X), 2, len(qs)))
+        for h, half in self.half.items():
+            m = np.isclose(X[:, 0], h)
+            out[m, :, 0], out[m, :, -1] = -half, half
+        return out
+
+
 class LGBMQuantile:
     name = "lgbm"
 
@@ -110,6 +140,32 @@ class TabPFNQuantile:
         return out
 
 
+class TabPFNClientQuantile:
+    """TabPFN through Prior Labs' hosted API (tabpfn_client): no GPU needed. Token from TABPFN_TOKEN.
+    One regressor per axis; fit uploads the context, predict uses API quota per row."""
+    name = "tabpfn_client"
+
+    def fit(self, X, Y):
+        from tabpfn_client import TabPFNRegressor, set_access_token
+        token = os.environ.get("TABPFN_TOKEN")
+        if not token:
+            raise RuntimeError("TABPFN_TOKEN is not set: export TABPFN_TOKEN=<key from ux.priorlabs.ai/account>")
+        set_access_token(token)
+        t0 = time.perf_counter()
+        self.models = [TabPFNRegressor().fit(X, Y[:, ax]) for ax in range(2)]
+        self.t_fit = time.perf_counter() - t0
+        return self
+
+    def predict_quantiles(self, X, qs=QS):
+        t0 = time.perf_counter()
+        out = np.zeros((len(X), 2, len(qs)))
+        for ax, m in enumerate(self.models):
+            q = m.predict(X, output_type="quantiles", quantiles=list(qs))
+            out[:, ax, :] = np.stack(q, axis=1)
+        self.t_pred = time.perf_counter() - t0
+        return out
+
+
 def make(name, **kw):
-    return {"cv": ConstantVelocity, "cv_band": ConstantBand, "lgbm": LGBMQuantile,
-            "tabpfn": TabPFNQuantile}[name](**kw)
+    return {"cv": ConstantVelocity, "cv_band": ConstantBand, "cv_box": ConstantBox, "lgbm": LGBMQuantile,
+            "tabpfn": TabPFNQuantile, "tabpfn_client": TabPFNClientQuantile}[name](**kw)

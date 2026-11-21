@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Last-metre delivery</title>
+<style>
+  :root {
+    --ink: #2b2a28; --muted: #6d6a64; --card: rgba(250, 248, 244, 0.92); --pill: rgba(38, 38, 42, 0.88);
+    --accent: #e0603c; --bg1: #8d8b88; --bg2: #5f5e5c;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink);
+    background: radial-gradient(ellipse at 50% 35%, var(--bg1), var(--bg2)); }
+  #stage { position: fixed; inset: 0; }
+  .card { position: fixed; background: var(--card); border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+  #info { top: 18px; left: 18px; padding: 14px 18px; min-width: 250px; }
+  #info h1 { margin: 0 0 2px; font-size: 20px; letter-spacing: -.01em; }
+  #info .sub { color: var(--muted); font-size: 12.5px; }
+  #info .row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 650; }
+  .phase { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #e6e1d8; color: var(--ink); }
+  .phase.rush { background: var(--accent); color: white; }
+  #bar { left: 50%; bottom: 18px; transform: translateX(-50%); width: min(920px, calc(100% - 36px)); padding: 12px 16px 10px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; }
+  button, select { font: inherit; font-size: 13px; border: 0; border-radius: 999px; padding: 7px 13px; background: #ebe6dd; color: var(--ink); cursor: pointer; }
+  button.on { background: var(--ink); color: white; }
+  #play { width: 40px; height: 40px; padding: 0; font-size: 16px; background: var(--ink); color: white; }
+  #track { position: relative; height: 58px; }
+  #slider { position: absolute; left: 0; right: 0; bottom: 2px; width: 100%; accent-color: var(--ink); margin: 0; }
+  .tick { position: absolute; bottom: 22px; background: var(--card); padding: 0 3px; border-radius: 4px; transform: translateX(-50%); font-size: 11px; white-space: nowrap; color: var(--ink); cursor: pointer; }
+  .tick.up { bottom: 38px; }
+  .tick.up::after { height: 23px; }
+  .tick::after { content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: 7px; background: var(--accent); transform: translateX(-50%); }
+  .tick b { font-weight: 650; }
+  .views { display: flex; gap: 6px; }
+  .pill { background: var(--pill); color: white; font-size: 13px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(0,0,0,.25); transition: opacity .35s; pointer-events: none; }
+  .pill.event { background: var(--accent); font-size: 14px; }
+  .pill.robot { background: rgba(38,38,42,.82); font-size: 12px; }
+  #banner { position: fixed; top: 22px; left: 50%; transform: translateX(-50%); opacity: 0; font-size: 16px; padding: 8px 16px; }
+  #help { right: 18px; top: 18px; padding: 10px 14px; font-size: 12px; color: var(--muted); }
+  /* intro: how the prediction works */
+  #caption { left: 50%; bottom: 22px; transform: translateX(-50%); width: min(860px, calc(100% - 36px)); padding: 16px 22px; display: none; }
+  #caption .step { font-size: 13px; font-weight: 650; color: var(--accent); letter-spacing: .02em; text-transform: uppercase; }
+  #caption h2 { margin: 2px 0 6px; font-size: 24px; letter-spacing: -.01em; }
+  #caption p { margin: 0; font-size: 16px; color: #46433e; line-height: 1.45; }
+  #rows { left: 50%; top: 20px; transform: translateX(-50%); padding: 10px 14px; display: none; font-size: 13px; }
+  #rows table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  #rows th { font-weight: 600; color: var(--muted); text-align: right; padding: 3px 10px; font-size: 12px; }
+  #rows td { text-align: right; padding: 4px 10px; border-top: 1px solid #e6e1d8; }
+  #rows th:first-child, #rows td:first-child { text-align: left; }
+  #rows tr.me td { background: rgba(224, 96, 60, .14); font-weight: 650; }
+  #rows .q { color: var(--accent); font-weight: 700; }
+  #tab { right: 26px; top: 50%; transform: translateY(-50%); width: 220px; padding: 18px; display: none; text-align: center; }
+  #tab .name { font-size: 26px; font-weight: 750; letter-spacing: -.02em; }
+  #tab .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  #tab .count { font-size: 22px; font-weight: 650; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .chip { position: fixed; padding: 3px 8px; border-radius: 6px; background: #f2ede4; border: 1px solid #d8d0c2; font-size: 11px; color: #5a564f; pointer-events: none; white-space: nowrap; }
+  #meter { right: 26px; top: 50%; transform: translateY(-50%); width: 240px; padding: 18px; display: none; }
+  #meter .big { font-size: 40px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  #meter .lbl { font-size: 13px; color: var(--muted); }
+  #meter .barbox { height: 10px; background: #e6e1d8; border-radius: 6px; margin-top: 10px; position: relative; overflow: hidden; }
+  #meter .fillbar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 6px; }
+  #meter .target { position: absolute; left: 80%; top: -4px; bottom: -4px; width: 2px; background: var(--ink); }
+  .pill.card { background: rgba(250,248,244,.96); color: var(--ink); font-weight: 500; font-size: 12.5px; padding: 10px 12px; border-radius: 10px; line-height: 1.55; white-space: normal; width: 220px; box-shadow: 0 6px 20px rgba(0,0,0,.22); }
+  .pill.card b { font-weight: 650; }
+  .pill.tag { background: rgba(38,38,42,.78); font-size: 11.5px; padding: 3px 8px; font-weight: 600; }
+  .pill.blue { background: #2a78d6; }
+  /* outro: the evidence */
+  #panel { right: 26px; top: 50%; transform: translateY(-50%); width: 470px; padding: 18px 20px; display: none; }
+  #panel h3 { margin: 0 0 2px; font-size: 18px; letter-spacing: -.01em; }
+  #panel .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+  #panel svg { display: block; width: 100%; height: auto; }
+  #panel .verdict { margin-top: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13.5px; line-height: 1.4; }
+  #panel .verdict.yes { background: rgba(27,175,122,.14); }
+  #panel .verdict.no { background: #ece7de; }
+  #panel .verdict b { display: block; font-size: 14px; margin-bottom: 2px; }
+  #panel ul { margin: 6px 0 0; padding-left: 18px; font-size: 14.5px; line-height: 1.55; }
+  @media (max-width: 700px) { #help { display: none; } #bar { grid-template-columns: auto 1fr; } .views { grid-column: 1 / -1; justify-content: center; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="info" class="card">
+  <h1>Last-metre delivery</h1>
+  <div class="sub" id="sub"></div>
+  <div class="row"><span id="clock">0.0 s</span><span id="phase" class="phase">Normal traffic</span></div>
+  <div class="sub" id="stat" style="margin-top:8px"></div>
+</div>
+<div id="help" class="card">Drag to orbit · right-drag to pan · scroll to zoom</div>
+<div id="banner" class="pill event"></div>
+<div id="caption" class="card"><div class="step" id="cap-step"></div><h2 id="cap-title"></h2><p id="cap-text"></p></div>
+<div id="rows" class="card"></div>
+<div id="panel" class="card"></div>
+<div id="tab" class="card"><div class="name">TabPFN</div><div class="sub">pretrained on tables, no training here</div><div class="count" id="tab-count">0 rows</div><div class="sub">example rows with known answers</div></div>
+<div id="meter" class="card"><div class="lbl">Validation episodes: real positions inside the patch</div><div class="big" id="meter-val">80%</div><div class="barbox"><div class="fillbar" id="meter-bar"></div><div class="target"></div></div><div class="lbl" style="margin-top:8px">patch size <b id="meter-f">×1.00</b> · target 80%</div></div>
+<div id="bar" class="card">
+  <button id="play" title="Play / pause">❚❚</button>
+  <div id="track"><input id="slider" type="range" min="0" max="1" step="0.001" value="0"></div>
+  <div class="views">
+    <select id="speed" title="Playback speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+    <button data-view="overview" class="on">Overview</button>
+    <button data-view="follow">Follow robot</button>
+    <button data-view="street">Street level</button>
+  </div>
+</div>
+<script type="application/json" id="data">__DATA__</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const D = JSON.parse(document.getElementById('data').textContent);
+const QP = new URLSearchParams(location.search);
+const SCENE = D.scene || 'street';                    // 'street' (last-metre delivery) or 'doorway' (bottleneck)
+const M = D.map, ACT = D.acts;
+const W = D.bounds[2], H = D.bounds[3];             // half sizes (street 20 x 12.5, doorway 8 x 8)
+const CURB = M.curb_abs_y ?? 0, WALL = M.wall_abs_y ?? 0, ROAD = M.road ? M.road.y[1] : 0, CX = M.crosswalk ? M.crosswalk.x[1] : 0;
+const SIDE_H = 0.15;                                  // sidewalk height
+const FLOOR_H = 0.1;                                  // doorway: floor slab height
+const groundZ = (type, y) => SCENE === 'doorway' ? FLOOR_H : (Math.abs(y) >= CURB && type !== 'car' && type !== 'cyclist' ? SIDE_H : 0.02);
+const TXT = SCENE === 'doorway'
+  ? { title: 'Doorway bottleneck', sub: 'Simulated rooms', calm: 'Trickle', rush: 'Rush: meeting ended', eye: 'At the door' }
+  : { title: 'Last-metre delivery', sub: 'Simulated street', calm: 'Normal traffic', rush: 'Rush hour', eye: 'Street level' };
+document.title = TXT.title;
+document.querySelector('#info h1').textContent = TXT.title;
+document.getElementById('phase').textContent = TXT.calm;
+document.querySelector('[data-view="street"]').textContent = TXT.eye;
+document.getElementById('sub').textContent = `${TXT.sub} · episode ${D.episode} · ${D.agents.length} agents`;
+
+// ---------- renderer, scene, camera ----------
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.setSize(innerWidth, innerHeight);
+Object.assign(labels.domElement.style, { position: 'fixed', inset: '0', pointerEvents: 'none' });
+document.body.appendChild(labels.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 500);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.48; controls.minDistance = 4; controls.maxDistance = 140;
+
+scene.add(new THREE.HemisphereLight(0xfffaf2, 0x8c8272, 1.25));
+const sun = new THREE.DirectionalLight(0xfff1df, 2.3);
+sun.position.set(-18, 32, 16); sun.castShadow = true;
+Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 24, bottom: -24, near: 1, far: 90 });
+sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4;
+scene.add(sun);
+
+// sim (x, y) -> world (x, 0, -y): north is away from the default camera
+const P = (x, y, z = 0) => new THREE.Vector3(x, z, -y);
+const mat = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0, ...o });
+function mesh(geo, material, { x = 0, y = 0, z = 0, cast = true, receive = true } = {}) {
+  const m = new THREE.Mesh(geo, material); m.position.set(x, z, -y); m.castShadow = cast; m.receiveShadow = receive; return m;
+}
+function box(w, d, h, color, x, y, z0 = 0, o = {}) {   // w along x, d along sim y, h up; z0 = bottom
+  const m = mesh(new THREE.BoxGeometry(w, h, d), typeof color === 'string' || typeof color === 'number' ? mat(color, o) : color, { x, y, z: z0 + h / 2 });
+  scene.add(m); return m;
+}
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+function floorText(text, x, y, z, size, color = '#3a3733', { sub = '', dot = null, rot = 0 } = {}) {
+  const pxPerM = 90, wM = Math.max(text.length * size * 0.62, sub.length * size * 0.33) + size * (dot ? 0.9 : 0.2), hM = size * (sub ? 1.75 : 1.2);
+  const tex = canvasTex(Math.ceil(wM * pxPerM), Math.ceil(hM * pxPerM), (g, w, h) => {
+    const s = size * pxPerM, off = dot ? s * 0.7 : 0;
+    if (dot) { g.fillStyle = dot; g.beginPath(); g.arc(s * 0.28, s * 0.55, s * 0.17, 0, 7); g.fill(); }
+    g.fillStyle = color; g.font = `700 ${s}px system-ui, sans-serif`; g.textBaseline = 'top'; g.fillText(text, off, s * 0.05);
+    if (sub) { g.globalAlpha = 0.75; g.font = `500 ${s * 0.42}px system-ui, sans-serif`; g.fillText(sub, off, s * 1.15); }
+  });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(wM, hM), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 1, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; m.rotation.z = rot; m.position.set(x, z + 0.006, -y); m.receiveShadow = true; scene.add(m); return m;
+}
+
+// ---------- shared pieces: trees, walls ----------
+const trunk = mat('#7a5c45'), leaf = mat('#8fb07a'), leaf2 = mat('#7ea36a'), metal = mat('#3d3f43', { roughness: 0.5, metalness: 0.4 });
+function tree(x, y, z0, s = 1) {
+  scene.add(mesh(new THREE.CylinderGeometry(0.07 * s, 0.1 * s, 1.1 * s, 8), trunk, { x, y, z: z0 + 0.55 * s }));
+  scene.add(mesh(new THREE.SphereGeometry(0.62 * s, 20, 14), leaf, { x, y, z: z0 + 1.45 * s }));
+  scene.add(mesh(new THREE.SphereGeometry(0.45 * s, 20, 14), leaf2, { x: x + 0.15 * s, y: y - 0.1 * s, z: z0 + 2.05 * s }));
+}
+const wallM = mat('#f4f1ea'), wallTop = mat('#6b5847'), glass = new THREE.MeshPhysicalMaterial({ color: '#cfe0e6', transparent: true, opacity: 0.35, roughness: 0.1 });
+function wall(x0, y0, x1, y1, h = 1.7, m = wallM, z0 = SIDE_H, thick = 0.2) {
+  const len = Math.hypot(x1 - x0, y1 - y0), w = mesh(new THREE.BoxGeometry(len, h, thick), m, { x: (x0 + x1) / 2, y: (y0 + y1) / 2, z: z0 + h / 2 });
+  w.rotation.y = Math.atan2(y1 - y0, x1 - x0); scene.add(w);
+  const cap = mesh(new THREE.BoxGeometry(len + 0.02, 0.06, thick + 0.04), wallTop, { x: (x0 + x1) / 2, y: (y0 + y1) / 2, z: z0 + h + 0.03 });
+  cap.rotation.y = w.rotation.y; scene.add(cap);
+}
+function tileTex(base, line, n = 8) {
+  const t = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, h); g.strokeStyle = line; g.lineWidth = 3;
+    for (let i = 0; i <= n; i++) { g.beginPath(); g.moveTo(i * w / n, 0); g.lineTo(i * w / n, h); g.stroke(); g.beginPath(); g.moveTo(0, i * h / n); g.lineTo(w, i * h / n); g.stroke(); }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+function plankTex() {
+  const t = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = '#dcc6a5'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 16; i++) { g.fillStyle = i % 2 ? 'rgba(120,85,50,.07)' : 'rgba(255,255,255,.06)'; g.fillRect(0, i * h / 16, w, h / 16 - 2); }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+
+if (SCENE === 'doorway') buildDoorway();
+else {
+// ---------- the model base and the street ----------
+box(2 * W + 1.6, 2 * H + 1.6, 0.5, '#6b5847', 0, 0, -0.65);                 // dark trim like a model's plinth
+box(2 * W + 1.0, 2 * H + 1.0, 0.5, '#e6e0d5', 0, 0, -0.5);
+const tiles = canvasTex(512, 512, (g, w, h) => {
+  g.fillStyle = '#e9e4da'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(120,110,95,.18)'; g.lineWidth = 3;
+  for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * w / 8, 0); g.lineTo(i * w / 8, h); g.stroke(); g.beginPath(); g.moveTo(0, i * h / 8); g.lineTo(w, i * h / 8); g.stroke(); }
+});
+tiles.wrapS = tiles.wrapT = THREE.RepeatWrapping;
+for (const s of [1, -1]) {                                                    // raised sidewalks with tiles
+  const t = tiles.clone(); t.needsUpdate = true; t.repeat.set(2 * W / 4, (WALL - CURB) / 4);
+  box(2 * W, WALL - CURB, SIDE_H, mat('#ffffff', { map: t }), 0, s * (CURB + WALL) / 2);
+  box(2 * W, 0.18, SIDE_H + 0.02, '#cfc7b8', 0, s * (CURB + 0.09));            // curb stones
+}
+box(2 * W, 2 * ROAD, 0.02, '#4b4e54', 0, 0);                                  // asphalt
+for (const s of [1, -1]) box(2 * W, CURB - ROAD, 0.025, '#b2674f', 0, s * (ROAD + CURB) / 2);   // bike lanes
+for (const s of [1, -1]) box(2 * W, 0.12, 0.03, '#f4f1ea', 0, s * (ROAD - 0.06));                // edge lines
+for (let x = -W + 1; x < W; x += 4) if (Math.abs(x + 1) > CX + 1.2) box(2.0, 0.12, 0.03, '#f4f1ea', x + 1, 0);   // centre dashes
+for (let y = -CURB + 0.45; y < CURB; y += 1.0) box(2 * CX, 0.5, 0.035, '#fbfaf6', 0, y);           // zebra stripes
+box(0.3, ROAD, 0.032, '#fbfaf6', -(CX + 1.0), -ROAD / 2);                      // stop lines
+box(0.3, ROAD, 0.032, '#fbfaf6', CX + 1.0, ROAD / 2);
+for (const [s, dir] of [[-1, 1], [1, -1]]) {                                  // bike symbols + arrows
+  for (const x of [-12, 12]) floorText('BIKE ' + (dir > 0 ? '→' : '←'), x, s * (ROAD + CURB) / 2 - 0.33, 0.03, 0.55, 'rgba(255,255,255,.85)');
+}
+floorText('Bike lane', -17.5, (ROAD + CURB) / 2 - 0.3, 0.03, 0.5, 'rgba(255,255,255,.9)');
+floorText('Zebra crossing', CX + 1.6, -CURB - 0.9, SIDE_H, 0.45, '#5b5750');
+
+// lamp posts and planters with round trees (from the simulation's obstacles)
+for (const [x, y, r] of D.obstacles) {
+  if (r < 0.3) {
+    scene.add(mesh(new THREE.CylinderGeometry(0.06, 0.08, 4.2, 12), metal, { x, y, z: SIDE_H + 2.1 }));
+    const arm = mesh(new THREE.BoxGeometry(0.05, 0.05, 0.9), metal, { x, y: y - Math.sign(y) * 0.45, z: SIDE_H + 4.15 }); scene.add(arm);
+    scene.add(mesh(new THREE.BoxGeometry(0.35, 0.12, 0.25), mat('#fff3d6', { emissive: '#ffe3a3', emissiveIntensity: 0.6 }), { x, y: y - Math.sign(y) * 0.85, z: SIDE_H + 4.05 }));
+  } else {
+    box(1.3, 1.3, 0.5, '#b9a58b', x, y, SIDE_H);
+    tree(x, y, SIDE_H + 0.5, 1.0);
+  }
+}
+
+// ---------- buildings: cut-away rooms like an architect's model ----------
+function room(b, floor, doorW = b.door_width ?? 1.8) {
+  const [x0, x1] = b.x, [y0, y1] = b.y, s = Math.sign(y0 + y1);      // s: +1 north side, -1 south side
+  const front = s > 0 ? y0 : y1, back = s > 0 ? y1 : y0, dx = b.door[0];
+  box(x1 - x0, y1 - y0, 0.04, floor, (x0 + x1) / 2, (y0 + y1) / 2, SIDE_H);
+  wall(x0, back, x1, back); wall(x0, y0, x0, y1); wall(x1, y0, x1, y1);
+  wall(x0, front, dx - doorW / 2, front, 0.55); wall(dx + doorW / 2, front, x1, front, 0.55);   // low street front ...
+  for (const [a, c] of [[x0, dx - doorW / 2], [dx + doorW / 2, x1]]) {                       // ... with glass above
+    const g = mesh(new THREE.BoxGeometry(c - a, 1.1, 0.05), glass, { x: (a + c) / 2, y: front, z: SIDE_H + 0.55 + 0.55, cast: false }); scene.add(g);
+  }
+  return { x0, x1, y0, y1, s, front, back };
+}
+const planks = canvasTex(512, 512, (g, w, h) => {
+  g.fillStyle = '#dcc6a5'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 16; i++) { g.fillStyle = i % 2 ? 'rgba(120,85,50,.07)' : 'rgba(255,255,255,.06)'; g.fillRect(0, i * h / 16, w, h / 16 - 2); }
+});
+planks.wrapS = planks.wrapT = THREE.RepeatWrapping; planks.repeat.set(3, 1.5);
+const cafe = room(M.buildings.find(b => b.name.startsWith('Caf')), mat('#ffffff', { map: planks }));
+const station = room(M.buildings.find(b => b.name === 'Station'), mat('#d9dad6'));
+// café furniture
+const wood = mat('#b58c62'), white = mat('#f7f5f0'), dark = mat('#3b3a38');
+box(4.2, 0.8, 1.0, white, cafe.x0 + 3.2, cafe.back - 0.8, SIDE_H);                          // counter
+box(4.2, 0.85, 0.06, wood, cafe.x0 + 3.2, cafe.back - 0.8, SIDE_H + 1.0);
+box(0.45, 0.4, 0.55, dark, cafe.x0 + 2.0, cafe.back - 0.75, SIDE_H + 1.06);                  // coffee machine
+for (const [tx, ty] of [[cafe.x0 + 2.2, cafe.front + 1.6], [cafe.x0 + 5.2, cafe.front + 1.8], [cafe.x0 + 8.2, cafe.front + 1.5], [cafe.x0 + 7.4, cafe.back - 1.2]]) {
+  scene.add(mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.05, 24), wood, { x: tx, y: ty, z: SIDE_H + 0.75 }));
+  scene.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.72, 8), dark, { x: tx, y: ty, z: SIDE_H + 0.37 }));
+  for (const a of [0, Math.PI]) { box(0.42, 0.42, 0.45, white, tx + Math.cos(a) * 0.75, ty, SIDE_H); box(0.06, 0.42, 0.45, white, tx + Math.cos(a) * 0.96, ty, SIDE_H + 0.45); }
+}
+tree(cafe.x1 - 0.8, cafe.back - 0.8, SIDE_H, 0.8);
+const cafeDoor = M.buildings.find(b => b.name.startsWith('Caf')).door[0];
+for (let i = 0; i < 4; i++) box(1.0, 0.35, 0.05, ['#e0603c', '#f4f1ea'][i % 2], cafeDoor + 1.6 + i, cafe.front - 0.3, SIDE_H + 2.2, { side: THREE.DoubleSide });   // awning, clear of the door
+floorText('Café', cafe.x0 + 0.6, cafe.back - 1.7, SIDE_H + 0.04, 1.0, '#3a3733', { sub: 'Robot pickup point', dot: '#e0603c' });
+// station furniture
+for (let i = 0; i < 5; i++) {                                                                // ticket gates
+  const gx = station.x0 + 3.5 + i * 1.3;
+  box(0.25, 1.2, 1.0, '#9aa1a6', gx, station.front - 2.6, SIDE_H);
+  box(0.26, 1.21, 0.05, '#2f7d5c', gx, station.front - 2.6, SIDE_H + 1.0, { emissive: '#2f7d5c', emissiveIntensity: 0.5 });
+}
+for (const bx of [station.x0 + 2, station.x1 - 3]) { box(2.4, 0.5, 0.45, wood, bx, station.back + 0.6, SIDE_H); box(2.4, 0.08, 0.5, wood, bx, station.back + 0.35, SIDE_H + 0.45); }
+box(3.2, 0.2, 0.9, dark, station.x0 + 9.5, station.back + 0.25, SIDE_H + 1.3);                 // departures board
+const boardTex = canvasTex(512, 144, (g, w, h) => { g.fillStyle = '#1d2326'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffcf5a'; g.font = '600 34px ui-monospace, monospace';
+  g.fillText('Departures', 18, 44); g.font = '500 28px ui-monospace, monospace'; g.fillText('U2  Central   2 min', 18, 88); g.fillText('S5  Airport   6 min', 18, 126); });
+const board = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 0.85), new THREE.MeshBasicMaterial({ map: boardTex }));
+board.position.set(station.x0 + 9.5, SIDE_H + 1.75, -(station.back + 0.36)); scene.add(board);
+floorText('Station', station.x0 + 0.7, station.front - 0.6, SIDE_H + 0.04, 1.0, '#3a3733', { sub: 'Robot drop-off', dot: '#e0603c' });
+// the other plots along the street: low shop blocks with flat roofs
+const roofM = mat('#d6cfc3'), roofLip = mat('#bfb6a7');
+function block(x0, x1, s, label) {
+  const y0 = s * WALL, y1 = s * H, h = 0.9;                // low, so they never hide the street
+  box(x1 - x0 - 0.3, Math.abs(y1 - y0) - 0.2, h, roofM, (x0 + x1) / 2, (y0 + y1) / 2 + s * 0.05, SIDE_H);
+  box(x1 - x0 - 0.3, 0.15, 0.25, roofLip, (x0 + x1) / 2, y0 + s * 0.12, SIDE_H + h);
+  if (label) floorText(label, x0 + 0.6, (y0 + y1) / 2 + s * 0.7, SIDE_H + h, 0.6, '#5b5750');
+}
+block(-20, cafe.x0, 1); block(cafe.x1, 2, 1, 'Bookshop'); block(2, 12, 1, 'Pharmacy'); block(12, 20, 1, 'Flats');
+block(-20, -9, -1, 'Bakery'); block(-9, station.x0, -1, 'Offices'); block(station.x1, 20, -1);
+}   // end of the street
+
+// ---------- the doorway scene: two rooms, one 1.5 m door, a meeting room and the exits ----------
+function buildDoorway() {
+  const L = W, DH = M.door.y[1], WT = M.wall.thickness, ANNEX = 4.5, HALL = 2.6;
+  const ey = M.entry.y, xy = M.exits.y;                       // openings in the outer walls
+  const x0 = -L - HALL, x1 = L + ANNEX, cx = (x0 + x1) / 2;
+  box(x1 - x0 + 1.6, 2 * L + 1.6, 0.5, '#6b5847', cx, 0, -0.65);              // plinth
+  box(x1 - x0 + 1.0, 2 * L + 1.0, 0.5, '#e6e0d5', cx, 0, -0.5);
+  const pl = plankTex(); pl.repeat.set(2, 4);
+  box(L, 2 * L, FLOOR_H, mat('#ffffff', { map: pl }), -L / 2, 0, 0);              // room A: wooden floor
+  const tl = tileTex('#e9e4da', 'rgba(120,110,95,.18)'); tl.repeat.set(1, 2);
+  box(L, 2 * L, FLOOR_H, mat('#ffffff', { map: tl }), L / 2, 0, 0);               // room B: stone tiles
+  box(ANNEX, xy[1] - xy[0], FLOOR_H, '#a9bcb0', L + ANNEX / 2, 0, 0);            // meeting room: carpet
+  box(HALL, xy[1] - xy[0], FLOOR_H, '#d9dad6', -L - HALL / 2, 0, 0);             // exit hall
+  const Z = FLOOR_H, hi = 1.6, mid = 1.0, lo = 0.35;          // cut-away: tall at the back, low at the front
+  wall(-L, L, L, L, hi, wallM, Z); wall(-L, -L, L, -L, lo, wallM, Z);
+  wall(-L, -L, -L, xy[0], mid, wallM, Z); wall(-L, xy[1], -L, L, mid, wallM, Z);          // left wall, exits open
+  wall(L, -L, L, ey[0], mid, wallM, Z); wall(L, ey[1], L, L, mid, wallM, Z);              // right wall, opening to the meeting room
+  wall(L, xy[1], x1, xy[1], hi, wallM, Z); wall(L, xy[0], x1, xy[0], lo, wallM, Z); wall(x1, xy[0], x1, xy[1], hi, wallM, Z);
+  wall(x0, xy[1], -L, xy[1], hi, wallM, Z); wall(x0, xy[0], -L, xy[0], lo, wallM, Z); wall(x0, xy[0], x0, xy[1], hi, wallM, Z);
+  // the wall between the rooms, as thick as in the simulation, low enough to see over; dark door frame
+  for (const s of [1, -1]) wall(0, s * DH, 0, s * L, 1.1, wallM, Z, WT);
+  for (const s of [1, -1]) box(WT + 0.08, 0.12, 1.25, '#6b5847', 0, s * (DH + 0.06), Z);
+  const doorEl = document.createElement('div'); doorEl.className = 'pill'; doorEl.textContent = 'Door · 1.5 m';
+  const doorLbl = new CSS2DObject(doorEl); doorLbl.position.copy(P(0, 0, 2.2)); scene.add(doorLbl);
+  // meeting room: long table and chairs
+  const wood = mat('#b58c62'), white = mat('#f7f5f0'), dark = mat('#3b3a38');
+  box(1.3, 5.0, 0.06, wood, L + ANNEX / 2 + 0.3, 0, Z + 0.72);
+  for (const sy of [-1.8, 1.8]) box(0.1, 0.1, 0.72, dark, L + ANNEX / 2 + 0.3, sy, Z);
+  for (let i = 0; i < 5; i++) for (const sx of [-1, 1]) {
+    const cxh = L + ANNEX / 2 + 0.3 + sx * 1.0, cy = -2 + i;
+    box(0.45, 0.45, 0.45, white, cxh, cy, Z); box(0.06, 0.45, 0.5, white, cxh + sx * 0.22, cy, Z + 0.45);
+  }
+  box(0.1, 2.4, 1.3, dark, x1 - 0.15, 0, Z + 0.6);                               // screen on the far wall
+  floorText('Meeting room', L + ANNEX / 2 + 0.3, xy[0] + 0.7, Z, 0.55, '#2f4a3c');
+  // exits: green sign
+  const signTex = canvasTex(256, 96, (g, w, h) => { g.fillStyle = '#1f8a4c'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = '700 54px system-ui, sans-serif'; g.fillText('← EXIT', 24, 68); });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.52), new THREE.MeshBasicMaterial({ map: signTex }));
+  sign.position.copy(P(x0 + 0.12, 0, Z + 1.25)); sign.rotation.y = Math.PI / 2; scene.add(sign);
+  floorText('Exits', -L - HALL / 2, xy[0] + 0.7, Z, 0.55, '#3a3733');
+  // room names painted on the floor at the back, plants in the corners
+  floorText('Room A', -L / 2, L - 1.0, Z, 0.9, '#3a3733', { sub: 'Open office' });
+  floorText('Room B', L / 2 + 1.2, L - 1.0, Z, 0.9, '#3a3733', { sub: 'Lobby' });
+  for (const [px, py] of [[-L + 0.6, L - 0.6], [L - 0.6, L - 0.6], [-L + 0.6, -L + 0.6], [L - 0.6, -L + 0.6]]) { box(0.7, 0.7, 0.4, '#b9a58b', px, py, Z); tree(px, py, Z + 0.4, 0.55); }
+}
+
+// ---------- agents ----------
+const SHIRTS = ['#c4683c', '#5b7fa6', '#7a9a5b', '#c7a64a', '#8e6aa8', '#3f7a74', '#a64f5b', '#d9d6cc', '#4a4a52', '#e08a6a'];
+const PANTS = ['#3b3d45', '#55524c', '#2e3a4f', '#6d5b4b', '#262626'];
+const SKIN = ['#f1c7a5', '#d9a07a', '#a8714d', '#7a4e33', '#f5d6bd'];
+const CARS = ['#eae7e0', '#2f4b7c', '#9aa3ab', '#b33a3a', '#3c6e71', '#d9a441', '#2b2b2b', '#6f8f5a'];
+const pick = (arr, id, k = 7) => arr[(id * k) % arr.length];
+
+function person(id) {
+  const g = new THREE.Group(), shirt = mat(pick(SHIRTS, id)), pants = mat(pick(PANTS, id, 3)), skin = mat(pick(SKIN, id, 5)), hair = mat(id % 3 ? '#3a2b22' : '#c9a36b');
+  const legs = [];
+  for (const s of [-1, 1]) {
+    const hip = new THREE.Group(); hip.position.set(0, 0.86, s * 0.09);
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.62, 4, 10), pants); leg.position.y = -0.4; leg.castShadow = true; hip.add(leg);
+    g.add(hip); legs.push(hip);
+  }
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.42, 6, 14), shirt); torso.position.y = 1.18; torso.scale.set(0.75, 1, 1); torso.castShadow = true; g.add(torso);
+  const arms = [];
+  for (const s of [-1, 1]) {
+    const sh = new THREE.Group(); sh.position.set(0, 1.42, s * 0.25);
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.48, 4, 8), shirt); arm.position.y = -0.3; arm.castShadow = true; sh.add(arm);
+    g.add(sh); arms.push(sh);
+  }
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 18, 14), skin); head.position.y = 1.68; head.castShadow = true; g.add(head);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.135, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), hair); cap.position.set(-0.015, 1.69, 0); g.add(cap);
+  const phone = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.15, 0.09), mat('#1a1a1a', { emissive: '#7fd2ff', emissiveIntensity: 1.2 }));
+  phone.position.set(0.3, 1.33, 0); phone.rotation.z = 0.5; phone.visible = false; g.add(phone);
+  const wait = new THREE.Mesh(new THREE.RingGeometry(0.27, 0.37, 32), new THREE.MeshBasicMaterial({ color: '#f2a922', transparent: true, opacity: 0.95 }));
+  wait.rotation.x = -Math.PI / 2; wait.position.y = 0.03; wait.visible = false; g.add(wait);   // doorway: waiting for the door
+  g.scale.setScalar(1.1);
+  return { g, legs, arms, phone, head, wait, kind: 'person' };
+}
+function cyclist(id) {
+  const g = new THREE.Group(), frameM = mat(pick(['#2f7d5c', '#1f5fa8', '#c23b22', '#333333'], id), { roughness: 0.4, metalness: 0.3 }), tyre = mat('#1d1d1d');
+  const wheels = [];
+  for (const x of [-0.52, 0.52]) {
+    const w = new THREE.Group(); w.position.set(x, 0.34, 0);
+    const t = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.035, 8, 28), tyre); t.castShadow = true; w.add(t);
+    for (let i = 0; i < 3; i++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.012, 0.012), mat('#9a9a9a')); sp.rotation.z = i * Math.PI / 3; w.add(sp); }
+    g.add(w); wheels.push(w);
+  }
+  const tube = (a, b, r = 0.025) => { const v = new THREE.Vector3().subVectors(b, a), m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, v.length(), 8), frameM);
+    m.position.copy(a).addScaledVector(v, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.clone().normalize()); m.castShadow = true; g.add(m); };
+  const V = (x, y) => new THREE.Vector3(x, y, 0);
+  tube(V(-0.52, 0.34), V(-0.05, 0.36)); tube(V(-0.05, 0.36), V(-0.15, 0.85)); tube(V(-0.15, 0.82), V(0.42, 0.82)); tube(V(-0.05, 0.36), V(0.42, 0.8));
+  tube(V(0.52, 0.34), V(0.45, 0.98)); tube(V(-0.52, 0.34), V(-0.15, 0.82));
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8), mat('#2a2a2a')); bar.rotation.x = Math.PI / 2; bar.position.set(0.45, 1.0, 0); g.add(bar);
+  const jersey = mat(pick(['#f2c14e', '#e0603c', '#5aa0d8', '#7bc47f'], id, 3)), skin = mat(pick(SKIN, id, 5)), helmetM = mat('#f2f2f2', { roughness: 0.35 });
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.42, 6, 12), jersey); torso.position.set(0.12, 1.3, 0); torso.rotation.z = -0.75; torso.castShadow = true; g.add(torso);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), skin); head.position.set(0.43, 1.62, 0); g.add(head);
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), helmetM); helmet.position.set(0.42, 1.65, 0); helmet.castShadow = true; g.add(helmet);
+  for (const s of [-1, 1]) { const a = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.42, 4, 8), jersey); a.position.set(0.35, 1.28, s * 0.2); a.rotation.z = -1.05; g.add(a); }
+  const crank = new THREE.Group(); crank.position.set(-0.05, 0.36, 0); g.add(crank);
+  const legs = [];
+  for (const s of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.55, 4, 8), mat('#2b2b30')); leg.castShadow = true; leg.userData.side = s; g.add(leg); legs.push(leg);
+  }
+  return { g, wheels, legs, kind: 'cyclist' };
+}
+function car(id, len, wid) {
+  const g = new THREE.Group(), paint = mat(pick(CARS, id, 3), { roughness: 0.35, metalness: 0.25 }), glassM = mat('#4a5a66', { roughness: 0.12, metalness: 0.35 });
+  const body = new THREE.Mesh(new RoundedBoxGeometry(len, 0.72, wid, 4, 0.18), paint); body.position.y = 0.58; body.castShadow = true; body.receiveShadow = true; g.add(body);
+  const cabin = new THREE.Mesh(new RoundedBoxGeometry(len * 0.5, 0.6, wid * 0.88, 4, 0.16), glassM); cabin.position.set(-len * 0.06, 1.12, 0); cabin.castShadow = true; g.add(cabin);
+  const roof = new THREE.Mesh(new RoundedBoxGeometry(len * 0.44, 0.08, wid * 0.86, 2, 0.04), paint); roof.position.set(-len * 0.07, 1.43, 0); g.add(roof);
+  const wheels = [];
+  for (const x of [len * 0.32, -len * 0.32]) for (const z of [wid / 2 - 0.12, -wid / 2 + 0.12]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.26, 20), mat('#1b1b1b')); w.rotation.x = Math.PI / 2; w.position.set(x, 0.34, z); w.castShadow = true; g.add(w); wheels.push(w);
+  }
+  for (const z of [wid / 2 - 0.3, -wid / 2 + 0.3]) {
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.13, 0.32), mat('#fffbe8', { emissive: '#fff2c2', emissiveIntensity: 0.9 })); hl.position.set(len / 2 + 0.01, 0.68, z); g.add(hl);
+  }
+  const brakeM = mat('#6e1414', { emissive: '#ff2a1a', emissiveIntensity: 0 });
+  for (const z of [wid / 2 - 0.3, -wid / 2 + 0.3]) { const bl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.13, 0.34), brakeM); bl.position.set(-len / 2 - 0.01, 0.7, z); g.add(bl); }
+  return { g, wheels, brakeM, kind: 'car' };
+}
+function robot() {
+  const g = new THREE.Group(), shell = mat('#f6f5f2', { roughness: 0.45 }), trim = mat('#3c3d41'), accent = mat('#e0603c');
+  const body = new THREE.Mesh(new RoundedBoxGeometry(0.75, 0.42, 0.58, 4, 0.1), shell); body.position.y = 0.42; body.castShadow = true; g.add(body);
+  const lid = new THREE.Mesh(new RoundedBoxGeometry(0.66, 0.1, 0.5, 3, 0.05), shell); lid.position.y = 0.66; lid.castShadow = true; g.add(lid);
+  const band = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.06, 0.59), accent); band.position.y = 0.32; g.add(band);
+  const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 0.34), mat('#111', { emissive: '#62e0ff', emissiveIntensity: 1.4 })); eyes.position.set(0.38, 0.5, 0); g.add(eyes);
+  const wheels = [];
+  for (const x of [-0.26, 0, 0.26]) for (const z of [0.3, -0.3]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16), trim); w.rotation.x = Math.PI / 2; w.position.set(x, 0.12, z); w.castShadow = true; g.add(w); wheels.push(w);
+  }
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.3, 6), trim); pole.position.set(-0.3, 1.3, 0.2); g.add(pole);
+  const flag = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.22, 0), new THREE.Vector3(-0.32, -0.11, 0)]), mat('#ff7a2e', { side: THREE.DoubleSide, emissive: '#ff7a2e', emissiveIntensity: 0.3 }));
+  flag.geometry.computeVertexNormals(); flag.position.set(-0.3, 1.95, 0.2); g.add(flag);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.78, 40), new THREE.MeshBasicMaterial({ color: '#e0603c', transparent: true, opacity: 0.55 }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; g.add(ring);
+  g.scale.setScalar(1.6);                                    // a little larger than life so it reads from above
+  return { g, wheels, kind: 'robot' };
+}
+
+const agents = D.agents.map(a => {
+  const v = a.type === 'car' ? car(a.id, a.len, a.wid) : a.type === 'cyclist' ? cyclist(a.id) : a.type === 'robot' ? robot() : person(a.id);
+  v.data = a; v.dist = cumulative(a); scene.add(v.g); v.g.visible = false;
+  if (a.type === 'robot') {
+    const el = document.createElement('div'); el.className = 'pill robot'; el.textContent = 'Delivery robot';
+    const lbl = new CSS2DObject(el); lbl.position.set(0, 1.9, 0); v.g.add(lbl);
+  }
+  const el = document.createElement('div'); el.className = 'pill event'; el.style.opacity = 0;
+  v.eventLabel = new CSS2DObject(el); v.eventLabel.position.set(0, a.type === 'car' ? 2.4 : a.type === 'robot' ? 2.2 : 2.6, 0); v.g.add(v.eventLabel);
+  return v;
+});
+const byId = new Map(agents.map(v => [v.data.id, v]));
+
+// ---------- predictions (optional): the model's 80% range at +h s under each agent ----------
+// rows: [agent_id, frame, x0, y0, x1, y1, x2, y2, x3, y3, true_x, true_y, inside]
+const PRED = D.pred || null;
+if (PRED) {
+  const per = new Map();
+  for (const r of PRED.rows) { if (!per.has(r[0])) per.set(r[0], []); per.get(r[0]).push(r); }
+  const fillM = new THREE.MeshBasicMaterial({ color: '#eb6834', transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
+  const edgeM = new THREE.LineBasicMaterial({ color: '#c4471c' });
+  const trueM = new THREE.MeshBasicMaterial({ color: '#26262a' });
+  for (const [aid, rows] of per) {
+    const v = byId.get(aid); if (!v) continue;
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(12), 3)); g.setIndex([0, 1, 2, 0, 2, 3]);
+    const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(15), 3));
+    const fill = new THREE.Mesh(g, fillM), edge = new THREE.Line(eg, edgeM);
+    const mark = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.05, 8, 24), trueM); mark.rotation.x = -Math.PI / 2;
+    fill.renderOrder = 2; scene.add(fill, edge, mark); fill.visible = edge.visible = mark.visible = false;
+    v.pred = { fill, edge, mark, rows };
+  }
+  document.getElementById('sub').textContent += ' · held-out episode (never trained on)';
+}
+function drawPred(v, f) {
+  const p = v.pred; let r = null;
+  for (const x of p.rows) { if (x[1] <= f + 1e-6) r = x; else break; }
+  const show = predShow === 'all' && !!r && f - r[1] < PRED.every + 0.01 && v.g.visible;
+  p.fill.visible = p.edge.visible = p.mark.visible = show;
+  if (!show) return;
+  const z = (y) => groundZ(v.data.type, y) + 0.05, pos = p.fill.geometry.attributes.position.array, e = p.edge.geometry.attributes.position.array;
+  for (let i = 0; i < 5; i++) {
+    const j = i % 4, x = r[2 + 2 * j], y = r[3 + 2 * j];
+    if (i < 4) { pos[3 * i] = x; pos[3 * i + 1] = z(y); pos[3 * i + 2] = -y; }
+    e[3 * i] = x; e[3 * i + 1] = z(y) + 0.01; e[3 * i + 2] = -y;
+  }
+  p.fill.geometry.attributes.position.needsUpdate = true; p.fill.geometry.computeBoundingSphere();
+  p.edge.geometry.attributes.position.needsUpdate = true; p.edge.geometry.computeBoundingSphere();
+  p.mark.position.set(r[10], z(r[11]) + 0.02, -r[11]);
+}
+function cumulative(a) {             // distance travelled so far, for leg swing and wheel spin
+  const out = new Array(a.x.length).fill(0);
+  for (let i = 1; i < a.x.length; i++) out[i] = out[i - 1] + (a.x[i] != null && a.x[i - 1] != null ? Math.hypot(a.x[i] - a.x[i - 1], a.y[i] - a.y[i - 1]) : 0);
+  return out;
+}
+const robotV = agents.find(v => v.data.type === 'robot');
+const trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: '#e0603c', dashSize: 0.35, gapSize: 0.25 }));
+scene.add(trail);
+
+// ---------- scripted events: labels over the agents involved, ticks on the timeline ----------
+const EVENT_TEXT = { sudden_stop: 'Stops suddenly', steps_onto_crosswalk: 'Steps onto the zebra', car_brake_crosswalk: 'Brakes hard',
+                     jaywalk: 'Jaywalking', rush_hour: 'Rush hour: more people, more cars',
+                     rush: 'The meeting ends: 24 people head for one 1.5 m door',
+                     robot_waits_door: 'Waits: someone is coming in', robot_door_clear: 'Door clear: going' };
+const EVENT_TICK = { sudden_stop: 'Sudden stop', car_brake_crosswalk: 'Hard braking', jaywalk: 'Jaywalker', rush_hour: 'Rush hour', rush: 'Meeting ends',
+                     robot_waits_door: 'Robot at the door' };
+const SHOW_S = 3.5;
+const T_END = (D.n - 1) * D.dt;
+const track = document.getElementById('track');
+let nTick = 0;
+for (const e of D.events) if (EVENT_TICK[e.name]) {
+  const t = document.createElement('div'); t.className = 'tick' + (nTick++ % 2 ? ' up' : ''); t.style.left = `${100 * e.t / T_END}%`;
+  t.innerHTML = `<b>${EVENT_TICK[e.name]}</b> ${Math.round(e.t)} s`; t.onclick = () => seek(Math.max(0, e.t - 1.5)); track.appendChild(t);
+}
+const banner = document.getElementById('banner');
+
+// ---------- playback ----------
+let t = 0, playing = true, speed = 1, view = 'overview';
+const slider = document.getElementById('slider'), playBtn = document.getElementById('play');
+const lerpAngle = (a, b, f) => a + (((b - a + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * f;
+
+function sample(a, arr, f) {
+  const k = Math.floor(f) - a.k0, fr = f - Math.floor(f);
+  if (k < 0 || k >= arr.length || arr[k] == null) return null;
+  const nxt = k + 1 < arr.length && arr[k + 1] != null ? arr[k + 1] : arr[k];
+  return arr[k] + (nxt - arr[k]) * fr;
+}
+let nWait = 0, nPeople = 0;
+function update() {
+  const f = t / D.dt;
+  nWait = 0; nPeople = 0;
+  for (const v of agents) {
+    const a = v.data, x = sample(a, a.x, f);
+    if (x == null) { v.g.visible = false; continue; }
+    const y = sample(a, a.y, f), k = Math.floor(f) - a.k0, kn = Math.min(k + 1, a.h.length - 1);
+    const h = lerpAngle(a.h[k], a.h[kn] ?? a.h[k], f - Math.floor(f)), speedNow = sample(a, a.v, f), dist = sample(a, v.dist, f);
+    v.g.visible = true; v.g.position.set(x, groundZ(a.type, y), -y); v.g.rotation.y = h;
+    const act = ACT[a.a[k]];
+    if (v.kind === 'person') {
+      v.wait.visible = SCENE === 'doorway' && (act === 'wait' || act === 'queue');
+      if (v.wait.visible) { nWait++; } if (SCENE === 'doorway') nPeople++;
+      const moving = speedNow > 0.15, sw = moving ? Math.sin(dist * Math.PI * 2 / 1.3) * Math.min(1, speedNow) * 0.55 : 0;
+      v.legs[0].rotation.z = sw; v.legs[1].rotation.z = -sw;
+      const onPhone = act === 'phone' || act === 'phone_slow';
+      v.phone.visible = onPhone;
+      v.arms[0].rotation.z = onPhone ? 1.1 : -sw * 0.8; v.arms[1].rotation.z = onPhone ? 0.9 : sw * 0.8;
+      v.head.rotation.z = onPhone ? -0.35 : 0;
+    } else if (v.kind === 'cyclist') {
+      for (const w of v.wheels) w.rotation.z = -dist / 0.31;
+      const c = -dist / 0.9;
+      for (const leg of v.legs) { const s = leg.userData.side, ang = c + (s > 0 ? 0 : Math.PI);
+        const px = -0.05 + Math.cos(ang) * 0.17, py = 0.36 + Math.sin(ang) * 0.17, hip = new THREE.Vector3(-0.12, 1.02, s * 0.11), foot = new THREE.Vector3(px, py, s * 0.11);
+        leg.position.copy(hip).lerp(foot, 0.5); leg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), hip.clone().sub(foot).normalize()); }
+    } else if (v.kind === 'car') {
+      for (const w of v.wheels) w.rotation.y = 0, w.rotation.z = -dist / 0.34;
+      const kp = Math.max(0, k - 2), dv = (a.v[k] ?? 0) - (a.v[kp] ?? 0);
+      v.brakeM.emissiveIntensity = (dv < -0.25 || speedNow < 0.3) ? 2.2 : 0.05;     // braking or standing
+    } else if (v.kind === 'robot') {
+      for (const w of v.wheels) w.rotation.y = -dist / 0.12;
+    }
+    if (v.pred) drawPred(v, f);
+    // event label: shown for SHOW_S after an event involving this agent
+    const ev = D.events.find(e => e.agent_id === a.id && t >= e.t && t < e.t + SHOW_S);
+    const el = v.eventLabel.element;
+    if (introOn || outroOn) el.style.opacity = 0;      // the intro and outro have their own labels
+    else if (ev) { el.textContent = EVENT_TEXT[ev.name] || ev.name; el.style.opacity = 1; }
+    else if (a.type === 'robot' && act === 'wait_door') { el.textContent = EVENT_TEXT.robot_waits_door; el.style.opacity = 1; }   // the whole wait
+    else el.style.opacity = 0;
+  }
+  // robot path so far
+  const r = robotV.data, kr = Math.min(Math.floor(f) - r.k0, r.x.length - 1), pts = [];
+  for (let i = 0; i <= kr; i++) if (r.x[i] != null) pts.push(new THREE.Vector3(r.x[i], groundZ('robot', r.y[i]) + 0.03, -r.y[i]));
+  if (pts.length > 1) { trail.geometry.dispose(); trail.geometry = new THREE.BufferGeometry().setFromPoints(pts); trail.computeLineDistances(); }
+  // clock, phase, scene-wide banner
+  document.getElementById('clock').textContent = `${t.toFixed(1)} s`;
+  const rush = D.rush_t != null && t >= D.rush_t, ph = document.getElementById('phase');
+  ph.textContent = rush ? TXT.rush : TXT.calm; ph.classList.toggle('rush', rush);
+  if (PRED) {                                          // live score: truths whose time has come
+    const due = PRED.rows.filter(r => r[1] + PRED.h / D.dt <= f + 1e-6), hit = due.filter(r => r[12]).length;
+    document.getElementById('stat').innerHTML =
+      `<span style="display:inline-block;width:12px;height:9px;background:rgba(235,104,52,.45);border:1.5px solid #c4471c;vertical-align:middle"></span> `
+      + `${PRED.model}: where each agent will be in ${PRED.h} s (80% range)<br>`
+      + `<span style="display:inline-block;width:9px;height:9px;border:2.5px solid #26262a;border-radius:50%;vertical-align:middle"></span> where it really was`
+      + `<br><b style="color:var(--ink)">Inside its range so far: ${due.length ? Math.round(100 * hit / due.length) : '–'}%</b> (${hit} of ${due.length})`;
+  }
+  if (SCENE === 'doorway') document.getElementById('stat').innerHTML =
+    `${nPeople} people · <span style="color:#c98a10;font-weight:650">◯ ${nWait} waiting or queueing</span> for the door`;
+  const scen = D.events.find(e => e.agent_id < 0 && t >= e.t && t < e.t + SHOW_S);
+  banner.textContent = scen ? EVENT_TEXT[scen.name] : ''; banner.style.opacity = scen ? 1 : 0;
+  slider.value = t / T_END;
+}
+function seek(s) { t = Math.min(Math.max(s, 0), T_END); update(); }
+slider.oninput = () => { t = slider.value * T_END; update(); };
+playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '❚❚' : '▶'; if (playing && t >= T_END) t = 0; };
+document.getElementById('speed').onchange = e => speed = +e.target.value;
+addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); playBtn.onclick(); } });
+
+// ---------- cameras ----------
+const VIEWS = SCENE === 'doorway' ? {
+  overview: { pos: P(9, -24, 23), target: P(0.8, -0.5, 0) },
+  street:   { pos: P(8.5, -9.5, 6.0), target: P(0.6, 0.6, 0.6) },
+} : {
+  overview: { pos: P(-19, -41, 38), target: P(-1.5, -0.5, 0) },
+  street:   { pos: P(5, -11, 3.4), target: P(-2.5, 2, 0.6) },
+};
+const followOffset = new THREE.Vector3(-7, 8.5, 9);
+function setView(name) {
+  view = name;
+  document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name));
+  if (name !== 'follow') { camera.position.copy(VIEWS[name].pos); controls.target.copy(VIEWS[name].target); }
+  else { controls.target.copy(robotV.g.position).add(new THREE.Vector3(0, 1.2, 0)); camera.position.copy(controls.target).add(followOffset); }
+  controls.update();
+}
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+const params = new URLSearchParams(location.search);
+if (params.has('t')) t = +params.get('t');
+if (params.has('pause')) { playing = false; playBtn.textContent = '▶'; }
+setView(VIEWS[params.get('view')] || params.get('view') === 'follow' ? params.get('view') : 'overview');
+
+// ---------- intro (?intro): how the prediction works, on one person, then the scene ----------
+// Every number shown is real: the sensor dots are the person's true track + 0.1 m noise, the smooth
+// line is the core's Kalman filter over them, the card is the person's actual table row, the three
+// points are TabPFN's answer, and the meter is coverage on the validation episodes.
+const IN = PRED && PRED.intro && QP.has('intro') ? PRED.intro : null;
+let introOn = !!IN, introT = QP.has('it') ? +QP.get('it') : 0, introPaused = !!IN && QP.has('pause');
+let predShow = IN ? 'none' : 'all';
+const TL = [0, 3, 11, 20, 28, 37, 45, 50];
+const CAPS = [
+  ['How the prediction works', 'Five steps, on one person in this street', 'Pedestrian, held-out episode, 11 seconds in.'],
+  ['Step 1', 'Watching', 'Sensors are noisy (dots). A Kalman filter turns them into a smooth track: where the person is, and how fast they move.'],
+  ['Step 2', 'One row of a table', 'Every half second, each agent’s situation becomes numbers: speed, turning, neighbours, the robot, obstacles, crowd, type.'],
+  ['Step 3', 'The question', 'The simple guess: keep going straight at the same speed. The model only learns the correction to that guess.'],
+  ['Step 4', 'TabPFN answers', 'Shown 5,000 example rows with known answers, it predicts this row in one step, with no training: a 5%, a 50% and a 95% point.'],
+  ['Step 5', 'Sizing the patch', 'On validation episodes the patch is stretched or shrunk until 80% of the real positions land inside. Never on the episode you see.'],
+  ['', 'Every agent, every half second', 'A patch for every person, car and cyclist. Now the street: an episode the model never saw.'],
+];
+const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+const stepOf = it => Math.max(0, TL.findIndex((b, i) => i + 1 < TL.length && it >= b && it < TL[i + 1]));
+function introSceneT(it) {
+  const t0 = IN.k * D.dt;
+  if (it < 3) return t0 - 3;
+  if (it < 11) return t0 - 3 + (it - 3) * 3 / 8;                 // 3 s of street in 8 s (slow motion)
+  if (it < 20) return t0;
+  if (it < 24) return t0 + (it - 20) / 2;                         // 2 s ahead in 4 s
+  if (it < 28) return t0 + 2;
+  return t0;
+}
+let introUpdate = () => {}, introEnd = () => {};
+if (IN) {
+  const fv = byId.get(IN.agent), fa = fv.data, k0 = IN.k;
+  const at = (a, k) => ({ x: sample(a, a.x, k), y: sample(a, a.y, k) });
+  const F0 = at(fa, k0), zg = y => groundZ('pedestrian', y);
+  const W = (x, y, z = 0) => new THREE.Vector3(x, zg(y) + z, -y);
+  const tag = (text, cls = 'tag', pos) => { const el = document.createElement('div'); el.className = 'pill ' + cls; el.innerHTML = text;
+    const o = new CSS2DObject(el); if (pos) o.position.copy(pos); scene.add(o); o.visible = false; return o; };
+  const tube = (pts, color, r = 0.035) => { const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), Math.max(8, pts.length * 6), r, 8),
+    new THREE.MeshBasicMaterial({ color })); scene.add(m); m.visible = false; return m; };
+  const show = (o, on) => { if (Array.isArray(o)) o.forEach(x => show(x, on)); else if (o) o.visible = on; };
+  // step 1: noisy readings, the filtered track, the velocity
+  const S = IN.sensor;
+  const dots = S.noisy.map(([x, y], i) => { const m = mesh(new THREE.SphereGeometry(0.055, 12, 8), mat('#2f3034'), { x, y, z: zg(y) + 0.07 }); m.userData.k = S.k[i]; scene.add(m); m.visible = false; return m; });
+  const track = tube(S.smooth.map(([x, y]) => W(x, y, 0.06)), '#2a78d6', 0.045);
+  const trackN = track.geometry.index.count;
+  const [ex, ey] = S.smooth.at(-1), sp = Math.hypot(S.v[0], S.v[1]);
+  const vEnd = [ex + S.v[0], ey + S.v[1]], vM = new THREE.MeshBasicMaterial({ color: '#2a78d6' });
+  const vArrow = new THREE.Group();
+  vArrow.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(W(ex, ey, 0.12), W(ex + S.v[0] * 0.75, ey + S.v[1] * 0.75, 0.12)), 4, 0.05, 8), vM));
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.36, 16), vM); head.position.copy(W(vEnd[0] - S.v[0] * 0.15, vEnd[1] - S.v[1] * 0.15, 0.12));
+  head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(S.v[0], 0, -S.v[1]).normalize()); vArrow.add(head);
+  scene.add(vArrow); vArrow.visible = false;
+  const vTag = tag(`velocity ${sp.toFixed(2)} m/s`, 'tag blue', W(ex + S.v[0] * 0.6, ey + S.v[1] * 0.6, 0.6));
+  const dotTag = tag('noisy readings', 'tag', W(S.noisy[0][0], S.noisy[0][1], 0.6));
+  // step 2: what the row looks at, and the row itself
+  const others = agents.filter(v => v !== fv && v.data.type !== 'robot').map(v => ({ v, p: at(v.data, k0) })).filter(o => o.p.x != null)
+    .sort((a, b) => Math.hypot(a.p.x - F0.x, a.p.y - F0.y) - Math.hypot(b.p.x - F0.x, b.p.y - F0.y)).slice(0, 3);
+  const rp = at(robotV.data, k0);
+  const ob = D.obstacles.map(([x, y, r]) => ({ x, y, d: Math.hypot(x - F0.x, y - F0.y) - r })).sort((a, b) => a.d - b.d)[0];
+  const links = [...others.map((o, i) => ({ to: o.p, color: '#6d6a64', name: `neighbour ${i + 1}` })),
+                 { to: rp, color: '#e0603c', name: 'robot' }, ...(ob ? [{ to: ob, color: '#8a7a64', name: 'obstacle' }] : [])]
+    .map(L => ({ line: tube([W(F0.x, F0.y, 1.0), W(L.to.x, L.to.y, 1.0)], L.color, 0.03),
+                 tag: tag(L.name, 'tag', W((F0.x + L.to.x) / 2, (F0.y + L.to.y) / 2, 1.35)) }));
+  const R = IN.row;
+  const card = tag(`<b>Pedestrian ${R.id} · one row</b><br>speed ${R.speed} m/s<br>turning ${R.turn}°/s<br>path: last 1 s, 5 points<br>`
+    + `nearest 3: ${R.n.join(' · ')} m<br>robot ${R.robot} m · obstacle ${R.obst} m<br>people within 3 m: ${R.crowd}<br>type: ${R.type}`, 'card', W(F0.x - 1.2, F0.y, 2.9));
+  const rowsEl = document.getElementById('rows');
+  const tr = (r, me) => `<tr class="${me ? 'me' : ''}"><td>${r.type} ${r.id}</td><td>${r.speed}</td><td>${r.turn}</td><td>${r.n[0]}</td><td>${r.robot}</td><td>${r.crowd}</td><td class="q">?</td></tr>`;
+  rowsEl.innerHTML = `<table><tr><th>agent</th><th>speed m/s</th><th>turning °/s</th><th>nearest m</th><th>robot m</th><th>within 3 m</th><th>where in 2 s?</th></tr>`
+    + tr(R, true) + IN.others.map(o => tr(o, false)).join('') + '</table>';
+  // step 3: the straight-line guess against what really happened
+  const ghost = person(IN.agent); ghost.g.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.35; o.material.depthWrite = false; o.castShadow = false; } });
+  scene.add(ghost.g); ghost.g.visible = false;
+  const h0 = fa.h[k0 - fa.k0];
+  const ghostTag = tag('going straight (constant velocity)', 'tag', W(IN.cv[0], IN.cv[1], 2.4));
+  const corr = tube([W(IN.cv[0], IN.cv[1], 0.08), W(IN.truth[0], IN.truth[1], 0.08)], '#26262a', 0.05);
+  const corrTag = tag(`the correction the model learns · ${IN.cv_err} m`, 'tag', W((IN.cv[0] + IN.truth[0]) / 2, (IN.cv[1] + IN.truth[1]) / 2, 0.7));
+  // step 4: TabPFN's three points, then the patch
+  const [c0, , c2] = IN.corners, med = IN.median;
+  const pts = [[c0, '5%'], [med, '50%'], [c2, '95%']].map(([p, l]) => ({ m: (() => { const d = mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.04, 20), mat('#eb6834', { emissive: '#eb6834', emissiveIntensity: 0.4 }), { x: p[0], y: p[1], z: zg(p[1]) + 0.06 }); scene.add(d); d.visible = false; return d; })(),
+    tag: tag(l, 'tag', W(p[0], p[1], 0.5)) }));
+  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(12), 3)); pg.setIndex([0, 1, 2, 0, 2, 3]);
+  const pFill = new THREE.Mesh(pg, new THREE.MeshBasicMaterial({ color: '#eb6834', transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }));
+  const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(15), 3));
+  const pEdge = new THREE.Line(eg, new THREE.LineBasicMaterial({ color: '#c4471c' })); scene.add(pFill, pEdge); pFill.visible = pEdge.visible = false;
+  const setPatch = f => { const a = pg.attributes.position.array, e = eg.attributes.position.array;
+    for (let i = 0; i < 5; i++) { const c = IN.corners[i % 4], x = med[0] + (c[0] - med[0]) * f, y = med[1] + (c[1] - med[1]) * f, z = zg(y) + 0.05;
+      if (i < 4) a.set([x, z, -y], 3 * i); e.set([x, z + 0.01, -y], 3 * i); }
+    pg.attributes.position.needsUpdate = true; pg.computeBoundingSphere(); eg.attributes.position.needsUpdate = true; eg.computeBoundingSphere(); };
+  setPatch(1);
+  const truthRing = mesh(new THREE.TorusGeometry(0.17, 0.05, 8, 24), new THREE.MeshBasicMaterial({ color: '#26262a' }), { x: IN.truth[0], y: IN.truth[1], z: zg(IN.truth[1]) + 0.08 });
+  truthRing.rotation.x = -Math.PI / 2; scene.add(truthRing); truthRing.visible = false;
+  const truthTag = tag('where they really were', 'tag', W(IN.truth[0], IN.truth[1], 0.55));
+  const patchTag = tag('80% range in 2 s', 'tag', W(c2[0], c2[1], 0.9));
+  const tabEl = document.getElementById('tab'), tabCount = document.getElementById('tab-count');
+  const chips = Array.from({ length: 16 }, (_, i) => { const el = document.createElement('div'); el.className = 'chip'; el.textContent = 'row · answer known';
+    el.style.display = 'none'; document.body.appendChild(el); return { el, y0: 120 + (i * 53) % (innerHeight - 300), d: 29 + i * 0.17 }; });
+  const meterEl = document.getElementById('meter'), mVal = document.getElementById('meter-val'), mBar = document.getElementById('meter-bar'), mF = document.getElementById('meter-f');
+  const cover = f => { let lo = 0, hi = IN.need.length; while (lo < hi) { const m = (lo + hi) >> 1; if (IN.need[m] <= f) lo = m + 1; else hi = m; } return lo / IN.need.length; };
+  // camera: a shot per step, eased in over 1.8 s from wherever the camera was
+  const off = (target, dx, up, dz) => ({ target, pos: target.clone().add(new THREE.Vector3(dx, up, dz)) });
+  const mid1 = S.smooth.at(Math.floor(S.smooth.length / 2));
+  const SHOTS = [off(W(F0.x, F0.y, 0.9), -4.5, 5.2, 7.5), off(W(mid1[0], mid1[1], 0.6), -4.2, 6.2, 8.4),
+    off(W(F0.x, F0.y, 0.8), -5.5, 7.5, 10.5), off(W((F0.x + IN.truth[0] + IN.cv[0]) / 3, (F0.y + IN.truth[1] + IN.cv[1]) / 3, 0.4), -1.6, 8.6, 4.8),
+    off(W(med[0], med[1], 0.2), -1.4, 8.2, 4.4), off(W(med[0], med[1], 0.2), -1.4, 8.2, 4.4), { target: VIEWS.overview.target.clone(), pos: VIEWS.overview.pos.clone() }];
+  let shotIdx = -1, shotFrom = null;
+  const cap = document.getElementById('caption');
+  const ui = on => { for (const id of ['info', 'bar', 'help']) document.getElementById(id).style.display = on ? '' : 'none'; cap.style.display = on ? 'none' : 'block'; };
+  ui(false); controls.enabled = false;
+  introUpdate = it => {
+    const s = stepOf(it), ls = it - TL[s];
+    if (s !== shotIdx) { shotIdx = s; shotFrom = { pos: camera.position.clone(), target: controls.target.clone() };
+      document.getElementById('cap-step').textContent = CAPS[s][0]; document.getElementById('cap-title').textContent = CAPS[s][1]; document.getElementById('cap-text').textContent = CAPS[s][2]; }
+    const e = ease(ls / 1.8), sh = SHOTS[s];
+    camera.position.lerpVectors(shotFrom.pos, sh.pos, e); controls.target.lerpVectors(shotFrom.target, sh.target, e);
+    const f = t / D.dt;
+    // step 1
+    dots.forEach(d => d.visible = (s === 1 || s === 2) && d.userData.k <= f + 1e-6);
+    track.visible = s === 1 || s === 2; track.geometry.setDrawRange(0, s === 1 ? Math.floor(trackN * ease((ls - 0.5) / 7) / 3) * 3 : trackN);
+    vArrow.visible = vTag.visible = (s === 1 && ls > 6.8) || s === 2; dotTag.visible = s === 1 && ls > 1 && ls < 6;
+    // step 2
+    links.forEach((L, i) => { const on = s === 2 && ls > 0.4 + i * 0.35; L.line.visible = on; L.tag.visible = on && ls < 5; });
+    card.visible = s === 2 && ls > 2;
+    rowsEl.style.display = s === 2 && ls > 4.5 ? 'block' : 'none';
+    // step 3
+    ghost.g.visible = ghostTag.visible = s === 3;
+    if (s === 3) { const g = ease(Math.min(1, ls / 4)) * 0 + Math.min(1, ls / 4);
+      ghost.g.position.copy(W(F0.x + (IN.cv[0] - F0.x) * g, F0.y + (IN.cv[1] - F0.y) * g)); ghost.g.rotation.y = h0;
+      const sw = ls < 4 ? Math.sin(ls * 5.5) * 0.5 : 0; ghost.legs[0].rotation.z = sw; ghost.legs[1].rotation.z = -sw; ghost.arms[0].rotation.z = -sw * 0.8; ghost.arms[1].rotation.z = sw * 0.8;
+      ghostTag.position.copy(ghost.g.position).add(new THREE.Vector3(0, 2.4, 0)); }
+    corr.visible = corrTag.visible = s === 3 && ls > 4.2;
+    // step 4
+    tabEl.style.display = s === 4 ? 'block' : 'none';
+    tabCount.textContent = `${Math.round(IN.n_ctx * ease((it - 29) / 3)).toLocaleString('en')} rows`;
+    const tb = tabEl.getBoundingClientRect();
+    chips.forEach(c => { const p = (it - c.d) / 0.9; c.el.style.display = s === 4 && p > 0 && p < 1 ? 'block' : 'none';
+      if (p > 0 && p < 1) { c.el.style.left = `${20 + (tb.left + 40 - 20) * ease(p)}px`; c.el.style.top = `${c.y0 + (tb.top + tb.height / 2 - c.y0) * ease(p)}px`; c.el.style.opacity = 1 - p * 0.6; } });
+    pts.forEach((P_, i) => { P_.m.visible = (s === 4 && ls > 4 + i * 0.4) || s === 5; P_.tag.visible = s === 4 && ls > 4 + i * 0.4; });
+    const fade = s === 4 ? ease((ls - 6) / 1.5) : s === 5 ? 1 : 0;
+    pFill.visible = pEdge.visible = fade > 0; pFill.material.opacity = 0.3 * fade; patchTag.visible = s === 4 && ls > 6.5;
+    truthRing.visible = (s === 4 && ls > 7.5) || s === 5; truthTag.visible = s === 4 && ls > 7.5;
+    // step 5
+    meterEl.style.display = s === 5 ? 'block' : 'none';
+    const fz = s === 5 && ls < 6 ? 1 + 0.55 * Math.sin(2 * Math.PI * ls / 3) * (1 - ls / 6) : 1;
+    setPatch(s === 5 ? fz : 1);
+    if (s === 5) { const c = cover(fz); mVal.textContent = `${Math.round(100 * c)}%`; mBar.style.width = `${100 * c}%`; mF.textContent = `×${fz.toFixed(2)}`; }
+    // trees turn see-through while the camera looks past them (steps 3-5)
+    const ghostly = s >= 3 && s <= 5;
+    for (const m of [leaf, leaf2, trunk]) { m.transparent = true; m.opacity = ghostly ? 0.15 : 1; m.depthWrite = !ghostly; }
+    // step 6: every agent's patch
+    predShow = s === 6 ? 'all' : 'none';
+    fv.g.visible = fv.g.visible && true;
+  };
+  introEnd = () => {
+    introOn = false; ui(true); controls.enabled = true; predShow = 'all';
+    for (const m of [leaf, leaf2, trunk]) { m.opacity = 1; m.depthWrite = true; }
+    [...dots, track, vArrow, vTag, dotTag, card, ghost.g, ghostTag, corr, corrTag, pFill, pEdge, patchTag, truthRing, truthTag,
+     ...links.flatMap(L => [L.line, L.tag]), ...pts.flatMap(p => [p.m, p.tag])].forEach(o => o.visible = false);
+    for (const id of ['rows', 'tab', 'meter']) document.getElementById(id).style.display = 'none';
+    chips.forEach(c => c.el.style.display = 'none');
+    t = 0; playing = true; playBtn.textContent = '❚❚'; setView('overview');
+  };
+}
+
+// ---------- outro (?outro): the evidence, over the same street ----------
+// Numbers come from results/evidence.json (D.evidence) and, for Test 1's close-up, from each model's
+// +2 s box for the intro's pedestrian, sized on validation exactly as in the evidence run (PRED.compare).
+const EVD = D.evidence, FD = PRED && PRED.intro, CMP = PRED && PRED.compare;
+const OUTRO = !!(EVD && FD && CMP && QP.has('outro') && !IN);
+let outroOn = OUTRO, outT = QP.has('ot') ? +QP.get('ot') : 0, outPaused = OUTRO && QP.has('pause');
+const OL = [0, 4, 14, 22, 30, 37, 44, 48];
+let outroUpdate = () => {}, outroSceneT = () => 0;
+if (OUTRO) {
+  const C_TAB = '#eb6834', C_LGB = '#2a78d6', C_LG2 = '#1baf7a', C_CV = '#9a958c';
+  const f2 = (x, d = 2) => Number(x).toFixed(d), pc = x => `${Math.round(100 * x)}%`;
+  const T1 = EVD.t1, T3 = EVD.t3, REAL = EVD.real;
+  const best = s => ['lgbm_all', 'lgbm_same'].reduce((a, m) => REAL[s][m]['2'][0] < REAL[s][a]['2'][0] ? m : a, 'lgbm_all');
+  const svgBars = (items, max, unit) => {
+    const W_ = 430, rowH = 38, H_ = items.length * rowH + 10, x0 = 150, w = W_ - x0 - 64;
+    return `<svg viewBox="0 0 ${W_} ${H_}">` + items.map((it, i) => { const y = 6 + i * rowH, bw = Math.max(2, w * it.v / max);
+      return `<text x="${x0 - 10}" y="${y + 16}" text-anchor="end" font-size="13" fill="#2b2a28">${it.label}</text>`
+        + (it.sub ? `<text x="${x0 - 10}" y="${y + 30}" text-anchor="end" font-size="11" fill="#6d6a64">${it.sub}</text>` : '')
+        + `<rect x="${x0}" y="${y + 4}" width="${bw}" height="20" rx="4" fill="${it.c}"/>`
+        + `<text x="${x0 + bw + 8}" y="${y + 19}" font-size="13" font-weight="650" fill="#2b2a28">${f2(it.v, it.d ?? 1)} ${unit}</text>`; }).join('') + '</svg>';
+  };
+  const svgLines = (series, o) => {
+    const W_ = 430, H_ = 230, L = 46, R = 132, T = 14, B = 34, xs = series.flatMap(s => s.pts.map(p => p[0])), ys = series.flatMap(s => s.pts.flatMap(p => [p[1] - (p[2] || 0), p[1] + (p[2] || 0)]));
+    const tx = o.log ? Math.log10 : (v => v), x0 = tx(Math.min(...xs)), x1 = tx(Math.max(...xs));
+    const y0 = o.ymin ?? Math.min(...ys) * 0.95, y1 = Math.max(...ys) * 1.03;
+    const X = v => L + (tx(v) - x0) / (x1 - x0) * (W_ - L - R), Y = v => T + (1 - (v - y0) / (y1 - y0)) * (H_ - T - B);
+    let g = '';
+    for (const yv of o.yticks) g += `<line x1="${L}" x2="${W_ - R}" y1="${Y(yv)}" y2="${Y(yv)}" stroke="#e6e1d8"/><text x="${L - 6}" y="${Y(yv) + 4}" text-anchor="end" font-size="11" fill="#6d6a64">${f2(yv, 1)}</text>`;
+    for (const xv of o.xticks) g += `<text x="${X(xv)}" y="${H_ - B + 16}" text-anchor="middle" font-size="11" fill="#6d6a64">${o.xfmt ? o.xfmt(xv) : xv}</text>`;
+    if (o.vline != null) g += `<line x1="${X(o.vline)}" x2="${X(o.vline)}" y1="${T}" y2="${H_ - B}" stroke="#2b2a28" stroke-dasharray="4 4"/><text x="${X(o.vline) + 5}" y="${T + 11}" font-size="11" fill="#2b2a28">${o.vlabel}</text>`;
+    g += `<text x="${(L + W_ - R) / 2}" y="${H_ - 2}" text-anchor="middle" font-size="11.5" fill="#6d6a64">${o.xlabel}</text>`;
+    g += `<text x="12" y="${T + (H_ - T - B) / 2}" transform="rotate(-90 12 ${T + (H_ - T - B) / 2})" text-anchor="middle" font-size="11.5" fill="#6d6a64">${o.ylabel}</text>`;
+    const used = [];
+    for (const s of series) {
+      for (const p of s.pts) if (p[2]) g += `<line x1="${X(p[0])}" x2="${X(p[0])}" y1="${Y(p[1] - p[2])}" y2="${Y(p[1] + p[2])}" stroke="${s.c}" stroke-width="1.5"/>`;
+      g += `<polyline fill="none" stroke="${s.c}" stroke-width="2.4" points="${s.pts.map(p => `${X(p[0])},${Y(p[1])}`).join(' ')}"/>`;
+      g += s.pts.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3.2" fill="${s.c}"/>`).join('');
+      const last = s.pts.at(-1); let ly = Y(last[1]) + 4; while (used.some(u => Math.abs(u - ly) < 14)) ly += 14; used.push(ly);
+      g += `<text x="${X(last[0]) + 8}" y="${ly}" font-size="11.5" font-weight="650" fill="${s.c}">${s.name}</text>`;
+    }
+    return `<svg viewBox="0 0 ${W_} ${H_}">${g}</svg>`;
+  };
+  const verdict = (yes, head, text) => `<div class="verdict ${yes ? 'yes' : 'no'}"><b>${yes ? '✓ ' : ''}${head}</b>${text}</div>`;
+  const covs = ['cv_box', 'lgbm_all', 'lgbm_same', 'tabpfn'].map(m => T1[m].coverage);
+  const t2b = Object.keys(EVD.t2.tabpfn_refit).map(Number).sort((a, b) => a - b);
+  const t3n = Object.keys(T3).map(Number).sort((a, b) => a - b);
+  const PANELS = [null,
+    `<h3>Average patch at +2 s, held-out street</h3><div class="sub">each sized to 80% on validation · held-out coverage ${pc(Math.min(...covs))}–${pc(Math.max(...covs))} for all four</div>`
+      + svgBars([{ label: 'Constant velocity', sub: '+ fixed box', v: T1.cv_box.area_m2, c: C_CV }, { label: 'LightGBM', sub: 'all rows, tuned', v: T1.lgbm_all.area_m2, c: C_LGB },
+                 { label: 'LightGBM', sub: '5,000 rows, tuned', v: T1.lgbm_same.area_m2, c: C_LG2 }, { label: 'TabPFN', sub: '5,000 rows', v: T1.tabpfn.area_m2, c: C_TAB }], T1.cv_box.area_m2, 'm²')
+      + verdict(false, 'Smallest patches, but formally no advantage', `TabPFN's patches are the smallest and grow most in crowds (×${f2(T1.tabpfn.crowded_over_open)} vs ×${f2(T1.lgbm_all.crowded_over_open)}). But every model landed at 77–78%, under the 78% floor we fixed, so by our rule this test does not count.`),
+    `<h3>Error at +2 s around the rush-hour switch</h3><div class="sub">${EVD.t2_episodes} held-out episodes · refit every 1 s on the same rows</div>`
+      + svgLines([{ name: 'TabPFN', c: C_TAB, pts: t2b.map(b => [b + 0.5, EVD.t2.tabpfn_refit[b]]) }, { name: 'LightGBM retrained', c: C_LGB, pts: t2b.map(b => [b + 0.5, EVD.t2.lgbm_retrained[b]]) },
+                  { name: 'LightGBM frozen', c: C_LG2, pts: t2b.map(b => [b + 0.5, EVD.t2.lgbm_frozen[b]]) }],
+                 { xticks: [-5, 0, 5, 10, 15], xlabel: 'seconds since rush hour began', ylabel: 'error (m)', yticks: [0.6, 0.8, 1.0, 1.2], ymin: 0.55, vline: 0, vlabel: 'rush hour' })
+      + verdict(false, 'No advantage', 'The street’s rush hour is mild: all three recover within about 1 s, so this test cannot tell them apart. TabPFN is lowest throughout, but not faster to adapt.'),
+    `<h3>Error at +2 s against amount of data</h3><div class="sub">held-out street · mean ± sd over 3 draws · LightGBM tuned for each size</div>`
+      + svgLines([{ name: 'LightGBM', c: C_LGB, pts: t3n.map(n => [n, ...T3[n].lgbm]) }, { name: 'TabPFN', c: C_TAB, pts: t3n.map(n => [n, ...T3[n].tabpfn]) }],
+                 { log: true, xticks: t3n, xfmt: v => v >= 1000 ? `${v / 1000}k` : v, xlabel: 'example rows', ylabel: 'error (m)', yticks: [0.8, 1.0, 1.2] })
+      + verdict(true, 'TabPFN justified', `Lower error at every size: ${f2(T3[100].tabpfn[0])} vs ${f2(T3[100].lgbm[0])} m at 100 rows, ${f2(T3[5000].tabpfn[0])} vs ${f2(T3[5000].lgbm[0])} m at 5,000.`),
+    `<h3>Error at +2 s on real people</h3><div class="sub">ETH and Hotel (Zurich) · held-out minutes · best LightGBM shown</div>`
+      + svgBars(['eth', 'hotel'].filter(s => REAL[s]).flatMap(s => [{ label: s === 'eth' ? 'ETH' : 'Hotel', sub: 'LightGBM', v: REAL[s][best(s)]['2'][0], c: C_LGB, d: 2 },
+                                                                    { label: '', sub: 'TabPFN', v: REAL[s].tabpfn['2'][0], c: C_TAB, d: 2 }]), 0.7, 'm')
+      + verdict(true, 'More accurate on both', `Both gaps hold in a 95% bootstrap. On Hotel TabPFN's patches are also smaller (${f2(REAL.hotel.tabpfn['2'][2], 1)} vs ${f2(REAL.hotel[best('hotel')]['2'][2], 1)} m²); on ETH every model's patch covered too little (${pc(REAL.eth.tabpfn['2'][1])}–${pc(REAL.eth.lgbm_all['2'][1])}).`),
+    `<h3>Honest limits</h3><ul><li>It is a simulation; real streets are messier.</li><li>In the episode you saw, coverage slips to about 76% after rush hour.</li>`
+      + `<li>TabPFN did not adapt faster here, and its ranges sit at 77%, not 80%.</li><li>The robot follows a scripted route; planning around the patches is the next step.</li></ul>`
+      + `<div class="verdict no"><b>Rules fixed before the run</b>Same rows, same features, held-out episodes, the baseline tuned too.</div>`,
+    null];
+  const OCAPS = [
+    ['', 'Why TabPFN, and not something simpler', 'Three tests on held-out street episodes. Same rows and features for every model; the rules were fixed before the run.'],
+    ['Test 1', 'Ranges you can trust', 'Each model’s patch is sized to 80% on validation. At the same coverage, a smaller patch leaves the robot more room.'],
+    ['Test 2', 'Adapting to a switch', 'At rush hour TabPFN is re-fed the latest rows every second, and LightGBM is retrained every second on exactly the same rows.'],
+    ['Test 3', 'Learning from little data', 'How accurate is each model with 50 to 5,000 example rows?'],
+    ['Real pedestrians', 'Recorded people, not simulation', 'ETH and Hotel, two scenes from Zurich, on minutes the models never saw.'],
+    ['', 'What this does not show', 'We state where TabPFN does not win.'],
+    ['', 'Foresight', 'Calibrated ranges for every agent around a robot, from a few thousand example rows.'],
+  ];
+  // Test 1 close-up: the three models' boxes under the intro's pedestrian
+  const zg = y => groundZ('pedestrian', y), Wv = (x, y, z = 0) => new THREE.Vector3(x, zg(y) + z, -y);
+  const otag = (text, pos) => { const el = document.createElement('div'); el.className = 'pill tag'; el.innerHTML = text; const o = new CSS2DObject(el); o.position.copy(pos); scene.add(o); o.visible = false; return o; };
+  const patch = (b, color, op, lift) => { const g = new THREE.BufferGeometry(), c = b.corners;
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(c.flatMap(([x, y]) => [x, zg(y) + lift, -y])), 3)); g.setIndex([0, 1, 2, 0, 2, 3]);
+    const fill = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide }));
+    const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(c.map(([x, y]) => new THREE.Vector3(x, zg(y) + lift + 0.01, -y))), new THREE.LineBasicMaterial({ color }));
+    scene.add(fill, edge); fill.visible = edge.visible = false; return [fill, edge]; };
+  // each tag on a different side of its own box: constant velocity south, LightGBM east, TabPFN north
+  const side = { cv_box: (p, q) => p[1] - q[1], lgbm: (p, q) => q[0] - p[0], tabpfn: (p, q) => q[1] - p[1] };
+  const P3 = [['cv_box', '#6f6a62', 0.2, 0.04, 'Constant velocity + box'], ['lgbm', C_LGB, 0.22, 0.05, 'LightGBM'], ['tabpfn', C_TAB, 0.34, 0.06, 'TabPFN']]
+    .map(([k, c, op, lift, name]) => { const b = CMP[k], [x, y] = [...b.corners].sort(side[k])[0];
+      return { parts: patch(b, c, op, lift), tag: otag(`${name} · this person: ${f2(b.area, 1)} m² · ${b.inside ? 'truth inside' : 'truth outside'}`, Wv(x, y, 0.45)) }; });
+  const ring = mesh(new THREE.TorusGeometry(0.17, 0.05, 8, 24), new THREE.MeshBasicMaterial({ color: '#26262a' }), { x: FD.truth[0], y: FD.truth[1], z: zg(FD.truth[1]) + 0.09 });
+  ring.rotation.x = -Math.PI / 2; scene.add(ring); ring.visible = false;
+  const ringTag = otag('where they really were', Wv(FD.truth[0], FD.truth[1], 0.6));
+  // cameras: an orbiting overview (panel on the right) and the Test 1 close-up
+  const ov = VIEWS.overview, base = ov.pos.clone().sub(ov.target), shift = new THREE.Vector3(5.5, 0, 0);
+  const orbit = (ot, sh) => { const a = -0.12 + 0.012 * ot, c = Math.cos(a), s_ = Math.sin(a);
+    const tgt = ov.target.clone().add(sh ? shift : new THREE.Vector3()); return { target: tgt, pos: tgt.clone().add(new THREE.Vector3(base.x * c - base.z * s_, base.y, base.x * s_ + base.z * c)) }; };
+  const close = (() => { const tgt = Wv(FD.median[0] + 3.4, FD.median[1] - 0.4, 0.2); return { target: tgt, pos: tgt.clone().add(new THREE.Vector3(-1.8, 14.5, 8.0)) }; })();
+  const shot = (s, ot) => s === 1 ? close : orbit(ot, s >= 1 && s <= 5);
+  outroSceneT = ot => { const s = stepOf2(ot); return s === 0 ? 20 + ot * 0.5 : s === 1 ? FD.k * D.dt : s === 2 ? 37 + (ot - OL[2]) : Math.min(T_END, 45 + (ot - OL[3]) * 0.4); };
+  function stepOf2(ot) { return Math.max(0, OL.findIndex((b, i) => i + 1 < OL.length && ot >= b && ot < OL[i + 1])); }
+  let oIdx = -1, oFrom = null;
+  const cap = document.getElementById('caption'), panel = document.getElementById('panel');
+  for (const id of ['info', 'bar', 'help']) document.getElementById(id).style.display = 'none';
+  cap.style.display = 'block'; controls.enabled = false;
+  outroUpdate = ot => {
+    const s = Math.min(stepOf2(ot), OL.length - 2), ls = ot - OL[s];
+    if (s !== oIdx) { oIdx = s; oFrom = { pos: camera.position.clone(), target: controls.target.clone() };
+      document.getElementById('cap-step').textContent = OCAPS[s][0]; document.getElementById('cap-title').textContent = OCAPS[s][1]; document.getElementById('cap-text').textContent = OCAPS[s][2];
+      panel.innerHTML = PANELS[s] || ''; }
+    const e = ease(ls / 2.0), sh = shot(s, ot);
+    camera.position.lerpVectors(oFrom.pos, sh.pos, e); controls.target.lerpVectors(oFrom.target, sh.target, e);
+    panel.style.display = PANELS[s] && (s !== 1 || ls > 4.6) ? 'block' : 'none';
+    P3.forEach((p, i) => { const on = s === 1 && ls > 0.8 + i * 1.1; p.parts.forEach(o => o.visible = on); p.tag.visible = on; });
+    ring.visible = ringTag.visible = s === 1 && ls > 4.0;
+    predShow = s === 1 ? 'none' : 'all';
+    const ghostly = s === 1;
+    for (const m of [leaf, leaf2, trunk]) { m.transparent = true; m.opacity = ghostly ? 0.15 : 1; m.depthWrite = !ghostly; }
+  };
+  predShow = 'all';
+}
+
+// frame-by-frame recording (tools/record_clip.py): draw intro time `it` exactly, nothing else moves
+window.__introFrame = it => {
+  introPaused = true; introT = it; t = introSceneT(it);
+  update(); introUpdate(it); controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
+};
+// ?view=auto: the recorded scenario's camera, eased between shots: follow the robot out of the Café,
+// overview, street level for the hard brake at the zebra, then overview for the jaywalker and rush hour
+const AUTO = [[0, 'follow'], [9, 'overview'], [20, 'street'], [27, 'overview']];
+let autoFrom = null, autoIdx = -1;
+const autoShot = name => name === 'follow'
+  ? (() => { const tg = robotV.g.position.clone().add(new THREE.Vector3(0, 1.2, 0)); return { target: tg, pos: tg.clone().add(followOffset) }; })()
+  : { target: VIEWS[name].target.clone(), pos: VIEWS[name].pos.clone() };
+window.__sceneFrame = s => {
+  if (introOn) introEnd();
+  playing = false; t = Math.min(s, T_END); lastRobot.copy(robotV.g.position);
+  update();
+  if (QP.get('view') === 'auto') {
+    const i = AUTO.findLastIndex(a => s >= a[0]);
+    if (i !== autoIdx) { autoIdx = i; autoFrom = { pos: camera.position.clone(), target: controls.target.clone() }; }
+    const sh = autoShot(AUTO[i][1]), e = i === 0 ? 1 : ease((s - AUTO[i][0]) / 2.0);
+    camera.position.lerpVectors(autoFrom.pos, sh.pos, e); controls.target.lerpVectors(autoFrom.target, sh.target, e);
+  } else if (view === 'follow') { const d = robotV.g.position.clone().sub(lastRobot); camera.position.add(d); controls.target.add(d); }
+  controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
+};
+window.__introLength = TL.at(-1);
+window.__outroFrame = ot => {
+  outPaused = true; outT = ot; t = outroSceneT(ot);
+  update(); outroUpdate(ot); controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
+};
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); labels.setSize(innerWidth, innerHeight);
+});
+let last = performance.now();
+const lastRobot = new THREE.Vector3();
+renderer.setAnimationLoop(now => {
+  const dtReal = Math.min((now - last) / 1000, 0.1); last = now;
+  if (outroOn) {
+    if (!outPaused) outT = Math.min(outT + dtReal * speed, OL.at(-1) - 0.001);
+    t = outroSceneT(outT);
+  } else if (introOn) {
+    if (!introPaused) introT += dtReal * speed;
+    if (introT >= TL.at(-1)) introEnd();
+    else t = introSceneT(introT);
+  } else if (playing) { t += dtReal * speed; if (t >= T_END) { t = T_END; playing = false; playBtn.textContent = '▶'; } }
+  lastRobot.copy(robotV.g.position);
+  update();
+  if (introOn) introUpdate(introT);
+  if (outroOn) outroUpdate(outT);
+  if (view === 'follow') {                       // keep the camera's offset while the robot moves
+    const d = robotV.g.position.clone().sub(lastRobot); camera.position.add(d); controls.target.add(d);
+  }
+  controls.update();
+  renderer.render(scene, camera); labels.render(scene, camera);
+});
+</script>
+</body>
+</html>
