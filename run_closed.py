@@ -13,7 +13,7 @@ Planners (same seeds = same crowd, start and goal for all):
   tabpfn_live  (labelled from observed, filtered positions, as a robot would) + similar bank rows
   tabpfn_split frozen bank model + a scene model refitted every --refit s on this episode's <= 250 most recent
                completed rows (observed labels); quantiles averaged per axis; frozen alone below 20 recent rows
---frozen-ctx fill: lgbm and tabpfn read context.frozen(bank, --context) (half rare moves, rest random, exact).
+--frozen-ctx fill: lgbm and tabpfn read context.frozen(bank, --context): natural move frequency, exact budget, no kNN.
 --bank-exclude-regime erratic: drop every bank episode with that regime before or after a switch.
 --switch-to erratic --switch-all: every seed switches into that regime at mid-episode, from a start regime
                other than it (start = the other regimes in turn by seed).
@@ -46,11 +46,11 @@ HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
        "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode", "smooth",
-       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all"]
+       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
             "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere", "smooth": False,
-            "frozen_ctx": "random", "bank_exclude": "-", "switch_to": "-", "switch_all": False}
+            "frozen_ctx": "random", "bank_exclude": "-", "switch_to": "-", "switch_all": False, "switch_t": -1.0}
 SPLIT_REC, SPLIT_THIN = 250, 20   # tabpfn_split: scene-model rows (most recent); fewer than SPLIT_THIN = frozen alone
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
@@ -194,7 +194,8 @@ def make_sim(name, seed, args):
     else:
         regime = names[seed % len(names)]                        # vary the crowd across seeds
     on = args.switch and (getattr(args, "switch_all", False) or seed % 2 == 1)
-    switch = dict(switch_t=round(args.duration / 2, 6), switch_to=to or names[(seed + 1) % len(names)]) if on else {}
+    st = getattr(args, "switch_t", None)
+    switch = dict(switch_t=round(args.duration / 2 if st is None else st, 6), switch_to=to or names[(seed + 1) % len(names)]) if on else {}
     cfg = CrowdConfig(n_people=args.people, duration=args.duration, regime=regime,
                       robot_repulsion=args.robot_repulsion, ignore_robot=args.ignore_robot,
                       robot_speed=args.max_speed, goal_mode=getattr(args, "goal_mode", "anywhere"), **switch)
@@ -327,6 +328,7 @@ def main():
     ap.add_argument("--horizons", type=float, nargs="*", default=list(HZ), help="planner checks the boxes at these")
     ap.add_argument("--switch", action="store_true", help="odd seeds: crowd-wide regime switch at mid-episode")
     ap.add_argument("--switch-to", default=None, help="with --switch: always switch into this regime (start = another)")
+    ap.add_argument("--switch-t", type=float, default=None, help="with --switch: switch time in s (default mid-episode)")
     ap.add_argument("--switch-all", action="store_true", help="with --switch: every seed switches, not only odd ones")
     ap.add_argument("--frozen-ctx", default="random", choices=["random", "fill"], help="frozen lgbm/tabpfn context")
     ap.add_argument("--bank-exclude-regime", default=None, help="drop bank episodes with this regime (before or after)")
@@ -383,6 +385,7 @@ def main():
                     "frozen_ctx": a.frozen_ctx if kind.startswith(("lgbm", "tabpfn")) and kind != "lgbm_all" else "-",
                     "bank_exclude": a.bank_exclude_regime or "-", "switch_to": a.switch_to or "-",
                     "switch_all": bool(a.switch_all),
+                    "switch_t": (a.duration / 2 if a.switch_t is None else a.switch_t) if a.switch else -1.0,
                     "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
                     "threads": a.threads, "max_speed": a.max_speed,
                     "vo_w": a.vo_w if kind == "vo" else np.nan, "vo_h": a.vo_h if kind == "vo" else np.nan,
