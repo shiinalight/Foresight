@@ -39,6 +39,7 @@ def score(Q, Y):
     pin = np.mean([np.maximum(q * (Y - Q[:, :, j]), (q - 1) * (Y - Q[:, :, j])).mean(axis=1) for j, q in enumerate(QS)], axis=0)
     return dict(joint90=j90, cov80=c80, width80=(Q[:, :, 3] - Q[:, :, 1]).mean(axis=1), pinball=pin,
                 is80=interval_score(Q[:, :, 1], Q[:, :, 3], Y, 0.2), is90=interval_score(Q[:, :, 0], Q[:, :, 4], Y, 0.1),
+                box_miss=~j90, point_miss05=np.linalg.norm(Q[:, :, 2] - Y, axis=1) > 0.5,
                 err=np.linalg.norm(Q[:, :, 2] - Y, axis=1))
 
 
@@ -92,11 +93,12 @@ def main():
                                                         joint90=("joint90", "mean"), joint90_sd=("joint90", "std"),
                                                         cov80=("cov80", "mean"), width80=("width80", "mean"),
                                                         is80=("is80", "mean"), is90=("is90", "mean"),
+                                                        box_miss=("box_miss", "mean"), point_miss05=("point_miss05", "mean"),
                                                         pinball=("pinball", "mean"), err=("err", "mean"),
                                                         err_sd=("err", "std")).round(4)
     print(T.to_string())
     note = ("Nominal coverage: joint90 = 5-95% box, nominal 80-90% joint (81% if the axes are independent); "
-            "cov80 = per-axis 10-90%, nominal 80%. is80/is90 = interval score (Gneiting & Raftery 2007), lower is better."
+            "cov80 = per-axis 10-90%, nominal 80%. is80/is90 = interval score (Gneiting & Raftery 2007), lower is better. box_miss = 1 - joint90; point_miss05 = share of rows with median error > 0.5 m at +2 s."
             + chr(10) * 2)
     Path(out.replace(".csv", ".md")).write_text(note + T.to_string(), encoding="utf-8")
     print(f"wrote {out}")

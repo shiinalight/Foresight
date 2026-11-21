@@ -243,6 +243,8 @@ Both apply to every planner. Amendment 2 also names the 02:00 TabPFN setup and i
   - Prior Labs sells a commercial licence.
   - So this is a research prototype. A product would need the commercial licence or the v2 weights (the tier grid in `tools/tier_grid.py` includes v2 for that reason).
 - **Model size** (counted from the released checkpoints, every tensor in the safetensors header, float32): TabPFN-3.5 has 218,987,657 parameters (836 MB file); TabPFN-3.5-Fast has 83,534,985 (319 MB). The real-time tier (3.5 with 1 estimator, D-5) costs the larger model; the timing comparison is in `tools/latency.py`.
+- **Positioning** (docs/INDUSTRY.md; RSS, Shalev-Shwartz et al. 2017; ISO/IEC TR 5469): calibrated ranges are for efficiency, a worst-case floor is for safety. **No statistical safety guarantee is claimed.** Live context updates change inputs, not weights, and would still have to be verified per deployment.
+- **Safety floor status:** the short 0.4 s check exists (per planner, D-8). A deadline takeover (constant velocity plus band when the predictor is late) is **designed, not built**, unless T4 adds it; this line changes if it does.
 - **TabPFN tier per result:** the closed loop runs TabPFN-3.5-Fast with 1 estimator (recorded per row as `tabpfn_cfg`); the deployed real-time tier in DEPLOYMENT.md is TabPFN-3.5 with 1 estimator (D-5, D-18). Offline real-data results use the 3.5 default unless a row says otherwise.
 - **Timings:** our CPU timings come from x64 Python emulated on an ARM laptop, which is a worst case, not a deployment number. We quote no industry compute figures.
 - **Latency:** the overnight closed-loop run assumes zero latency: a command applies on the step it is computed. A delayed-command run is planned.

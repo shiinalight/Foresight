@@ -6,6 +6,8 @@ From the tracks of the people around a robot, Foresight predicts where each pers
 
 **The claim we test:** a forecaster that gives a robot honest uncertainty in a place it has never seen, and corrects itself from the last seconds of that place, with no training.
 
+**Positioning:** calibrated ranges are for efficiency; a worst-case floor is for safety. No statistical safety guarantee is claimed (see `RESULTS.md`, deployment notes).
+
 ## Start here
 
 1. **This README:** what it is, how to run it.
