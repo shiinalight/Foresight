@@ -1,0 +1,24 @@
+{
+ "1": {
+  "brier": 0.002272973235827536,
+  "auc": 0.9858728853383458,
+  "brier_all_zero": 0.0025,
+  "cells": 6400,
+  "true_cells": 16,
+  "expected_people": 15.88271090577074,
+  "people_predicted": 16,
+  "p_at_truth_mean": 0.08571934990028028,
+  "p_max": 0.2242685455478287
+ },
+ "2": {
+  "brier": 0.0024195584153066893,
+  "auc": 0.9653626253132832,
+  "brier_all_zero": 0.0025,
+  "cells": 6400,
+  "true_cells": 16,
+  "expected_people": 15.951369476346716,
+  "people_predicted": 16,
+  "p_at_truth_mean": 0.0304873140021429,
+  "p_max": 0.0911293985935756
+ }
+}
