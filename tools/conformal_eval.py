@@ -33,8 +33,8 @@ from run_offline import rows_for  # noqa: E402
 
 QS = (0.1, 0.5, 0.9)
 BINS = [0, 5, 10, 20, 30, 45, 61]
-LABEL = dict(V.MODEL_LABEL, lgbm="LightGBM (1,500 rows)", lgbm_all="LightGBM (all rows)")
-COLOR = dict(V.MODEL_COLOR, lgbm_all="#5b8def")
+LABEL = dict(V.MODEL_LABEL, lgbm="LightGBM (1,500 rows)", lgbm_all="LightGBM (all rows)", tabpfn="TabPFN (1,500 rows)", tabpfn_all="TabPFN (all rows)")
+COLOR = dict(V.MODEL_COLOR, lgbm_all="#5b8def", tabpfn_all="#a63d00")
 
 
 def main():
@@ -59,8 +59,8 @@ def main():
     summary, binned = [], []
     for key in a.models:
         t0 = time.perf_counter()
-        rows = fit if key in ("cv_band", "lgbm_all") else fit.sample(min(a.context, len(fit)), random_state=0)
-        kind = "lgbm" if key == "lgbm_all" else key
+        rows = fit if key in ("cv_band", "lgbm_all", "tabpfn_all") else fit.sample(min(a.context, len(fit)), random_state=0)
+        kind = {"lgbm_all": "lgbm", "tabpfn_all": "tabpfn"}.get(key, key)
         m = M.make(kind, **({"api": True} if (kind == "tabpfn" and a.api) else {})).fit(F.X_of(rows), rows[["ddx", "ddy"]].to_numpy())
         Qc, Qt = m.predict_quantiles(F.X_of(cal), QS), m.predict_quantiles(F.X_of(dst), QS)
         lo_c, hi_c, lo_t, hi_t = Qc[:, :, 0], Qc[:, :, 2], Qt[:, :, 0], Qt[:, :, 2]
