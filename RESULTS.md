@@ -167,3 +167,18 @@ Show "none qualifies" if no setting does. Also report success rate, and compute 
 2. TabPFN against LightGBM inside the same planner, on the switch seeds in particular (live against frozen).
 
 A win on (1) is not a TabPFN win.
+
+## Deployment notes (wording rules for the deck)
+
+- **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):
+  - The TabPFN code is Apache 2.0.
+  - The **TabPFN-3.5 and 3.5-Fast weights, which we use, are under a non-commercial licence.**
+  - The TabPFN-2 weights are Apache 2.0 with an attribution requirement.
+  - Prior Labs sells a commercial licence.
+  - So this is a research prototype. A product would need the commercial licence or the v2 weights (the tier grid in `tools/tier_grid.py` includes v2 for that reason).
+- **Timings:** our CPU timings come from x64 Python emulated on an ARM laptop, which is a worst case, not a deployment number. We quote no industry compute figures.
+- **Latency:** the overnight closed-loop run assumes zero latency: a command applies on the step it is computed. A delayed-command run is planned.
+- **Not deployable:** `lgbm_live` retrains six LightGBM models every 2 s, so it is an ablation only ("is the gain the rows or TabPFN?"). It stays out of the headline and the product diagram.
+- **Deployable rivals:**
+  - frozen `lgbm_all` plus the online conformal offset;
+  - `tabpfn_live`, which updates its context but never its weights.
