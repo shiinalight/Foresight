@@ -16,3 +16,4 @@ fig_adapt_hotel_to_eth.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6
 fig_adapt.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6,superseded,replaced by the rerun with intervals
 fig_incontext_hotel_to_eth.png,tools/incontext_eval.py,pilot (98 rows),aea8af6,superseded,dense rerun running
 fig_incontext_eth_to_hotel.png,tools/incontext_eval.py,pilot (73 rows),aea8af6,superseded,dense rerun running
+fig_tier_grid.png,tools/tier_grid.py,API v3.5 / v3.5-fast / v2; hotel->eth and crowd,67d7b3d,current,ETH->Hotel direction not yet in the grid
