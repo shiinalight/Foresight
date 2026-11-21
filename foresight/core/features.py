@@ -82,11 +82,17 @@ def _obstacle_vec(p, obst, bounds):
 
 
 def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, noise=0.1, seed=0,
-               episodes=None, query_only=False):
+               episodes=None, query_only=False, label_from="truth"):
     """Return a DataFrame with META_COLS + feature_names() columns.
 
     query_only=True: live use. Rows only for the last time step in `tracks`, one per agent and
-    horizon, with no target (ddx, ddy, true_x, true_y are NaN). Pass a short recent window."""
+    horizon, with no target (ddx, ddy, true_x, true_y are NaN).
+
+    label_from="observed": targets from the noisy, Kalman-filtered future positions, as a robot
+    would label its own live rows. "truth" (default) uses simulator / annotated positions.
+
+    Noise is drawn from `seed` in array order, so the same seed gives identical observations for
+    a growing history (prefix property): live queries and offline rows see the same noise."""
     dt = float(meta["dt"])
     k = max(1, round(OBS_STEP / dt))
     hsteps = [round(h / dt) for h in horizons]
@@ -168,7 +174,7 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                     elif s + hs >= S or np.isnan(Pt[s + hs, a, 0]):
                         continue
                     else:
-                        true_f = Pt[s + hs, a]
+                        true_f = Ps[s + hs, a] if label_from == "observed" else Pt[s + hs, a]
                         dd = R @ (true_f - p - v * h)
                     # mode label from ground truth over the next 2 s (or the horizon)
                     s2 = min(S - 1, s + round(2.0 / dt))

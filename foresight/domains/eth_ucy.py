@@ -42,8 +42,10 @@ def convert(raw_dir, out_dir, window=60.0, scene=None):
     pd.DataFrame(columns=["episode", "obstacle_id", "shape", "x", "y", "r", "w", "h", "angle"]).to_csv(
         o / "obstacles.csv", index=False)
     pad = 1.0
-    meta = {"sim": f"eth-ucy:{scene}", "dt": DT,
-            "bounds": [float(out.x.min() - pad), float(out.y.min() - pad), float(out.x.max() + pad), float(out.y.max() + pad)],
+    # No "bounds": the bounding box of all recorded positions is the camera's field of view, computed
+    # from future positions, and would leak into the wall features. Kept for drawing only.
+    meta = {"sim": f"eth-ucy:{scene}", "dt": DT, "bounds": None,
+            "draw_bounds": [float(out.x.min() - pad), float(out.y.min() - pad), float(out.x.max() + pad), float(out.y.max() + pad)],
             "episodes": {str(int(e)): {"seed": None, "duration": window, "regime_switch_t": None,
                                        "regime_before": scene, "regime_after": None}
                          for e in sorted(out.episode.unique())},

@@ -50,7 +50,7 @@ def main():
         m = M.make(kind).fit(F.X_of(fit), fit[["ddx", "ddy"]].to_numpy())
         # score over the whole episode, draw the chosen moment
         scored = V.predict_rows(m, q_ep)
-        V.draw_scene(ax, tr_ep, obst_ep, scored[np.isclose(scored.t, t)], t, meta["bounds"], axis_labels=False)
+        V.draw_scene(ax, tr_ep, obst_ep, scored[np.isclose(scored.t, t)], t, (meta.get("draw_bounds") or meta["bounds"]), axis_labels=False)
         name = {"cv_band": "Const. velocity + band", "tabpfn": "TabPFN"}.get(key, "LightGBM")
         sub = f"{len(fit):,} rows" if key != "cv_band" else "fixed band"
         ax.set_title(f"{name} ({sub})\nin range {100 * scored.inside.mean():.0f}% · error {scored.err.mean():.2f} m",

@@ -61,7 +61,7 @@ def main():
     ax = fig.add_axes([0.08, 0.08, 0.68, 0.80])
 
     def draw(t):
-        V.draw_scene(ax, tr_ep, obst_ep, q[np.isclose(q.t, t)], t, meta["bounds"])
+        V.draw_scene(ax, tr_ep, obst_ep, q[np.isclose(q.t, t)], t, (meta.get("draw_bounds") or meta["bounds"]))
         seen = q[q.t <= t + 1e-6]
         fig.texts.clear()
         fig.text(0.08, 0.94, f"{V.MODEL_LABEL[a.model]}: where will each person be in {a.h:g} s?",

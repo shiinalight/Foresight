@@ -24,14 +24,15 @@ from foresight.core import models as M
 from foresight.core import schema
 
 
-def rows_for(data_dir, noise, seed=0, horizons=(1.0, 2.0)):
+def rows_for(data_dir, noise, seed=0, horizons=(1.0, 2.0), label_from="truth"):
     hz = "_".join(f"{h:g}" for h in horizons)
-    cache = Path(data_dir) / f"rows_noise{noise}_h{hz}.parquet"
+    lab = "" if label_from == "truth" else f"_{label_from}"
+    cache = Path(data_dir) / f"rows_noise{noise}_h{hz}{lab}.parquet"
     if cache.exists():
         return pd.read_parquet(cache)
     tracks, obst, meta = schema.load(data_dir)
     t0 = time.perf_counter()
-    df = F.build_rows(tracks, obst, meta, noise=noise, seed=seed, horizons=horizons)
+    df = F.build_rows(tracks, obst, meta, noise=noise, seed=seed, horizons=horizons, label_from=label_from)
     print(f"built {len(df)} rows from {df.episode.nunique()} episodes in {time.perf_counter() - t0:.0f} s")
     df.to_parquet(cache)
     return df

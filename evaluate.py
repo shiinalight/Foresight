@@ -42,6 +42,11 @@ def scores(Q, Y):
     j = QS.index(0.5)
     err = np.linalg.norm(Q[:, :, j] - Y, axis=1)
     out = {"err_mean": float(err.mean()), "err_median": float(np.median(err))}
+    pin = 0.0
+    for jq, qv in enumerate(QS):
+        d = Y - Q[:, :, jq]
+        pin += np.mean(np.maximum(qv * d, (qv - 1) * d))
+    out["pinball"] = float(pin / len(QS))
     for lo, hi in CENTRAL:
         a, b = QS.index(lo), QS.index(hi)
         out[f"cov{round(100 * (hi - lo))}"] = float(((Y >= Q[:, :, a]) & (Y <= Q[:, :, b])).mean())
@@ -147,17 +152,19 @@ def fig_efficiency(eff, path, src="eth", dst="hotel"):
 
 def table(res, timing):
     lines = ["| Direction | Model | Rows seen | " + " | ".join(f"Error +{h:g} s" for h in HZ)
-             + " | 80% range holds truth (+2 s) | 80% range width (+2 s) | Time (s) |",
-             "|---|---|---|" + "---|" * len(HZ) + "---|---|---|"]
+             + " | Per-axis coverage of 10–90% (+2 s) | Joint coverage of the 5–95% box (+2 s, target ~80%) "
+               "| 10–90% width (+2 s) | Pinball (+2 s) | Time (s) |",
+             "|---|---|---|" + "---|" * len(HZ) + "---|---|---|---|---|"]
     for pair, r in res.items():
         a, b = pair.split("->")
         for key in ("cv", "cv_band", "lgbm", "lgbm_all", "tabpfn"):
             row = r[key]
             cov = "—" if key == "cv" else f"{100 * row['2']['cov80']:.0f}%"
+            joint = "—" if key == "cv" else f"{100 * row['2']['joint90']:.0f}%"
             wid = "—" if key == "cv" else f"{row['2']['width80']:.2f} m"
             lines.append(f"| {NAME[a]} → {NAME[b]} | {LABEL[key]} | {row['2']['train_rows']:,} | "
                          + " | ".join(f"{row[f'{h:g}']['err_mean']:.3f} m" for h in HZ)
-                         + f" | {cov} | {wid} | {timing[pair][key]:.0f} |")
+                         + f" | {cov} | {joint} | {wid} | {row['2']['pinball']:.4f} | {timing[pair][key]:.0f} |")
     return "\n".join(lines)
 
 

@@ -45,6 +45,7 @@ def main():
     ap.add_argument("--train-data", default=None,
                     help="bank from another dataset; x axis becomes seconds in the scene (e.g. --train-data data/hotel --data data/eth)")
     ap.add_argument("--horizons", type=float, nargs="*", default=[1.0, 2.0])
+    ap.add_argument("--tabpfn-fast", type=int, default=1, help="TabPFN-3.5-Fast, 1 estimator: same accuracy, ~13x faster")
     a = ap.parse_args()
 
     df = rows_for(a.data, a.noise, horizons=tuple(a.horizons))
@@ -66,10 +67,14 @@ def main():
         frozen = None
         xlabel = "Time since the crowd changed behaviour"
     eps = sorted(test.episode.unique())[: a.episodes]
+    # rows from the current scene are labelled from observed (noisy, filtered) positions, as the robot
+    # would label them itself; queries are still scored against true positions
+    obs = rows_for(a.data, a.noise, horizons=tuple(a.horizons), label_from="observed")
+    obs = obs[np.isclose(obs.h, a.h)]
     rows = []
     t0 = time.perf_counter()
     for ep in eps:
-        live = df[df.episode == ep]
+        live = obs[obs.episode == ep]
         q_ep = test[test.episode == ep]
         all_t = sorted(q_ep.t.unique())
         step = max(1, int(round(a.every / np.median(np.diff(all_t)))))
@@ -78,17 +83,20 @@ def main():
             q = q_ep[np.isclose(q_ep.t, t)]
             for sname, mix in STRATS.items():
                 ctx = glob if mix is None else C.select(q, bank, live=live, budget=a.budget, mix=mix)
-                if len(ctx) < 20:
-                    continue                                   # recent-only before enough outcomes exist
+                thin = len(ctx) < 20       # e.g. "recent" before enough outcomes exist: scored as constant
+                                           # velocity with no range, on the same queries as every strategy
                 for mname in a.models + (["lgbm_frozen"] if frozen is not None and sname == "global" else []):
-                    m = frozen if mname == "lgbm_frozen" else M.make(mname).fit(F.X_of(ctx), ctx[["ddx", "ddy"]].to_numpy())
-                    Q = m.predict_quantiles(F.X_of(q), (0.1, 0.5, 0.9))
+                    if thin and mname != "lgbm_frozen":
+                        Q = np.zeros((len(q), 2, 3))
+                    else:
+                        m = frozen if mname == "lgbm_frozen" else M.make(mname, **({"fast": True, "n_estimators": 1} if (mname == "tabpfn" and a.tabpfn_fast) else {})).fit(F.X_of(ctx), ctx[["ddx", "ddy"]].to_numpy())
+                        Q = m.predict_quantiles(F.X_of(q), (0.1, 0.5, 0.9))
                     Y = q[["ddx", "ddy"]].to_numpy()
                     err = np.linalg.norm(Q[:, :, 1] - Y, axis=1)
                     cov = ((Y >= Q[:, :, 0]) & (Y <= Q[:, :, 2])).mean(axis=1)
                     for e, c, s in zip(err, cov, q.since_switch):
                         rows.append(dict(episode=ep, t=t, since=s, strategy=sname, model=mname, err=e, cov=c,
-                                         n_ctx=len(ctx)))
+                                         n_ctx=len(ctx), thin=thin))
         print(f"episode {ep} done ({time.perf_counter() - t0:.0f} s)")
     res = pd.DataFrame(rows)
     Path("results").mkdir(exist_ok=True); res.to_csv("results/adapt.csv", index=False)
