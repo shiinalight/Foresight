@@ -39,11 +39,12 @@ A prediction-and-planning layer for a robot moving among people. Each person's p
 
 | # | Claim | Status | Evidence / what decides it |
 |---|---|---|---|
-| A | **Safe out of the box in a new place:** TabPFN's ranges keep their promise in a scene it has never seen, while LightGBM's collapse | **Supported on f1 features; rerun on f2 in progress** (Sat 23:40: f1 leaked world heading through the no-obstacle padding on ETH/Hotel, D-20) | f1: Hotel → ETH joint box coverage TabPFN 83% against LightGBM 46–62%, error level. To be replaced by the f2 numbers [RESULTS] |
-| B | **Adapts in seconds without retraining:** reading the new scene's recent rows improves TabPFN fastest | **Promising, unconfirmed** | Pilot, Hotel → ETH: first 5 s, 0.425 against 0.536 m for frozen LightGBM. Pending the dense real-data run with person-level intervals, and **T3** (held-out crowd behaviour) |
-| C | **Prediction-aware planning beats standard navigation** | **No support yet** | In the plaza, the standard methods are fast and collision-free (pilot). Decided by **T1**, then **T2** (a scene that doesn't let robots push through) |
-| D | **Deployable** | Partly settled | Real-time tier = TabPFN-3.5 with 1 estimator (D-5, D-18). Licence: 3.5 weights are non-commercial, v2 is Apache 2.0. Latency on target-class hardware pending (Nooshin's Mac) |
-| — | **When to use which** (honest framing) | Holds so far | Familiar data with many rows: LightGBM is as good. New place or new behaviour, few rows: TabPFN is safer. Both under-cover turns |
+| A | **Calibrated ranges in a new place:** TabPFN's boxes keep their nominal coverage in a scene it has never seen; untuned LightGBM's under-cover. **No point-error gain is claimed** | **Being re-checked on f4** | f1 numbers (Hotel → ETH joint coverage 83% vs 46–62%) are superseded: f1 leaked world heading (D-20) and used a weak constant velocity (D-26). On f4, tuned constant velocity is at or below every model's point error on the f1 test rows (red-team, DEFENSE.md #1). The rerun includes tuned LightGBM (m50:n100) and the interval score. Nominal joint coverage of the 5–95% box: 80–90% |
+| B | **Adapts in seconds without retraining:** reading the new scene's own completed rows improves TabPFN | **Open** | The earlier "first 5 s" pilot is withdrawn: no in-scene row can have a known outcome in the first ~4 s, so it compared TabPFN with LightGBM at cold start. It needs the f4 rerun with the fixed recency-only arm (DEFENSE.md #4) and T3 |
+| C | **Prediction-aware planning beats standard navigation** | **No support yet** | Default plaza: the learned planners sit on the constant-velocity margin curve (T1, 100 crowds). The crossing crowd is being tested; a dated amendment comes first (DEFENSE.md #3). Fallback if no gain: reported as a stress test |
+| D | **Deployable** | Partly settled | The loop runs TabPFN-3.5-Fast with 1 estimator. The proposed deployed tier is 3.5 with 1 estimator (D-5, D-18). Licence: 3.5 weights are non-commercial; v2 is Apache 2.0. Mac and GPU timings pending |
+| — | **TabPFN learns more per example row** | Supported in the simulator (f4) | Crossing crowd, +2 s: TabPFN-Fast on 2,000 rows (0.646 m) ≈ LightGBM on 20,000 rows (0.634 m); LightGBM on all 73k rows is best (0.606 m). results/context_size.csv; API part pending |
+| — | **When to use which** | Holds so far | Many familiar rows: LightGBM is as good or better. Few rows, or a new place: TabPFN gives better-calibrated ranges. Both under-cover turns |
 
 ## 3. Framework
 
@@ -51,8 +52,8 @@ The modular sense–predict–plan pipeline. Each stage has its own pass/fail ch
 
 | Stage | Module | Status |
 |---|---|---|
-| S0 Data | `foresight/domains/` (crowd simulator, ETH/Hotel adapter), `INTERFACE.md` format | Plaza passes the prediction check. **Fails as a navigation test** (T2) |
-| S1 State estimate | Kalman filter in `features.py` | Works. Velocity error not yet reported |
+| S0 Data | `foresight/domains/` (crowd simulator, ETH/Hotel adapter), `INTERFACE.md` format | Crossing crowd passes on f4, narrowly (D-27: LightGBM 18.7% better than constant velocity, TabPFN-Fast on 1k rows 7.5%). Default plaza fails as a navigation test (T1) |
+| S1 State estimate | Kalman filter in `features.py` | Passes (D-26): filter tuned on training data; constant velocity at 4.8 s within 3–14% of the published value (Schöller et al. 2020), depending on the window selection |
 | S2 Table | `features.py`: agent-frame rows, target = deviation from constant velocity | Done. Leakage and parity tests pass |
 | S3 Context | `context.py`: recent, similar and fill rows | Done. Mix beats single sources (pilot) |
 | S4 Forecaster | `models.py`: TabPFN and baselines behind one interface | Done. Model tiers in progress |

@@ -61,6 +61,8 @@ Each tier runs where its latency fits:
 | Offline | TabPFN-3.5 or the hosted Thinking/Plus models (API) | Building and checking the context bank, analysis, evaluation | Cloud. **Never in the control loop** (network delay and dropouts) [judgment] |
 | Safety floor | Constant velocity plus band, and the 0.4 s hard check | Takes over whenever the predictor is late or fails | On the robot, independent of TabPFN |
 
+**Correction (red-team, DEFENSE.md #8):** v2 was *better* than 3.5 on Hotel → ETH (0.449 vs 0.474 m, 3 seeds), not "matching". The closed loop runs 3.5-Fast with 1 estimator; every result states its tier. The context-size test (results/context_size.csv) shows TabPFN still improving at 2,000 rows in the simulator, so the real-time context is set per setting at the 02:00 decision.
+
 **Evidence (tier grid, 21 Nov; results/tier_grid*.csv, single context sample, seed repeats in tier_seeds):** across 3.5 / Fast × 1-8 estimators × 250-2,000 rows, accuracy barely changes on Hotel → ETH and on the crowd; on ETH → Hotel Fast-1 is clearly worse from 1,000 rows on, while 3.5-1 equals 3.5-8 in both directions. v2 (Apache) matches 3.5 from 1,000 rows on Hotel → ETH and the crowd, and is weaker on ETH → Hotel (0.325–0.350 m). The cost of 3.5-1 against Fast-1 is the deck trade-off; `tools/latency.py` times both.
 
 **Original evidence request:** the earlier "Fast with 1 estimator equals the default" check (F3) compared Fast with 1 estimator against the default with 8, which mixes two changes. Run a clean grid:
