@@ -87,28 +87,29 @@ def main():
                                            # velocity with no range, on the same queries as every strategy
                 for mname in a.models + (["lgbm_frozen"] if frozen is not None and sname == "global" else []):
                     if thin and mname != "lgbm_frozen":
-                        Q = np.zeros((len(q), 2, 3))
+                        Q = np.zeros((len(q), 2, 5))
                     else:
                         m = frozen if mname == "lgbm_frozen" else M.make(mname, **({"fast": True, "n_estimators": 1} if (mname == "tabpfn" and a.tabpfn_fast) else {})).fit(F.X_of(ctx), ctx[["ddx", "ddy"]].to_numpy())
-                        Q = m.predict_quantiles(F.X_of(q), (0.1, 0.5, 0.9))
+                        Q = m.predict_quantiles(F.X_of(q), (0.05, 0.1, 0.5, 0.9, 0.95))
                     Y = q[["ddx", "ddy"]].to_numpy()
-                    err = np.linalg.norm(Q[:, :, 1] - Y, axis=1)
-                    inside = (Y >= Q[:, :, 0]) & (Y <= Q[:, :, 2])
-                    cov, joint = inside.mean(axis=1), inside.all(axis=1)      # per-axis; the 2D box itself
-                    for e, c, j, s in zip(err, cov, joint, q.since_switch):
-                        rows.append(dict(episode=ep, t=t, since=s, strategy=sname, model=mname, err=e, cov=c,
-                                         joint=float(j), n_ctx=len(ctx), thin=thin))
+                    err = np.linalg.norm(Q[:, :, 2] - Y, axis=1)
+                    inside = (Y >= Q[:, :, 1]) & (Y <= Q[:, :, 3])
+                    cov, joint = inside.mean(axis=1), inside.all(axis=1)      # 10-90: per-axis; 2D box
+                    joint90 = ((Y >= Q[:, :, 0]) & (Y <= Q[:, :, 4])).all(axis=1)   # the robot's 5-95% box (~81%)
+                    for e, c, j, j9, s, aid in zip(err, cov, joint, joint90, q.since_switch, q.agent_id):
+                        rows.append(dict(episode=ep, agent_id=aid, t=t, since=s, strategy=sname, model=mname, err=e,
+                                         cov=c, joint=float(j), joint90=float(j9), n_ctx=len(ctx), thin=thin))
         print(f"episode {ep} done ({time.perf_counter() - t0:.0f} s)")
     res = pd.DataFrame(rows)
     Path("results").mkdir(exist_ok=True); res.to_csv("results/adapt.csv", index=False)
     res["bin"] = pd.cut(res.since, [b[0] for b in BINS] + [BINS[-1][1]], labels=[b[2] for b in BINS], right=False)
     tab = res.groupby(["model", "strategy", "bin"], observed=True).err.mean().unstack("bin").round(3)
-    jtab = res.groupby(["model", "strategy", "bin"], observed=True).joint.mean().unstack("bin").round(3)
+    jtab = res.groupby(["model", "strategy", "bin"], observed=True).joint90.mean().unstack("bin").round(3)
     print("mean error (m)")
     print(tab)
-    print("joint coverage of the 10-90% box (per-axis 80% -> ~64% if independent)")
+    print("joint coverage of the 5-95% box (the robot's box; ~81% if the axes are independent)")
     print(jtab)
-    print(res.groupby(["model", "strategy"]).agg(err=("err", "mean"), cov=("cov", "mean"), joint=("joint", "mean")).round(3))
+    print(res.groupby(["model", "strategy"]).agg(err=("err", "mean"), cov=("cov", "mean"), joint=("joint", "mean"), joint90=("joint90", "mean")).round(3))
 
     fig, axes2 = plt.subplots(2, len(a.models), figsize=(5.5 * len(a.models), 7.6), sharey="row", facecolor="white",
                               squeeze=False)
@@ -138,7 +139,9 @@ def main():
             r = jtab.loc[("lgbm_frozen", "global")]
             ax.plot(list(r.index.astype(str)), 100 * r.values, marker="s", lw=1.5, ls="--", color="#1f2328")
         ax.set_xlabel(xlabel, color=V.C_MUTED)
-    axes2[1][0].set_ylabel("Box holds the truth (%)", color=V.C_MUTED)
+    axes2[1][0].set_ylabel("5-95% box holds the truth (%)", color=V.C_MUTED)
+    for ax in axes2[1]:
+        ax.axhline(81, color=V.C_MUTED, ls=":", lw=1); ax.text(0, 82, "~81% target (axes independent)", fontsize=7, color=V.C_MUTED)
     axes[0].set_ylabel(f"Mean error at +{a.h:g} s (m)", color=V.C_MUTED)
     axes[-1].legend(frameon=False, fontsize=9, labelcolor=V.C_INK)
     fig.suptitle("Which context rows, after the crowd changes", fontsize=13, weight="bold", color=V.C_INK, x=0.06, ha="left")

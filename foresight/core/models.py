@@ -50,8 +50,8 @@ class ConstantBand:
 class LGBMQuantile:
     name = "lgbm"
 
-    def __init__(self, n_estimators=300):
-        self.n = n_estimators
+    def __init__(self, n_estimators=300, min_child_samples=10, num_leaves=31, n_jobs=None):
+        self.n, self.mcs, self.leaves, self.n_jobs = n_estimators, min_child_samples, num_leaves, n_jobs
 
     def fit(self, X, Y):
         self.X, self.Y = X, Y
@@ -65,8 +65,9 @@ class LGBMQuantile:
             for j, q in enumerate(qs):
                 key = (ax, q)
                 if key not in self.models:
-                    m = LGBMRegressor(objective="quantile", alpha=q, n_estimators=self.n,
-                                      learning_rate=0.05, num_leaves=31, min_child_samples=10, verbose=-1)
+                    m = LGBMRegressor(objective="quantile", alpha=q, n_estimators=self.n, learning_rate=0.05,
+                                      num_leaves=self.leaves, min_child_samples=self.mcs, verbose=-1,
+                                      **({"n_jobs": self.n_jobs} if self.n_jobs else {}))
                     self.models[key] = m.fit(self.X, self.Y[:, ax])
                 out[:, ax, j] = self.models[key].predict(X)
         out.sort(axis=2)                                  # no crossing quantiles
@@ -120,5 +121,10 @@ class TabPFNQuantile:
 
 
 def make(name, **kw):
+    """name may carry LightGBM settings: "lgbm:m50:n100" = min_child_samples 50, 100 trees."""
+    if name.startswith("lgbm:"):
+        for part in name.split(":")[1:]:
+            kw[{"m": "min_child_samples", "n": "n_estimators", "l": "num_leaves"}[part[0]]] = int(part[1:])
+        name = "lgbm"
     return {"cv": ConstantVelocity, "cv_band": ConstantBand, "lgbm": LGBMQuantile,
             "tabpfn": TabPFNQuantile}[name](**kw)
