@@ -4,6 +4,28 @@
 
 Last updated: Sat 21 Nov, 23:20 (Berlin). Code freeze Sun 12:30; submission Sun 16:30.
 
+## 0. Orchestration (live; the CTO session owns this section)
+
+Times are Berlin. Freeze Sun 12:30; submit by 16:00 (hard deadline 16:30).
+
+| Window | Evidence (builder session) | TabPFN usage and ablations (CTO + subagents) | Story, defence, visuals (CTO + subagents) |
+|---|---|---|---|
+| Sat 23:30 → 01:00 | T2 in the crossing crowd (f4); claim A rerun on f4 (local) | Context size and retrieval, local part (LightGBM, TabPFN fast-1 up to 2k rows) | Step-by-step walkthrough page; red-team review and Q&A; presentation storyline and slide plan; industry-practice brief |
+| 01:00 → 02:00 | Calibration both directions (API); oracle gate in the T2 setting; T3 in the crossing crowd | Context size on the API (TabPFN-3.5, up to 20k rows; retrieved 5k) | Fold verified references and wording fixes into explainer and docs |
+| **02:00 decision** | | **Real-time TabPFN setup** (context size, retrieval, model tier) and whether the scene-tag / history-length ablations run | |
+| 02:00 → 03:30 | T4: calibration in the loop, refresh interval, latency budget, 10 crowds each | Ablations, if approved at 02:00 (offline) | Explainer v4 with f4 numbers |
+| **03:30** | Dated amendment to the pre-registration; **launch T5** (40 fresh crowds, all with a behaviour change) | | |
+| 03:30 → 08:00 | T5 runs | Real-data in-context and adaptation reruns on f4 (API) | Defence dossier v2 from red-team findings |
+| 08:00 → 10:30 | T5 analysis per the pre-registered rule; final figures on f4; traces of the showcase crowd; four-panel video render | Walkthrough rerun on f4 | RESULTS.md final; explainer and walkthrough final; README |
+| 10:30 → 12:30 | Promote code and results to `main` | | Deck; 3-minute video script final |
+| 12:30 → 16:00 | Freeze | | Record the video (people); slides; submit |
+
+**Standing rules for the orchestration:**
+- **Gates:** every gate result (S0, T2 pick, oracle, T3, T4) comes to the CTO session before the next step starts.
+- **Decisions:** every decision gets a DECISIONS row with its evidence.
+- **Docs and status:** `PLAN.md` and the explainer are updated when a claim's status changes.
+- **Subagents:** create only their own new files; bugs in shared code go to the file's owner.
+
 ## 1. What we are building
 
 A prediction-and-planning layer for a robot moving among people. Each person's position 1 to 2 s ahead is predicted as a **range**, by TabPFN reading a table of recent situations. The robot picks the move that keeps clear of those ranges.
