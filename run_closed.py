@@ -38,11 +38,11 @@ from run_offline import rows_for
 HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
-       "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode",
+       "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode", "smooth",
        "tabpfn_cfg"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
-            "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere"}
+            "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere", "smooth": False}
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
 
@@ -99,6 +99,26 @@ class Predictor:
         return V.predict_rows(self.model, q, (self.args.box_q, 0.5, 1 - self.args.box_q))
 
 
+def zigzag(headings, path_len, window=2.0, big=np.radians(45)):
+    """heading_change_per_m: total |heading change| of the robot's motion per metre travelled (rad/m).
+    reversals_45: turns of > 45 deg followed within `window` s by a turn of > 45 deg the other way
+    (turning points of the cumulative heading)."""
+    if len(headings) < 3 or path_len <= 0:
+        return {"heading_change_per_m": 0.0, "reversals_45": 0}
+    t = np.array([h[0] for h in headings]); a = np.unwrap(np.array([h[1] for h in headings]))
+    d = np.diff(a)
+    total = float(np.abs(d).sum())
+    sgn = np.sign(np.where(np.abs(d) < np.radians(1), 0, d))
+    nz = np.flatnonzero(sgn)
+    turns = [nz[0]] + [j for i, j in zip(nz[:-1], nz[1:]) if sgn[j] != sgn[i]] if len(nz) else []
+    pts = [(t[i], a[i]) for i in turns] + [(t[-1], a[-1])]
+    rev = 0
+    for (t0, a0), (t1, a1), (t2, a2) in zip(pts[:-2], pts[1:-1], pts[2:]):
+        if abs(a1 - a0) > big and abs(a2 - a1) > big and (t2 - t0) <= 2 * window and np.sign(a1 - a0) != np.sign(a2 - a1):
+            rev += 1
+    return {"heading_change_per_m": total / path_len, "reversals_45": rev}
+
+
 def oracle_rows(sim, cmd, horizons, dt, t_now, short_h=0.4):
     """Perfect prediction: deep-copy the simulator, roll it forward holding the current robot command,
     and return each person's TRUE position at short_h and every horizon as zero-width boxes
@@ -149,6 +169,10 @@ def run_episode(pred, seed, args, log=False):
     path_len, stopped_steps, intrusion_steps, decels = 0.0, 0, 0, []
     start = np.array([state[0]["x"], state[0]["y"]]); goal0 = np.array([state[0]["goal_x"], state[0]["goal_y"]])
     speeds = tuple(s * args.max_speed for s in (0.0, 1 / 3, 2 / 3, 1.0))   # one top speed for every planner
+    smooth = (dict(P.SMOOTH, a_max=args.sm_a_max, a_brake=args.sm_a_brake, w_max=np.radians(args.sm_w_max),
+                   dt=args.replan, l_turn=args.sm_l_turn, l_dv=args.sm_l_dv, hyst=args.sm_hyst)
+              if getattr(args, "smooth", False) else None)
+    headings = []                                            # (t, heading) while moving, for zigzag metrics
     cmd = np.zeros(2)
     while k * dt < args.duration:
         p_robot = np.array([state[0]["x"], state[0]["y"]])
@@ -166,7 +190,8 @@ def run_episode(pred, seed, args, log=False):
                 v_robot = np.array([state[0]["vx"], state[0]["vy"]])
                 cmd, info = P.choose_vo(p_robot, v_robot, goal, q.drop_duplicates("agent_id") if len(q) else q,
                                         max_speed=args.max_speed, w=args.vo_w, horizon=args.vo_h,
-                                        bounds=meta["bounds"], obstacles=obstacles)
+                                        bounds=meta["bounds"], obstacles=obstacles,
+                                        prev_cmd=cmd if smooth else None, smooth=smooth)
                 pr = q
             else:
                 if pred.kind == "reactive":                     # people frozen where they are: no prediction at all
@@ -177,7 +202,8 @@ def run_episode(pred, seed, args, log=False):
                     pr = pred.predict(q, k * dt, hist_df, obst_df, meta, seed) if len(q) else q
                 tp1 = time.perf_counter()
                 cmd, info = P.choose(p_robot, goal, pr, margin=args.margin, bounds=meta["bounds"],
-                                     obstacles=obstacles, horizons=args.hz, speeds=speeds)
+                                     obstacles=obstacles, horizons=args.hz, speeds=speeds,
+                                     prev_cmd=cmd if smooth else None, smooth=smooth)
             t1 = time.perf_counter()
             t_pred += t1 - t0
             n_plans += 1; n_fallback += int(info.get("fallback", False))
@@ -198,6 +224,8 @@ def run_episode(pred, seed, args, log=False):
         hist.append(state)
         rob = state[0]
         v_act = float(np.hypot(rob["vx"], rob["vy"]))           # the robot's actual velocity, every planner
+        if v_act >= 0.05:
+            headings.append((k * dt, float(np.arctan2(rob["vy"], rob["vx"]))))
         path_len += float(np.hypot(rob["x"] - prev[0]["x"], rob["y"] - prev[0]["y"]))
         stopped_steps += int(v_act < 0.05)
         gaps = np.array([np.hypot(r["x"] - rob["x"], r["y"] - rob["y"]) - r["radius"] - rob["radius"] for r in state[1:]])
@@ -223,6 +251,7 @@ def run_episode(pred, seed, args, log=False):
            "intrusion_s": intrusion_steps * dt, "path_length": path_len,
            "path_efficiency": float(max(np.linalg.norm(goal0 - start) - 0.5, 0) / path_len) if (t_goal and path_len > 0) else np.nan,
            "people_decel": float(np.mean(decels)) if decels else 0.0, "episode_s": t_end,
+           **zigzag(headings, path_len),
            "fallback_rate": n_fallback / max(n_plans, 1),
            "pred_seconds": t_pred, "pred_ms_per_plan": 1000 * t_pred / max(n_plans, 1)}
     logd = {"frames": frames, "plans": plans, "obst": obstacles, "bounds": meta["bounds"]} if log else None
@@ -256,6 +285,13 @@ def main():
     ap.add_argument("--robot-repulsion", type=float, default=2.0, help="T2 knob: how hard people push away from the robot")
     ap.add_argument("--ignore-robot", type=float, default=0.0, help="T2 knob: share of people who ignore the robot")
     ap.add_argument("--goal-mode", default="anywhere", choices=["anywhere", "cross"], help="crowd: goals anywhere, or cross the plaza and leave")
+    ap.add_argument("--smooth", action="store_true", help="dynamic window + smoothness cost + commitment (all planners using choose/choose_vo)")
+    ap.add_argument("--sm-a-max", type=float, default=1.0, help="max acceleration, m/s^2")
+    ap.add_argument("--sm-a-brake", type=float, default=2.0, help="max braking, m/s^2")
+    ap.add_argument("--sm-w-max", type=float, default=90.0, help="max turn rate, deg/s")
+    ap.add_argument("--sm-l-turn", type=float, default=0.3, help="smoothness cost per rad of heading change (m)")
+    ap.add_argument("--sm-l-dv", type=float, default=0.2, help="smoothness cost per m/s of speed change (m)")
+    ap.add_argument("--sm-hyst", type=float, default=0.1, help="keep the previous command if within this much score (m)")
     ap.add_argument("--vo-w", type=float, default=1.0, help="velocity-obstacle collision weight")
     ap.add_argument("--vo-h", type=float, default=5.0, help="velocity-obstacle time horizon (s)")
     ap.add_argument("--tag", default="", help="suffix for the run id (parallel runs)")
@@ -289,7 +325,7 @@ def main():
                     "threads": a.threads, "max_speed": a.max_speed,
                     "vo_w": a.vo_w if kind == "vo" else np.nan, "vo_h": a.vo_h if kind == "vo" else np.nan,
                     "robot_repulsion": a.robot_repulsion, "ignore_robot": a.ignore_robot,
-                    "features_version": F.FEATURES_VERSION, "goal_mode": a.goal_mode}
+                    "features_version": F.FEATURES_VERSION, "goal_mode": a.goal_mode, "smooth": a.smooth}
             out.append(res)
             pd.DataFrame([res]).to_csv(csv_path, mode="a", header=not csv_path.exists(), index=False)   # checkpoint
             if len(rf):

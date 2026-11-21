@@ -30,6 +30,38 @@ def candidates(p_robot, goal, speeds=SPEEDS, turns=TURNS_DEG):
     return np.array(out)
 
 
+SMOOTH = dict(a_max=1.0, a_brake=2.0, w_max=np.radians(90.0), dt=0.4, l_turn=0.3, l_dv=0.2, hyst=0.1)
+
+
+def _wrap(a):
+    return (a + np.pi) % (2 * np.pi) - np.pi
+
+
+def augment(cands, prev, sm, max_speed):
+    """Add candidates around the previous command (so the dynamic window is not empty) and prev itself last."""
+    ps = float(np.hypot(*prev)); pa = np.arctan2(prev[1], prev[0])
+    if ps < 0.05:
+        return np.vstack([cands, prev[None, :]])
+    dw = sm["w_max"] * sm["dt"]
+    speeds = np.clip(ps + np.array([-sm["a_brake"], -sm["a_max"] / 2, 0, sm["a_max"] / 2, sm["a_max"]]) * sm["dt"], 0, max_speed)
+    extra = [s * np.array([np.cos(pa + d), np.sin(pa + d)]) for s in np.unique(speeds) if s > 1e-6
+             for d in np.linspace(-dw, dw, 5)]
+    return np.vstack([cands, np.array(extra), prev[None, :]])
+
+
+def dynamics(cands, prev, sm):
+    """Feasible within one replan (DWA-style window) plus the heading and speed change of each candidate."""
+    ps = float(np.hypot(*prev)); sp = np.hypot(cands[:, 0], cands[:, 1])
+    dv = sp - ps
+    ok_v = (dv <= sm["a_max"] * sm["dt"] + 1e-9) & (dv >= -sm["a_brake"] * sm["dt"] - 1e-9)
+    if ps < 0.05:
+        dth = np.zeros(len(cands)); ok_h = np.ones(len(cands), bool)
+    else:
+        dth = np.where(sp > 0.05, _wrap(np.arctan2(cands[:, 1], cands[:, 0]) - np.arctan2(prev[1], prev[0])), 0.0)
+        ok_h = np.abs(dth) <= sm["w_max"] * sm["dt"] + 1e-9
+    return ok_v & ok_h, dth, dv
+
+
 def gap_to_box(pt, rows):
     """Distance from world point pt to each row's box (rows: DataFrame with px, py, vx, vy, h,
     theta, lo_a, hi_a, lo_c, hi_c). Zero if inside."""
@@ -44,7 +76,7 @@ def gap_to_box(pt, rows):
 
 
 def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin=0.2, bounds=None,
-           obstacles=(), horizons=(1.0, 2.0), short_h=0.4, stop_bias=0.15, speeds=SPEEDS):
+           obstacles=(), horizons=(1.0, 2.0), short_h=0.4, stop_bias=0.15, speeds=SPEEDS, prev_cmd=None, smooth=None):
     """Return (cmd, info). pred_rows: predicted boxes for the people at this moment.
 
     Besides the predicted boxes at `horizons`, a hard short-range check: at `short_h` seconds
@@ -52,9 +84,17 @@ def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin
     candidate that would touch someone then is vetoed. If no candidate is safe, the robot
     stops unless some move keeps a clearly larger worst-case gap (by `stop_bias` metres)."""
     cands = candidates(p_robot, goal, speeds=speeds)
+    use_sm = smooth is not None and prev_cmd is not None
+    if use_sm:                                   # optional: dynamic window + smoothness + commitment (off by default)
+        prev = np.asarray(prev_cmd, float)
+        cands = augment(cands, prev, smooth, max(speeds))
+        feas, dth, dvv = dynamics(cands, prev, smooth)
     worst = np.full(len(cands), np.inf)
     ok = np.ones(len(cands), bool)
     reason = np.array(["none"] * len(cands), dtype=object)        # first reason a candidate is vetoed
+    if use_sm:
+        ok &= feas
+        reason[~feas] = "dynamics"
     now = pred_rows.drop_duplicates("agent_id") if len(pred_rows) else pred_rows
     for i, cmd in enumerate(cands):
         if len(now):                                   # short-range constant-velocity check
@@ -83,13 +123,17 @@ def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin
     reason[ok & (worst < margin)] = "box"
     end = p_robot + cands * max(horizons)
     progress = np.linalg.norm(goal - p_robot) - np.linalg.norm(goal - end, axis=1)
+    score = progress - (smooth["l_turn"] * np.abs(dth) + smooth["l_dv"] * np.abs(dvv) if use_sm else 0.0)
     if safe.any():
-        i = int(np.argmax(np.where(safe, progress, -np.inf)))
+        i = int(np.argmax(np.where(safe, score, -np.inf)))
+        if use_sm and safe[-1] and score[-1] >= score[i] - smooth["hyst"]:
+            i = len(cands) - 1                   # commitment: keep the previous command (hysteresis)
         fallback = False
     else:
         fallback = True
         best = int(np.argmax(np.where(ok, worst, -np.inf))) if ok.any() else 0
-        i = 0 if (not ok[best] or worst[0] >= worst[best] - stop_bias) else best     # 0 = stop
+        stop_ok = (not use_sm) or feas[0]
+        i = 0 if (not ok[best] or (stop_ok and worst[0] >= worst[best] - stop_bias)) else best     # 0 = stop
     cand_table = {"vx": cands[:, 0], "vy": cands[:, 1], "worst_gap": worst, "progress": progress,
                   "veto_reason": reason, "chosen": np.arange(len(cands)) == i}
     return cands[i], {"n_safe": int(safe.sum()), "fallback": fallback, "worst_gap": float(worst[i]),
@@ -111,7 +155,8 @@ def time_to_collision(p_rel, v_rel, R):
 
 
 def choose_vo(p_robot, v_robot, goal, people, max_speed=1.0, w=1.0, horizon=5.0, radius_robot=0.4,
-              radius_person=0.3, margin=0.1, bounds=None, obstacles=(), n_speeds=5, n_dirs=16):
+              radius_person=0.3, margin=0.1, bounds=None, obstacles=(), n_speeds=5, n_dirs=16, prev_cmd=None,
+              smooth=None):
     """Velocity-obstacle (sampling) planner: no learned prediction, people assumed to keep their
     current velocity. Each candidate velocity v gets
         penalty = w / ttc(v) (over people with ttc < horizon) + |v - v_pref|
@@ -122,11 +167,19 @@ def choose_vo(p_robot, v_robot, goal, people, max_speed=1.0, w=1.0, horizon=5.0,
     cands = [np.zeros(2)] + [s * np.array([np.cos(a), np.sin(a)])
                              for s in np.linspace(max_speed / n_speeds, max_speed, n_speeds)
                              for a in np.linspace(0, 2 * np.pi, n_dirs, endpoint=False)] + [v_pref]
+    use_sm = smooth is not None and prev_cmd is not None
+    if use_sm:
+        prev = np.asarray(prev_cmd, float)
+        cands = list(augment(np.array(cands), prev, smooth, max_speed))
+        feas, dth, dvv = dynamics(np.array(cands), prev, smooth)
     R = radius_robot + radius_person + margin
     P = people[["px", "py"]].to_numpy() if len(people) else np.zeros((0, 2))
     Vp = people[["vx", "vy"]].to_numpy() if len(people) else np.zeros((0, 2))
     best, best_pen, best_ttc = np.zeros(2), np.inf, np.inf
-    for v in cands:
+    pens = np.full(len(cands), np.inf)
+    for ci, v in enumerate(cands):
+        if use_sm and not feas[ci]:
+            continue
         pt = p_robot + v * 1.0
         if bounds is not None and not (bounds[0] + radius_robot < pt[0] < bounds[2] - radius_robot
                                        and bounds[1] + radius_robot < pt[1] < bounds[3] - radius_robot):
@@ -135,6 +188,11 @@ def choose_vo(p_robot, v_robot, goal, people, max_speed=1.0, w=1.0, horizon=5.0,
             continue
         ttc = min((time_to_collision(P[j] - p_robot, Vp[j] - v, R) for j in range(len(P))), default=np.inf)
         pen = (w / max(ttc, 1e-3) if ttc < horizon else 0.0) + np.linalg.norm(v - v_pref)
+        if use_sm:
+            pen += smooth["l_turn"] * abs(dth[ci]) + smooth["l_dv"] * abs(dvv[ci])
+        pens[ci] = pen
         if pen < best_pen:
             best, best_pen, best_ttc = v, pen, ttc
+    if use_sm and np.isfinite(pens[-1]) and pens[-1] <= best_pen + smooth["hyst"]:
+        best = cands[-1]                         # commitment: keep the previous command
     return best, {"fallback": False, "ttc": float(best_ttc), "n_safe": -1}
