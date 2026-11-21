@@ -67,7 +67,7 @@ def run_episode(model, seed, args, log=False):
             win = pd.DataFrame([r for s in hist[-window:] for r in s])
             q = F.build_rows(win, obst_df, meta, horizons=HZ, noise=args.noise, seed=k, query_only=True)
             t0 = time.perf_counter()
-            pred = V.predict_rows(model, q) if len(q) else q
+            pred = V.predict_rows(model, q, (args.box_q, 0.5, 1 - args.box_q)) if len(q) else q
             t_pred += time.perf_counter() - t0
             cmd, info = P.choose(p_robot, goal, pred, margin=args.margin, bounds=meta["bounds"],
                                  obstacles=obstacles, horizons=HZ)
@@ -109,6 +109,7 @@ def main():
     ap.add_argument("--replan", type=float, default=0.4)
     ap.add_argument("--margin", type=float, default=0.2)
     ap.add_argument("--noise", type=float, default=0.1)
+    ap.add_argument("--box-q", type=float, default=0.05, help="box = [q, 1-q] per axis (risk dial)")
     ap.add_argument("--log", action="store_true")
     a = ap.parse_args()
 
@@ -120,7 +121,8 @@ def main():
         for seed in a.seeds:
             t0 = time.perf_counter()
             res, logd = run_episode(model, seed, a, log=a.log)
-            res |= {"sim": a.sim, "planner": kind, "wall_s": time.perf_counter() - t0, "margin": a.margin}
+            res |= {"sim": a.sim, "planner": kind, "wall_s": time.perf_counter() - t0, "margin": a.margin,
+                    "box_q": a.box_q, "version": "v2"}
             out.append(res)
             print(f"{kind:<8} seed {seed}  reached {res['reached']}  t_goal {res['time_to_goal']}  "
                   f"collisions {res['collision_steps']} (moving {res['moving_collision_steps']})  min gap {res['min_gap']:.2f} m  "

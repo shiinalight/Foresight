@@ -1,90 +1,129 @@
-# Scenarios and data plan
+# Scenarios: catalogue and data handover
 
-Every scenario only has to write tracks in the `INTERFACE.md` format: `episode, t, agent_id, kind, is_ego, x, y, vx, vy, radius, …`. The model, planner, evaluation and drawing code stay the same. So any kind of moving agent works. What a new scenario costs is writing each agent kind's behaviour (how it moves and reacts), not the format.
+For Nooshin, who owns the data side. This file says which scenes to build, what makes each one a good test, and exactly what to deliver. The core (features, TabPFN, planner, evaluation, drawing) reads only the `INTERFACE.md` files, so every scene plugs in without code changes on the model side.
 
-## What exists
+## The idea in one line
 
-| Scenario | Simulator | Status |
-|---|---|---|
-| Plaza: people + one robot crossing | `foresight/domains/crowd.py` (Nooshin): social force with a forward field of view, calm / hurried / erratic regimes, mid-episode switch, pillars, `reset()`/`step(robot_cmd)`, viewer `tools/view_crowd.py`, 14 tests | **Done.** Main domain 1 |
-| Real pedestrians (ETH, Hotel) | `foresight/domains/eth_ucy.py` | **Done.** Offline only (no robot) |
-| Stand-in plaza | `foresight/domains/toy_crowd.py` | Superseded by `crowd.py`; kept for tests |
+Any moving agent becomes rows in a table. Foresight predicts where each agent will be in 1 to 2 seconds as a range, and the robot moves so it stays clear of those ranges. A new scene only has to produce tracks; what it costs is writing how each agent kind moves and reacts.
 
-## Recommended: one new scenario, the mixed street
+## What makes a scene a good test
 
-A delivery robot crosses a street:
-- **Cars** drive in lanes and brake for whoever is on the crossing.
-- **Pedestrians** walk on the pavements and sometimes cross.
+A scene earns its place if it has at least two of these:
 
-**Why this one:**
-- **Several agent kinds in one picture:** the strongest visual for "one layer, any agent" (the judge asked for something visual).
-- **Same planner, unchanged:** it reuses `run_closed.py` and the planner as they are.
-- **It replaces the highway-env second domain.** That adapter was never written, and this scene covers cars too.
+1. **Behaviour constant velocity cannot predict:** stops, turns, yielding, queues, bursts. Otherwise a ruler beats any model.
+2. **A behaviour change mid-episode:** a regime switch. This is where TabPFN's "learn from the rows you just saw" shows.
+3. **Several plausible futures:** go or wait, left or right. Ranges matter more than points.
+4. **Interaction with the robot:** people react to it, so its choices change what happens.
+5. **A clear visual story** a judge understands in 5 seconds.
 
-**What to build** (an extension of `crowd.py`, about 2 to 3 hours):
+## Catalogue
 
-| Element | Behaviour |
+Priority: **A** = build this weekend, **B** = if time allows, **C** = pitch only (one slide, no data).
+
+### 1. Plaza crossing (done, A)
+
+A robot crosses a square while 10 to 30 people walk to their own goals, around two pillars.
+- **Agents:** people (social force), one robot.
+- **Regimes:** calm, hurried, erratic (sudden stops and sharp turns); the whole crowd switches once in about half the episodes.
+- **Why it's good:** the base case, with all five properties. Built in `crowd.py`.
+
+### 2. Delivery robot crossing a street (A, next)
+
+A two-lane road with pavements and a zebra crossing. Cars drive both ways; pedestrians walk the pavements and cross; the robot must get from one pavement to the other.
+- **Agents:**
+  - **cars** (`kind=car`, `length` 4.5 m, `width` 1.8 m): follow their lane, IDM car following, brake for anyone on the zebra or ahead;
+  - **pedestrians:** social force, restricted to pavements, crossing at the zebra or jaywalking;
+  - **robot.**
+- **Regimes:**
+  - **calm:** slow cars, early yielding, no jaywalking;
+  - **rush hour:** fast cars, short gaps, 20% jaywalkers.
+- **Why it's good:** several agent kinds in one picture, which is the "any agent" claim made visible. Go-or-wait decisions give several plausible futures. Cars and people answer to different rules.
+- **Map:** `map.json` with road polygon, lane centrelines, pavements, zebra polygon (drawing only).
+
+### 3. Doorway bottleneck (A, cheap)
+
+A wall with one 1.5 m door between two rooms. People stream through in both directions; the robot must pass the door too.
+- **Agents:** people, robot. Walls as rectangle obstacles.
+- **Regimes:** **trickle** (few people) and **rush** (a crowd arrives at `switch_t`, like a meeting ending).
+- **Why it's good:** queues and waiting are behaviour constant velocity gets badly wrong, and the switch to rush tests adaptation. It's a small change to `crowd.py`: walls plus goals on the other side.
+
+### 4. Station platform when a train arrives (B)
+
+A long platform. Before the train, people wait in clusters near the edge. At arrival (`switch_t`), doors open: a burst of people leaves, and waiting people board. The robot (a cleaning or info robot) moves along the platform.
+- **Regimes:** waiting, then arrival burst.
+- **Why it's good:** the clearest "the crowd suddenly changed" story for the adaptation figure. Rows from before arrival are the wrong rows afterwards.
+
+### 5. Pavement with two-way flow (B)
+
+A 4 m pavement. People walk both ways and form lanes, as real crowds do. Some stop at shop windows, some overtake. The robot drives along the pavement.
+- **Regimes:** quiet, busy (dense counterflow).
+- **Why it's good:** lane formation is learnable structure that constant velocity misses, and the robot has to overtake and merge.
+
+### 6. Signalised crossing (B)
+
+A crossing with a pedestrian light. People gather while the light is red and burst across on green (a scheduled switch every 20 s). Cars stop on red. The robot crosses with the crowd or waits.
+- **Why it's good:** periodic regime switches give many adaptation events per episode. It combines well with scene 2.
+
+### 7. Warehouse aisles (C)
+
+Up to hundreds of floor robots on an aisle grid, with human pickers walking between shelves. Robots follow lanes and yield at intersections.
+- **Pitch line:** same layer, different agents: robots predicting robots and people.
+- **If built:** robots follow grid paths and stop at crossings; `ext_aisle_id` as an adapter feature.
+
+### 8. Drone swarm (C)
+
+A flock of drones (boids rules: separation, alignment, cohesion) in 2D airspace; our drone crosses the flock.
+- **Pitch line:** the rows just gain a z column; the planner checks 3D boxes.
+
+### 9. Real data (done, A)
+
+ETH and Hotel pedestrians, Zurich: real people for offline checks (no robot). More real scenes, by priority:
+- **Zara and Students (UCY):** in OpenTraj, as spline files that need conversion.
+- **Stanford Drone Dataset:** a large campus with bikes and cars, but a large download.
+
+## Deliverable per scenario
+
+For each scene, put this in `data/<scene>/` (generated, not committed) plus code in `foresight/domains/<scene>.py`:
+
+| Item | Detail |
 |---|---|
-| Road | 2 lanes (one each way), about 7 m wide, across the middle; pavements either side |
-| Cars (`kind=car`, `length`, `width`) | Follow their lane at a desired speed (IDM car following); brake for anything on the crossing or in their lane ahead; 3 to 8 cars, re-spawn at the far end |
-| Pedestrians (`kind=person`) | Social force as now, kept on the pavements. Some cross at the zebra, a few jaywalk (regime-dependent) |
-| Robot (`is_ego=1`) | Starts on one pavement, goal on the other; the planner drives it |
-| Regimes | calm (cars slow, yield early), busy (fast cars, short gaps, jaywalkers) |
-| Map layer (new, drawing only) | `map.json`: road polygon, pavements, crossing. Read by the drawing code only, never a model input |
+| `tracks.csv` | Every `INTERFACE.md` column. `kind` set per agent; `length`/`width` for cars; `collided`; true positions, no noise |
+| `obstacles.csv` | Pillars, walls (rectangles: `w`, `h`, `angle`) |
+| `meta.json` | `dt` (0.2 s is fine), `bounds`, per-episode `seed`, `regime_switch_t`, `regime_before`/`after`. For scheduled switches (scene 6), list all switch times in `notes` |
+| `map.json` (new, optional) | Road, lanes, pavements, crossings, doors, as polygons. Drawing only |
+| Episodes | Training: 80 episodes (seeds 0–79). Held out: 20 (seeds 1000–1019) as `data/<scene>_test/`. About half with a regime switch |
+| Closed-loop hook | `Sim(seed, config).reset()` and `.step(robot_cmd)`, returning `(state, {"collided": bool})`, exactly as in `crowd.py` |
+| Viewer | GIF of one episode per regime, like `tools/view_crowd.py` |
+| Tests | Determinism (same seed gives the same tracks), no agent inside an obstacle, speeds within bounds, regime switch at the right time |
 
-**What the core needs from it:**
-- the three interface files plus `map.json`;
-- `reset()`/`step(robot_cmd)` as in `crowd.py`;
-- `info["collided"]`;
-- a car's footprint as `length`/`width`.
+**Acceptance checks** (run before handing over):
 
-The features already describe neighbours by relative position and velocity. A `kind` feature (person, car) is the one small addition to `features.py`.
-
-## Pitch only, no data (one sentence each)
-
-- **Warehouse:** hundreds of floor robots on aisle grids. The same layer predicts each robot's next 2 s, with lanes as adapter features.
-- **Drone swarms:** the same rows with z added, or flattened to 2D. The planner checks 3D boxes instead of 2D ones.
+1. `python -c "from foresight.core import schema; schema.load('data/<scene>')"` passes validation.
+2. `python run_offline.py --data data/<scene>`: LightGBM beats constant velocity by at least 15% at +2 s. If not, the scene is too predictable, so add stops, turns or interactions.
+3. `python run_closed.py --sim <scene> --planners cv --seeds 1000 1001`: the constant-velocity robot occasionally gets close to people (closest gap under 0.3 m). If it never does, the scene is too easy for the planner comparison.
+4. A summary printout per regime: people count, mean speed, share standing still, collisions per minute.
 
 ## How each agent kind is modelled, and where the data comes from
 
 | Agent | Model | Source |
 |---|---|---|
-| Pedestrians (simulated) | Social force (Helbing and Molnár 1995): pulled towards a goal, pushed away from other people, the robot, pillars and walls. Field of view, stops, sharp turns, crowd-wide regimes | Our own numpy code (`crowd.py`); no simulator library |
-| Pedestrians (real) | No model: annotated positions from overhead video | ETH Walking Pedestrians dataset (ETH Zurich 2009), via the OpenTraj collection |
-| Robot | A disc moving at the commanded velocity (holonomic) | Our code; the planner sets the command |
-| Cars (planned, mixed street) | Lane following with the Intelligent Driver Model (car following, braking) | Our code, the same model highway-env uses; highway-env itself is installed (open source, Farama) |
+| Pedestrians (simulated) | Social force (Helbing and Molnár 1995): pulled to a goal, pushed away from others, the robot, obstacles and walls. Field of view, stops, sharp turns | Our numpy code (`crowd.py`) |
+| Pedestrians (real) | No model: positions annotated from overhead video | ETH Walking Pedestrians (ETH Zurich 2009), via OpenTraj |
+| Robot | A disc moving at the commanded velocity | Our code; the planner sets the command |
+| Cars (scenes 2 and 6) | Intelligent Driver Model on lane centrelines | To write, about 60 lines; the same model highway-env uses (installed, open source) |
+| Floor robots, drones (C) | Grid path following; boids | Not built |
 
-**Open tools in the stack:**
-- **Data and models:** numpy, pandas, scikit-learn, LightGBM, TabPFN (Prior Labs).
+**Open tools:**
+- **Data and models:** numpy, pandas, scikit-learn, LightGBM, TabPFN.
 - **Figures:** matplotlib.
 - **Deck:** python-pptx.
 - **Installed:** highway-env.
 
-**Other open simulators worth knowing.** Each would cost setup time we don't have this weekend.
-- **pysocialforce / PedSim:** pedestrian crowds.
-- **SUMO:** city traffic with cars and pedestrians at crossings. It could generate the mixed street at scale.
-- **CARLA:** 3D driving. It needs a big GPU.
+**Bigger open simulators, too heavy to set up this weekend:**
+- **pysocialforce, PedSim:** crowds.
+- **SUMO:** city traffic with pedestrians.
+- **CARLA:** 3D driving, needs a big GPU.
 
 ## Later: a 3D scenario viewer
 
-A small web viewer (three.js) could replay `tracks.csv` with simple 3D objects (people, cars, robots, drones), draw the predicted boxes and the robot's chosen path, and show a side panel of live numbers (coverage, error, gaps). It would work like the 3D agent dashboard built for DeckHQ. The data contract already supports it: tracks, a map layer and per-step predictions. Not for this weekend.
-
-## How much data
-
-Rows are cheap. 40 stand-in episodes already gave 97,000 rows, and the model sees at most 1,500 to 20,000 at a time. So we don't need 300+ episodes.
-
-| Dataset | Episodes | Use |
-|---|---|---|
-| `data/crowd`: plaza, half the episodes with a regime switch | 80 (seeds 0–79) | Context bank, R1/R2 offline |
-| `data/crowd_test`: plaza | 20 (seeds 1000–1019) | Held-out offline tests and closed-loop seeds |
-| `data/street` | 60 + 20 held out | Same, second domain |
-| `data/eth`, `data/hotel` | as is | Real-data check |
-
-## Visuals each scenario must produce (minimal text, explanations in `RESULTS.md`)
-
-1. **Top-down tracking view:** agents, last-2 s trails, predicted boxes, actual positions (`demo.py`).
-2. **Side by side:** the same seed, constant-velocity robot against TabPFN robot (`render_closed.py`, next).
-3. **Real video beside the top-down view:**
-   - **Source:** the Hotel recording has its original video (`video.avi`, 50 MB, OpenTraj) and the homography matrix (`H.txt`, already downloaded).
-   - **What it gives:** predicted boxes projected onto the real footage. That's the strongest "it works on reality" picture.
-   - **Status:** the download needs approval.
+A small three.js web page could replay `tracks.csv` with simple 3D objects (people, cars, robots, drones), draw the predicted boxes and the robot's path, and show a live-numbers side panel. It would work like the 3D agent dashboard built for DeckHQ. The data contract already supports it. Not for this weekend.

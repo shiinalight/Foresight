@@ -18,10 +18,11 @@ MODEL_LABEL = {"tabpfn": "TabPFN", "lgbm": "LightGBM", "cv_band": "Const. veloci
 QS_BOX = (0.05, 0.5, 0.95)      # per-axis 5-95% -> box holds the truth ~80% of the time
 
 
-def predict_rows(model, q):
-    """Add median world position, box bounds, inside flag and error to rows q."""
+def predict_rows(model, q, qs=QS_BOX):
+    """Add median world position, box bounds, inside flag and error to rows q.
+    qs = (low, 0.5, high) per axis; the default 5-95% gives a box holding the truth ~80% of the time."""
     q = q.copy()
-    Q = model.predict_quantiles(F.X_of(q), QS_BOX)
+    Q = model.predict_quantiles(F.X_of(q), qs)
     q["mx"], q["my"] = F.to_world(q, Q[:, 0, 1], Q[:, 1, 1])
     q["lo_a"], q["hi_a"], q["lo_c"], q["hi_c"] = Q[:, 0, 0], Q[:, 0, 2], Q[:, 1, 0], Q[:, 1, 2]
     Y = q[["ddx", "ddy"]].to_numpy()

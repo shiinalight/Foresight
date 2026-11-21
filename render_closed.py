@@ -30,7 +30,7 @@ def load(sim, kind, seed):
 def draw(ax, log, i, title):
     fr = log["frames"][min(i, len(log["frames"]) - 1)]
     t = fr["t"]
-    V.style_axes(ax, log["bounds"]); ax.set_xticks([]); ax.set_yticks([])
+    ax.clear(); V.style_axes(ax, log["bounds"]); ax.set_xticks([]); ax.set_yticks([])
     for o in log["obst"]:
         ax.add_patch(Circle((o["x"], o["y"]), o["r"], color=V.C_OBST, zorder=1))
     # latest plan at or before t

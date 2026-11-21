@@ -44,12 +44,25 @@ def gap_to_box(pt, rows):
 
 
 def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin=0.2, bounds=None,
-           obstacles=(), horizons=(1.0, 2.0)):
-    """Return (cmd, info). pred_rows: predicted boxes for the people at this moment."""
+           obstacles=(), horizons=(1.0, 2.0), short_h=0.4, stop_bias=0.15):
+    """Return (cmd, info). pred_rows: predicted boxes for the people at this moment.
+
+    Besides the predicted boxes at `horizons`, a hard short-range check: at `short_h` seconds
+    people are assumed to keep their velocity (too short for behaviour to change), and any
+    candidate that would touch someone then is vetoed. If no candidate is safe, the robot
+    stops unless some move keeps a clearly larger worst-case gap (by `stop_bias` metres)."""
     cands = candidates(p_robot, goal)
     worst = np.full(len(cands), np.inf)
     ok = np.ones(len(cands), bool)
+    now = pred_rows.drop_duplicates("agent_id") if len(pred_rows) else pred_rows
     for i, cmd in enumerate(cands):
+        if len(now):                                   # short-range constant-velocity check
+            pt = p_robot + cmd * short_h
+            d = np.hypot(now.px.to_numpy() + now.vx.to_numpy() * short_h - pt[0],
+                         now.py.to_numpy() + now.vy.to_numpy() * short_h - pt[1]) - radius_robot - radius_person
+            if d.min() < 0.05:
+                ok[i] = False
+            worst[i] = min(worst[i], d.min())
         for h in horizons:
             pt = p_robot + cmd * h
             rows = pred_rows[np.isclose(pred_rows.h, h)]
@@ -69,6 +82,7 @@ def choose(p_robot, goal, pred_rows, radius_robot=0.4, radius_person=0.3, margin
         i = int(np.argmax(np.where(safe, progress, -np.inf)))
         fallback = False
     else:
-        i = int(np.argmax(np.where(ok, worst, -np.inf))) if ok.any() else 0
         fallback = True
+        best = int(np.argmax(np.where(ok, worst, -np.inf))) if ok.any() else 0
+        i = 0 if (not ok[best] or worst[0] >= worst[best] - stop_bias) else best     # 0 = stop
     return cands[i], {"n_safe": int(safe.sum()), "fallback": fallback, "worst_gap": float(worst[i])}
