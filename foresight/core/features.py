@@ -16,7 +16,8 @@ import pandas as pd
 
 # f2 (Sat 23:30): unrotated "no obstacle" padding (f1 leaked world heading when bounds=None), standing people
 # face the robot / nearest agent instead of the world x-axis, full-window history check. Never mix f1 and f2 rows.
-FEATURES_VERSION = "f2"
+# f3 (Sat 23:55): mode label "unknown" (not "stop") when the agent has no data 2 s later (left the view / episode end).
+FEATURES_VERSION = "f3"
 OBS_STEP = 0.2      # seconds between history samples
 N_HIST = 5          # history samples (1 s)
 N_NEIGH = 3         # nearest agents described
@@ -195,7 +196,9 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                     vt0, vt2 = Vt[s, a], Vt[s2, a]
                     if query_only:
                         pass
-                    elif np.isnan(vt2[0]) or np.nanmean(np.hypot(*Vt[s:s2 + 1, a].T)) < 0.2:
+                    elif s + round(2.0 / dt) >= S or np.isnan(vt2[0]):
+                        mode = "unknown"          # left the view or the episode ends: not a stop (f3)
+                    elif np.nanmean(np.hypot(*Vt[s:s2 + 1, a].T)) < 0.2:
                         mode = "stop"
                     else:
                         dth = np.arctan2(vt2[1], vt2[0]) - np.arctan2(vt0[1], vt0[0])

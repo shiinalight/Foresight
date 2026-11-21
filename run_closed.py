@@ -68,8 +68,8 @@ class Predictor:
         self.base = kind.replace("_live", "").replace("_all", "")
         self.last_fit, self.model, self.n_live = -1e9, None, 0
         self.ctx_rows, self.refit_at = None, None                  # for the trace: what the model last read
-        if kind in ("stop_go", "reactive", "vo"):
-            return                                              # navigation baselines: no predictor
+        if kind in ("stop_go", "reactive", "vo", "oracle"):
+            return                                              # baselines and the oracle: no learned predictor
         if not self.live:
             if kind == "cv":
                 self.model = M.make("cv")
@@ -97,6 +97,24 @@ class Predictor:
             self.model, self.last_fit, self.n_live = self._fit(ctx), t, int(len(live))
             self.ctx_rows, self.refit_at = ctx, t
         return V.predict_rows(self.model, q, (self.args.box_q, 0.5, 1 - self.args.box_q))
+
+
+def oracle_rows(sim, cmd, horizons, dt, t_now, short_h=0.4):
+    """Perfect prediction: deep-copy the simulator, roll it forward holding the current robot command,
+    and return each person's TRUE position at short_h and every horizon as zero-width boxes
+    (px, py = true future position, no velocity, no range). The h = short_h rows come first per agent,
+    so planner.choose's 0.4 s check reads the true position at +0.4 s."""
+    import copy
+    twin = copy.deepcopy(sim)
+    hs = sorted({short_h, *horizons})
+    steps = {round(h / dt): h for h in hs}
+    rows = []
+    for k in range(1, max(steps) + 1):
+        state, _ = twin.step(None if cmd is None else np.asarray(cmd, float))
+        if k in steps:
+            rows += [dict(t=t_now, agent_id=r["agent_id"], h=steps[k], px=r["x"], py=r["y"], vx=0.0, vy=0.0,
+                          theta=0.0, lo_a=0.0, hi_a=0.0, lo_c=0.0, hi_c=0.0) for r in state[1:]]
+    return pd.DataFrame(rows).sort_values(["h", "agent_id"], kind="stable") if rows else pd.DataFrame()
 
 
 def make_sim(name, seed, args):
@@ -153,6 +171,8 @@ def run_episode(pred, seed, args, log=False):
             else:
                 if pred.kind == "reactive":                     # people frozen where they are: no prediction at all
                     pr = q.assign(vx=0.0, vy=0.0, lo_a=0.0, hi_a=0.0, lo_c=0.0, hi_c=0.0) if len(q) else q
+                elif pred.kind == "oracle":                     # true future positions (upper bound on prediction)
+                    pr = oracle_rows(sim, cmd, args.hz, dt, k * dt)
                 else:
                     pr = pred.predict(q, k * dt, hist_df, obst_df, meta, seed) if len(q) else q
                 tp1 = time.perf_counter()
