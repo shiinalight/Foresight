@@ -12,7 +12,7 @@ A prediction-and-planning layer for a robot moving among people. Each person's p
 
 | # | Claim | Status | Evidence / what decides it |
 |---|---|---|---|
-| A | **Safe out of the box in a new place:** TabPFN's ranges keep their promise in a scene it has never seen, while LightGBM's collapse | **Supported (offline, real data)** | Hotel → ETH joint box coverage: TabPFN 83% against LightGBM 46–62%. Error is level with LightGBM on all rows [RESULTS] |
+| A | **Safe out of the box in a new place:** TabPFN's ranges keep their promise in a scene it has never seen, while LightGBM's collapse | **Supported on f1 features; rerun on f2 in progress** (Sat 23:40: f1 leaked world heading through the no-obstacle padding on ETH/Hotel, D-20) | f1: Hotel → ETH joint box coverage TabPFN 83% against LightGBM 46–62%, error level. To be replaced by the f2 numbers [RESULTS] |
 | B | **Adapts in seconds without retraining:** reading the new scene's recent rows improves TabPFN fastest | **Promising, unconfirmed** | Pilot, Hotel → ETH: first 5 s, 0.425 against 0.536 m for frozen LightGBM. Pending the dense real-data run with person-level intervals, and **T3** (held-out crowd behaviour) |
 | C | **Prediction-aware planning beats standard navigation** | **No support yet** | In the plaza, the standard methods are fast and collision-free (pilot). Decided by **T1**, then **T2** (a scene that doesn't let robots push through) |
 | D | **Deployable** | Partly settled | Real-time tier = TabPFN-3.5 with 1 estimator (D-5, D-18). Licence: 3.5 weights are non-commercial, v2 is Apache 2.0. Latency on target-class hardware pending (Nooshin's Mac) |
