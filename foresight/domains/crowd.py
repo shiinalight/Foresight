@@ -64,6 +64,11 @@ class CrowdConfig:
     switch_to: str | None = None     # ... to this one
     jitter: float = 0.1              # sd of per-person multiplicative jitter
     robot_speed: float = 1.0
+    # difficulty knobs (T2 in docs/DECISIONS.md). Defaults reproduce the original crowd exactly.
+    robot_repulsion: float = ROBOT_REPULSION   # how much harder people push away from the robot
+    ignore_robot: float = 0.0        # share of people who do not react to the robot at all
+                                     # (looking at a phone); drawn from a separate random stream, so
+                                     # the rest of the episode is the same crowd as with 0.0
 
     def regime_at(self, t: float) -> str:
         if self.switch_t is not None and t >= self.switch_t - 1e-9:
@@ -80,6 +85,10 @@ class CrowdSim:
                 raise ValueError(f"unknown regime {name!r}; choose from {list(REGIMES)}")
         if config.switch_t is not None and config.switch_to is None:
             raise ValueError("switch_t needs switch_to")
+        if not 0.0 <= config.ignore_robot <= 1.0:
+            raise ValueError(f"ignore_robot must be in [0, 1], got {config.ignore_robot}")
+        if config.robot_repulsion < 0:
+            raise ValueError(f"robot_repulsion must be >= 0, got {config.robot_repulsion}")
         self.seed, self.cfg = seed, config
 
     # ---------- setup ----------
@@ -115,6 +124,12 @@ class CrowdSim:
                                                for _ in range(1, n)])
         self.jit = rng.normal(1.0, c.jitter, (n, 4)).clip(0.7, 1.3)   # v0, A, B, rates
         self.stop_left = np.zeros(n)
+        # who ignores the robot: a separate stream keyed on the seed, so self.rng (and with it every
+        # other draw in the episode) is untouched whatever ignore_robot is
+        self.ignores_robot = np.zeros(n, bool)
+        if c.ignore_robot > 0:
+            u = np.random.default_rng([self.seed, 7919]).random(n)
+            self.ignores_robot[1:] = u[1:] < c.ignore_robot
         self.k = 0
         return self._state(np.zeros(n, bool))
 
@@ -168,7 +183,8 @@ class CrowdSim:
         cos_phi = -(e[:, None, :] * nrm).sum(axis=2)          # 1 when j is straight ahead of i
         w = LAMBDA + (1 - LAMBDA) * (1 + cos_phi) / 2
         is_robot = np.arange(n)[None, :] == 0
-        strength = A[:, None] * np.where(is_robot, ROBOT_REPULSION, 1.0)
+        robot_w = np.where(self.ignores_robot, 0.0, c.robot_repulsion)[:, None]   # per person i
+        strength = A[:, None] * np.where(is_robot, robot_w, 1.0)
         rng_ = np.where(is_robot, np.maximum(B[:, None], ROBOT_B), B[:, None])
         mag = strength * np.exp((self.radius[:, None] + self.radius[None, :] - dist) / rng_) * w
         np.fill_diagonal(mag, 0.0)
@@ -362,9 +378,13 @@ def main():
     ap.add_argument("--people", type=int, default=16)
     ap.add_argument("--duration", type=float, default=40.0)
     ap.add_argument("--switch-prob", type=float, default=0.5)
+    ap.add_argument("--robot-repulsion", type=float, default=ROBOT_REPULSION,
+                    help="how much harder people push away from the robot than from each other")
+    ap.add_argument("--ignore-robot", type=float, default=0.0, help="share of people who ignore the robot")
     ap.add_argument("--out", help="write tracks.csv, obstacles.csv, meta.json here")
     a = ap.parse_args()
-    cfg = CrowdConfig(n_people=a.people, duration=a.duration)
+    cfg = CrowdConfig(n_people=a.people, duration=a.duration, robot_repulsion=a.robot_repulsion,
+                      ignore_robot=a.ignore_robot)
     tracks, obstacles, meta = generate(a.episodes, a.seed, cfg, a.switch_prob)
     obs = observe(tracks, seed=a.seed)
     pd.set_option("display.width", 160)
