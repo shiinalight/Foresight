@@ -82,10 +82,10 @@ class Predictor:
 
     def predict(self, q, t, hist_df, obst_df, meta, seed):
         if self.live and t - self.last_fit >= self.args.refit - 1e-9:
-            recent = hist_df[hist_df.t >= t - LIVE_WINDOW]
-            live = F.build_rows(recent, obst_df, meta, horizons=self.args.hz, noise=self.args.noise, seed=seed,
+            # full history, so the Kalman state matches the queries; then keep the last LIVE_WINDOW s
+            live = F.build_rows(hist_df, obst_df, meta, horizons=self.args.hz, noise=self.args.noise, seed=seed,
                                 label_from="observed")
-            live = live[live.t_known <= t + 1e-9]
+            live = live[(live.t_known <= t + 1e-9) & (live.t >= t - LIVE_WINDOW)]
             ctx = C.select(q, self.bank_obj, live=live if len(live) else None, budget=self.args.context,
                            mix=(0.6, 0.3, 0.1))
             self.model, self.last_fit, self.n_live = self._fit(ctx), t, int(len(live))

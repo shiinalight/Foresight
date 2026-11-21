@@ -91,8 +91,8 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
     label_from="observed": targets from the noisy, Kalman-filtered future positions, as a robot
     would label its own live rows. "truth" (default) uses simulator / annotated positions.
 
-    Noise is drawn from `seed` in array order, so the same seed gives identical observations for
-    a growing history (prefix property): live queries and offline rows see the same noise."""
+    Noise is drawn per agent from (seed, agent_id) over absolute time steps, so a growing history
+    gives identical observations, also when agents enter or leave: live queries match offline rows."""
     dt = float(meta["dt"])
     k = max(1, round(OBS_STEP / dt))
     hsteps = [round(h / dt) for h in horizons]
@@ -123,7 +123,11 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
         is_ego = info.loc[agents, "is_ego"].to_numpy().astype(bool)
         ego = int(np.flatnonzero(is_ego)[0]) if is_ego.any() else None
         # observe: noise + forward Kalman filter per agent
-        Po = Pt + rng.normal(0, noise, Pt.shape)
+        # noise seeded per agent over absolute time steps: identical observations for a growing history
+        # even when agents enter or leave (a shared (S, A, 2) draw would shift with the agent set)
+        Po = Pt.copy()
+        for a_i, aid in enumerate(agents):
+            Po[:, a_i] += np.random.default_rng([seed, int(aid)]).normal(0, noise, (S, 2))
         Ps = np.full_like(Pt, np.nan); Vs = np.full_like(Pt, np.nan)
         for a in range(A):
             Ps[:, a], Vs[:, a] = _kalman_cv(Po[:, a], dt, r=max(noise, 0.05))

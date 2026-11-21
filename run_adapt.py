@@ -93,19 +93,26 @@ def main():
                         Q = m.predict_quantiles(F.X_of(q), (0.1, 0.5, 0.9))
                     Y = q[["ddx", "ddy"]].to_numpy()
                     err = np.linalg.norm(Q[:, :, 1] - Y, axis=1)
-                    cov = ((Y >= Q[:, :, 0]) & (Y <= Q[:, :, 2])).mean(axis=1)
-                    for e, c, s in zip(err, cov, q.since_switch):
+                    inside = (Y >= Q[:, :, 0]) & (Y <= Q[:, :, 2])
+                    cov, joint = inside.mean(axis=1), inside.all(axis=1)      # per-axis; the 2D box itself
+                    for e, c, j, s in zip(err, cov, joint, q.since_switch):
                         rows.append(dict(episode=ep, t=t, since=s, strategy=sname, model=mname, err=e, cov=c,
-                                         n_ctx=len(ctx), thin=thin))
+                                         joint=float(j), n_ctx=len(ctx), thin=thin))
         print(f"episode {ep} done ({time.perf_counter() - t0:.0f} s)")
     res = pd.DataFrame(rows)
     Path("results").mkdir(exist_ok=True); res.to_csv("results/adapt.csv", index=False)
     res["bin"] = pd.cut(res.since, [b[0] for b in BINS] + [BINS[-1][1]], labels=[b[2] for b in BINS], right=False)
     tab = res.groupby(["model", "strategy", "bin"], observed=True).err.mean().unstack("bin").round(3)
-    print(tab)
-    print(res.groupby(["model", "strategy"]).agg(err=("err", "mean"), cov=("cov", "mean")).round(3))
+    jtab = res.groupby(["model", "strategy", "bin"], observed=True).joint.mean().unstack("bin").round(3)
+    print("mean error (m)
+", tab)
+    print("joint coverage of the 10-90% box (per-axis 80% -> ~64% if independent)
+", jtab)
+    print(res.groupby(["model", "strategy"]).agg(err=("err", "mean"), cov=("cov", "mean"), joint=("joint", "mean")).round(3))
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True, facecolor="white")
+    fig, axes2 = plt.subplots(2, len(a.models), figsize=(5.5 * len(a.models), 7.6), sharey="row", facecolor="white",
+                              squeeze=False)
+    axes = axes2[0]
     colors = {"global": "#8b949e", "knn": "#2a6fdb", "recent": "#7a3fb5", "mix": "#e8590c"}
     labels = {"global": "Random rows, other episodes", "knn": "Similar situations", "recent": "This crowd only",
               "mix": "Mix: this crowd + similar"}
@@ -121,6 +128,17 @@ def main():
             r = tab.loc[("lgbm_frozen", "global")]
             ax.plot(list(r.index.astype(str)), r.values, marker="s", lw=1.5, ls="--", color="#1f2328",
                     label="Frozen, all rows of the other scene")
+    for ax, mname in zip(axes2[1], a.models):
+        V.style_axes(ax, equal=False)
+        for s in STRATS:
+            if (mname, s) in jtab.index:
+                r = jtab.loc[(mname, s)]
+                ax.plot(list(r.index.astype(str)), 100 * r.values, marker="o", lw=2, color=colors[s])
+        if mname == "lgbm" and ("lgbm_frozen", "global") in jtab.index:
+            r = jtab.loc[("lgbm_frozen", "global")]
+            ax.plot(list(r.index.astype(str)), 100 * r.values, marker="s", lw=1.5, ls="--", color="#1f2328")
+        ax.set_xlabel(xlabel, color=V.C_MUTED)
+    axes2[1][0].set_ylabel("Box holds the truth (%)", color=V.C_MUTED)
     axes[0].set_ylabel(f"Mean error at +{a.h:g} s (m)", color=V.C_MUTED)
     axes[-1].legend(frameon=False, fontsize=9, labelcolor=V.C_INK)
     fig.suptitle("Which context rows, after the crowd changes", fontsize=13, weight="bold", color=V.C_INK, x=0.06, ha="left")
