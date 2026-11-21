@@ -14,6 +14,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+# f2 (Sat 23:30): unrotated "no obstacle" padding (f1 leaked world heading when bounds=None), standing people
+# face the robot / nearest agent instead of the world x-axis, full-window history check. Never mix f1 and f2 rows.
+FEATURES_VERSION = "f2"
 OBS_STEP = 0.2      # seconds between history samples
 N_HIST = 5          # history samples (1 s)
 N_NEIGH = 3         # nearest agents described
@@ -137,7 +140,8 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                 continue
             alive = ~np.isnan(Ps[s, :, 0])
             for a in np.flatnonzero(alive):
-                if a == ego or np.isnan(Ps[s - N_HIST * k, a, 0]):
+                # seen at every step of the history window: no NaN history, no fresh Kalman restart
+                if a == ego or np.isnan(Ps[s - N_HIST * k:s + 1, a, 0]).any():
                     continue
                 p, v = Ps[s, a], Vs[s, a]
                 speed = float(np.hypot(*v))
@@ -145,7 +149,13 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                     theta = np.arctan2(v[1], v[0])
                 else:
                     disp = p - Ps[s - N_HIST * k, a]
-                    theta = np.arctan2(disp[1], disp[0]) if np.hypot(*disp) > 0.05 else 0.0
+                    if np.hypot(*disp) > 0.05:
+                        theta = np.arctan2(disp[1], disp[0])
+                    else:       # standing: face the robot, else the nearest agent (no world axis)
+                        ref = [b for b in np.flatnonzero(alive) if b != a]
+                        ref = ([ego] if ego in ref else []) or sorted(ref, key=lambda b: np.linalg.norm(Ps[s, b] - p))
+                        d = Ps[s, ref[0]] - p if ref else np.zeros(2)
+                        theta = np.arctan2(d[1], d[0]) if np.hypot(*d) > 1e-6 else 0.0
                 R = _rot(theta)
                 vprev = Vs[s - k, a]
                 acc = R @ ((v - vprev) / (k * dt))
@@ -170,7 +180,7 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                 ov, od = _obstacle_vec(p, obst, bounds)
                 density = sum(1 for d, _ in rel if d < 3.0)
                 base = [speed, acc[0], acc[1], turn, radius[a], *np.ravel(hist), *neigh, *robot,
-                        *(R @ ov), od, density]
+                        *((R @ ov) if od < FAR else ov), od, density]   # padding is not rotated
                 for hs in hsteps:
                     h = hs * dt                  # horizon snapped to the data's time grid
                     if query_only:
@@ -197,7 +207,9 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
                                 p[0], p[1], v[0], v[1], theta, dd[0], dd[1], true_f[0], true_f[1],
                                 h, *base])
     # META already holds "h"; the model's copy of the horizon is the feature column "h_f"
-    return pd.DataFrame(out, columns=META_COLS + ["h_f"] + feature_names()[1:])
+    df = pd.DataFrame(out, columns=META_COLS + ["h_f"] + feature_names()[1:])
+    df["features_version"] = FEATURES_VERSION
+    return df
 
 
 def X_of(df):

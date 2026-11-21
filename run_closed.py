@@ -110,7 +110,8 @@ def make_sim(name, seed, args):
     switch = dict(switch_t=round(args.duration / 2, 6), switch_to=names[(seed + 1) % len(names)]) \
         if (args.switch and seed % 2 == 1) else {}
     cfg = CrowdConfig(n_people=args.people, duration=args.duration, regime=regime,
-                      robot_repulsion=args.robot_repulsion, ignore_robot=args.ignore_robot, **switch)
+                      robot_repulsion=args.robot_repulsion, ignore_robot=args.ignore_robot,
+                      robot_speed=args.max_speed, **switch)
     return NCrowdSim(seed, cfg), cfg.dt, cfg.half_size
 
 
@@ -266,7 +267,8 @@ def main():
                     "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
                     "threads": a.threads, "max_speed": a.max_speed,
                     "vo_w": a.vo_w if kind == "vo" else np.nan, "vo_h": a.vo_h if kind == "vo" else np.nan,
-                    "robot_repulsion": a.robot_repulsion, "ignore_robot": a.ignore_robot}
+                    "robot_repulsion": a.robot_repulsion, "ignore_robot": a.ignore_robot,
+                    "features_version": F.FEATURES_VERSION}
             out.append(res)
             pd.DataFrame([res]).to_csv(csv_path, mode="a", header=not csv_path.exists(), index=False)   # checkpoint
             if len(rf):

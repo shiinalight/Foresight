@@ -27,7 +27,9 @@ class Bank:
     def knn(self, queries, k):
         Z = (queries[KNN_FEATS].to_numpy(float) - self.mu) / self.sd
         _, idx = self.nn.kneighbors(Z, n_neighbors=min(k, len(self.df)))
-        return np.unique(idx.ravel())
+        order = idx.T.ravel()                     # rank-major: every query's 1-NN first, then 2-NN, ...
+        _, first = np.unique(order, return_index=True)
+        return order[np.sort(first)]              # unique, nearest ranks first, so [:n] cuts the farthest
 
 
 def select(queries, bank: Bank, live=None, budget=1500, mix=(0.6, 0.3, 0.1), rare_col="mode",

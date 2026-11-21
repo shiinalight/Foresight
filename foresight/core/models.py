@@ -42,7 +42,8 @@ class ConstantBand:
             m = np.isclose(self.h, h)
             ref = self.Y[m] if m.any() else self.Y
             q = np.quantile(ref, qs, axis=0).T          # [2, len(qs)]
-            q[:, list(qs).index(0.5)] = 0.0 if 0.5 in qs else q[:, 0]
+            a = np.asarray(qs)                          # CV is the median: the band straddles 0
+            q = np.where(a < 0.5, np.minimum(q, 0.0), np.where(a > 0.5, np.maximum(q, 0.0), 0.0))
             out[np.isclose(X[:, 0], h)] = q
         return out
 

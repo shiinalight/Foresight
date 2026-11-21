@@ -27,7 +27,7 @@ from foresight.core import schema
 def rows_for(data_dir, noise, seed=0, horizons=(1.0, 2.0), label_from="truth"):
     hz = "_".join(f"{h:g}" for h in horizons)
     lab = "" if label_from == "truth" else f"_{label_from}"
-    cache = Path(data_dir) / f"rows_noise{noise}_h{hz}{lab}.parquet"
+    cache = Path(data_dir) / f"rows_{F.FEATURES_VERSION}_noise{noise}_h{hz}{lab}.parquet"
     if cache.exists():
         return pd.read_parquet(cache)
     tracks, obst, meta = schema.load(data_dir)
