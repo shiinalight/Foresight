@@ -66,3 +66,17 @@ def select(queries, bank: Bank, live=None, budget=1500, mix=(0.6, 0.3, 0.1), rar
     # same rows as before (first occurrence wins); `source` records where each row came from
     ctx = ctx[~ctx.drop(columns="source").duplicated()]
     return ctx
+
+
+def frozen(bank_df, budget=2000, rare_col="mode", rare_values=("stop", "turn_left", "turn_right"), seed=0):
+    """Fixed bank context for a frozen model: up to half rare moves (stop / turns), the rest random rows
+    not already chosen, so the budget is filled exactly (no duplicate shortfall). No kNN share."""
+    import pandas as pd
+    df = bank_df.reset_index(drop=True)
+    budget = min(budget, len(df))
+    rare_idx = np.flatnonzero(df[rare_col].isin(rare_values).to_numpy())
+    n_r = min(len(rare_idx), budget // 2)
+    pick_r = np.random.default_rng(seed).choice(rare_idx, n_r, replace=False) if n_r else np.array([], int)
+    rest = np.setdiff1d(np.arange(len(df)), pick_r)
+    pick_f = np.random.default_rng(seed + 1).choice(rest, budget - n_r, replace=False)
+    return pd.concat([df.iloc[pick_r].assign(source="fill-rare"), df.iloc[pick_f].assign(source="fill-random")])

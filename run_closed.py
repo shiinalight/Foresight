@@ -11,6 +11,12 @@ Planners (same seeds = same crowd, start and goal for all):
   tabpfn       TabPFN on --context random bank rows, fitted once (frozen)
   lgbm_live    refitted every --refit s on context.select(): this episode's completed rows
   tabpfn_live  (labelled from observed, filtered positions, as a robot would) + similar bank rows
+  tabpfn_split frozen bank model + a scene model refitted every --refit s on this episode's <= 250 most recent
+               completed rows (observed labels); quantiles averaged per axis; frozen alone below 20 recent rows
+--frozen-ctx fill: lgbm and tabpfn read context.frozen(bank, --context) (half rare moves, rest random, exact).
+--bank-exclude-regime erratic: drop every bank episode with that regime before or after a switch.
+--switch-to erratic --switch-all: every seed switches into that regime at mid-episode, from a start regime
+               other than it (start = the other regimes in turn by seed).
 Short 0.4 s check: constant velocity from the filtered state for cv, cv_band, lgbm* and tabpfn*; people frozen for
 reactive; true positions for the open-loop oracle; none for vo (time-to-collision penalty) and stop_go (sim policy).
 
@@ -40,10 +46,12 @@ HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
        "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode", "smooth",
-       "tabpfn_cfg"]
+       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
-            "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere", "smooth": False}
+            "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere", "smooth": False,
+            "frozen_ctx": "random", "bank_exclude": "-", "switch_to": "-", "switch_all": False}
+SPLIT_REC, SPLIT_THIN = 250, 20   # tabpfn_split: scene-model rows (most recent); fewer than SPLIT_THIN = frozen alone
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
 
@@ -66,7 +74,9 @@ class Predictor:
     def __init__(self, kind, bank, bank_obj, args):
         self.kind, self.args, self.bank_obj = kind, args, bank_obj
         self.live = kind.endswith("_live")
-        self.base = kind.replace("_live", "").replace("_all", "")
+        self.split = kind.endswith("_split")
+        self.base = kind.replace("_live", "").replace("_all", "").replace("_split", "")
+        self.frozen_model, self.n_rec = None, 0
         self.last_fit, self.model, self.n_live = -1e9, None, 0
         self.ctx_rows, self.refit_at = None, None                  # for the trace: what the model last read
         if kind in ("stop_go", "reactive", "vo", "oracle"):
@@ -75,9 +85,15 @@ class Predictor:
             if kind == "cv":
                 self.model = M.make("cv")
             else:
-                rows = bank if kind in ("cv_band", "lgbm_all") else bank.sample(min(args.context, len(bank)), random_state=0)
+                if kind in ("cv_band", "lgbm_all"):
+                    rows = bank.assign(source="bank-all")
+                elif getattr(args, "frozen_ctx", "random") == "fill":
+                    rows = C.frozen(bank, args.context)
+                else:
+                    rows = bank.sample(min(args.context, len(bank)), random_state=0).assign(source="bank-random")
                 self.model = self._fit(rows)
-                self.ctx_rows, self.refit_at = rows.assign(source="bank-random" if len(rows) < len(bank) else "bank-all"), 0.0
+                self.frozen_model = self.model
+                self.ctx_rows, self.refit_at = rows, 0.0
 
     def _fit(self, rows):
         kw = {}
@@ -87,7 +103,23 @@ class Predictor:
             kw = {"fit_mode": "fit_with_cache", "fast": self.args.tabpfn_fast, "n_estimators": self.args.tabpfn_est}
         return M.make(self.base, **kw).fit(F.X_of(rows), rows[["ddx", "ddy"]].to_numpy())
 
+    def reset(self):
+        """Start of an episode: live and split models forget the last episode's scene."""
+        self.last_fit, self.n_live, self.n_rec = -1e9, 0, 0
+        if self.split:
+            self.model = self.frozen_model
+
     def predict(self, q, t, hist_df, obst_df, meta, seed):
+        if self.split and t - self.last_fit >= self.args.refit - 1e-9:
+            live = F.build_rows(hist_df, obst_df, meta, horizons=self.args.hz, noise=self.args.noise, seed=seed,
+                                label_from="observed")
+            rec = live[live.t_known <= t + 1e-9].sort_values("t_known").tail(SPLIT_REC)
+            self.last_fit, self.n_rec, self.n_live = t, int(len(rec)), int(len(rec))
+            if len(rec) < SPLIT_THIN:
+                self.model = self.frozen_model                     # thin scene: frozen alone
+            else:
+                self.model = AvgQuantiles(self.frozen_model, self._fit(rec))
+                self.ctx_rows, self.refit_at = rec.assign(source="recent"), t
         if self.live and t - self.last_fit >= self.args.refit - 1e-9:
             # full history, so the Kalman state matches the queries; then keep the last LIVE_WINDOW s
             live = F.build_rows(hist_df, obst_df, meta, horizons=self.args.hz, noise=self.args.noise, seed=seed,
@@ -98,6 +130,16 @@ class Predictor:
             self.model, self.last_fit, self.n_live = self._fit(ctx), t, int(len(live))
             self.ctx_rows, self.refit_at = ctx, t
         return V.predict_rows(self.model, q, (self.args.box_q, 0.5, 1 - self.args.box_q))
+
+
+class AvgQuantiles:
+    """Average two models' quantiles per axis (then sorted, so the bounds never cross)."""
+
+    def __init__(self, a, b):
+        self.a, self.b = a, b
+
+    def predict_quantiles(self, X, qs):
+        return np.sort((self.a.predict_quantiles(X, qs) + self.b.predict_quantiles(X, qs)) / 2, axis=2)
 
 
 def zigzag(headings, path_len, window=2.0, big=np.radians(45)):
@@ -145,9 +187,14 @@ def make_sim(name, seed, args):
         return sim, sim.dt, BOUND
     from foresight.domains.crowd import REGIMES, CrowdConfig, CrowdSim as NCrowdSim
     names = list(REGIMES)
-    regime = names[seed % len(names)]                            # vary the crowd across seeds
-    switch = dict(switch_t=round(args.duration / 2, 6), switch_to=names[(seed + 1) % len(names)]) \
-        if (args.switch and seed % 2 == 1) else {}
+    to = getattr(args, "switch_to", None)
+    if to:                                                       # every start regime but the target, in turn
+        others = [n for n in names if n != to]
+        regime = others[seed % len(others)]
+    else:
+        regime = names[seed % len(names)]                        # vary the crowd across seeds
+    on = args.switch and (getattr(args, "switch_all", False) or seed % 2 == 1)
+    switch = dict(switch_t=round(args.duration / 2, 6), switch_to=to or names[(seed + 1) % len(names)]) if on else {}
     cfg = CrowdConfig(n_people=args.people, duration=args.duration, regime=regime,
                       robot_repulsion=args.robot_repulsion, ignore_robot=args.ignore_robot,
                       robot_speed=args.max_speed, goal_mode=getattr(args, "goal_mode", "anywhere"), **switch)
@@ -162,8 +209,8 @@ def run_episode(pred, seed, args, log=False):
     obstacles = getattr(sim, "obst", None) or getattr(sim, "obstacles", [])
     obst_df = pd.DataFrame([dict(episode=seed, obstacle_id=i, shape="circle", **o) for i, o in enumerate(obstacles)])
     every = max(1, round(args.replan / dt))
-    if pred.live:
-        pred.last_fit = -1e9
+    if pred.live or pred.split:
+        pred.reset()
     frames, plans, robotfeat = [], [], []
     collided_steps, moving_collisions, min_gap, t_goal, t_pred = 0, 0, np.inf, None, 0.0
     n_plans, n_fallback, k = 0, 0, 0
@@ -279,6 +326,10 @@ def main():
     ap.add_argument("--box-q", type=float, default=0.05, help="box = [q, 1-q] per axis (caution dial)")
     ap.add_argument("--horizons", type=float, nargs="*", default=list(HZ), help="planner checks the boxes at these")
     ap.add_argument("--switch", action="store_true", help="odd seeds: crowd-wide regime switch at mid-episode")
+    ap.add_argument("--switch-to", default=None, help="with --switch: always switch into this regime (start = another)")
+    ap.add_argument("--switch-all", action="store_true", help="with --switch: every seed switches, not only odd ones")
+    ap.add_argument("--frozen-ctx", default="random", choices=["random", "fill"], help="frozen lgbm/tabpfn context")
+    ap.add_argument("--bank-exclude-regime", default=None, help="drop bank episodes with this regime (before or after)")
     ap.add_argument("--tabpfn-fast", type=int, default=1, help="1 = TabPFN-3.5-Fast")
     ap.add_argument("--tabpfn-est", type=int, default=1, help="TabPFN ensemble members")
     ap.add_argument("--threads", type=int, default=0, help="cap torch/OpenMP threads (parallel runs)")
@@ -307,6 +358,13 @@ def main():
     a.hz = tuple(a.horizons)
     bank_path = a.bank or f"data/{a.sim}"
     bank = rows_for(bank_path, a.noise, horizons=a.hz)
+    if a.bank_exclude_regime:
+        import json
+        em = json.loads((Path(bank_path) / "meta.json").read_text())["episodes"]
+        bad = set(bank[bank.regime == a.bank_exclude_regime].episode.unique())
+        bad |= {int(e) for e, m in em.items() if a.bank_exclude_regime in (m.get("regime_before"), m.get("regime_after"))}
+        bank = bank[~bank.episode.isin(bad)].reset_index(drop=True)
+        print(f"bank: {bank.episode.nunique()} episodes, {len(bank)} rows without '{a.bank_exclude_regime}'", flush=True)
     bank_obj = C.Bank(bank) if any(p.endswith("_live") for p in a.planners) else None
     run_id = time.strftime("%Y%m%d-%H%M%S") + (f"-{a.tag}" if a.tag else "")
     out, feats = [], []
@@ -321,7 +379,10 @@ def main():
             res |= {"sim": a.sim, "planner": kind, "wall_s": time.perf_counter() - t0, "margin": a.margin,
                     "box_q": a.box_q, "version": VERSION, "horizons": " ".join(f"{h:g}" for h in a.hz),
                     "context": a.context, "people": a.people, "bank": bank_path,
-                    "refit": a.refit if kind.endswith("_live") else 0.0, "switch": a.switch, "run_id": run_id,
+                    "refit": a.refit if kind.endswith(("_live", "_split")) else 0.0, "switch": a.switch, "run_id": run_id,
+                    "frozen_ctx": a.frozen_ctx if kind.startswith(("lgbm", "tabpfn")) and kind != "lgbm_all" else "-",
+                    "bank_exclude": a.bank_exclude_regime or "-", "switch_to": a.switch_to or "-",
+                    "switch_all": bool(a.switch_all),
                     "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
                     "threads": a.threads, "max_speed": a.max_speed,
                     "vo_w": a.vo_w if kind == "vo" else np.nan, "vo_h": a.vo_h if kind == "vo" else np.nan,
