@@ -136,3 +136,33 @@ Every model's 10–90% box (per axis) is widened or narrowed by one offset, so t
 - LightGBM is untuned; tuned and conformal versions are next.
 - No obstacles from the scene maps.
 - No robot in the real data.
+
+## Closed loop: pre-registered analysis (written Sat 21 Nov, before the overnight run starts)
+
+This section fixes how the overnight closed-loop results will be read, before any of those numbers exist. That way the operating point can't be chosen after seeing the results.
+
+**Run:**
+- **Crowds:** Nooshin's crowd simulator, seeds 1000–1099. Odd seeds switch the crowd's behaviour regime at mid-episode (`--switch`).
+- **Same conditions everywhere:** one robot top speed (1.0 m/s) for every planner, and the same seeds for every planner.
+- **Our planners:** each predictor is swept over its caution dial: the box quantile `box_q` 0.05 / 0.10 / 0.15 at margin 0.2 m. The predictors are the band, LightGBM (1,500 rows, all rows, live) and TabPFN (frozen, live).
+- **Baselines:** each swept over its own dial:
+  - constant velocity and the reactive planner (DWA-style local planner, our implementation) at margin 0.2 / 0.4 / 0.6 m;
+  - velocity obstacles (sampling form, not ORCA) at collision weight 0.5 / 1 / 2;
+  - stop-and-go once (it has no setting).
+
+**Main figure:** full curves, one per planner (one point per dial setting):
+- **Axes:** mean time to goal, with failures scored at the 40 s limit (`time_capped`), against mean closest gap and against mean seconds with anyone within 0.5 m (`intrusion_s`).
+- **Split:** switch and no-switch seeds shown separately.
+- **Intervals:** 95% paired-seed bootstrap.
+
+**Headline table, rule fixed now.** For each planner, take the dial setting with the lowest mean `time_capped` among settings that meet both conditions:
+- collision rate ≤ 2% of runs;
+- mean `intrusion_s` ≤ 1 s.
+
+Show "none qualifies" if no setting does. Also report success rate, and compute on the seeds that every planner finished (common seeds).
+
+**Two claims, kept separate:**
+1. A prediction-aware planner against standard navigation (stop-and-go, reactive, velocity obstacles).
+2. TabPFN against LightGBM inside the same planner, on the switch seeds in particular (live against frozen).
+
+A win on (1) is not a TabPFN win.

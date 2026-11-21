@@ -92,10 +92,10 @@ def time_to_collision(p_rel, v_rel, R):
     """Smallest t > 0 with |p_rel + v_rel t| = R (constant velocities); inf if never; 0 if overlapping now.
     p_rel = other - robot, v_rel = other_velocity - robot_velocity."""
     c = p_rel @ p_rel - R * R
-    if c <= 0:
-        return 0.0
     a = v_rel @ v_rel
     b = 2 * (p_rel @ v_rel)
+    if c <= 0:                                  # already overlapping: urgent only if still closing in
+        return 0.0 if b < 0 else np.inf
     disc = b * b - 4 * a * c
     if a < 1e-12 or disc < 0 or b >= 0:
         return np.inf

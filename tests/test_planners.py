@@ -31,3 +31,9 @@ def test_choose_respects_top_speed():
     cmd, _ = P.choose(np.zeros(2), np.array([8.0, 0]), people().assign(h=[], theta=[], lo_a=[], hi_a=[], lo_c=[],
                       hi_c=[], agent_id=[]), speeds=(0.0, 0.5, 1.0))
     assert np.linalg.norm(cmd) <= 1.0 + 1e-9
+
+
+def test_ttc_overlapping():
+    # inside the combined radius: separating -> no collision ahead; approaching -> collision now
+    assert P.time_to_collision(np.array([0.5, 0]), np.array([1.0, 0]), 1.0) == np.inf
+    assert P.time_to_collision(np.array([0.5, 0]), np.array([-1.0, 0]), 1.0) == 0.0
