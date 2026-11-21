@@ -50,7 +50,8 @@ def write(args, pred, seed, hist, plans, obstacles, meta, res, root="results/tra
         S = steps.max() + 1
         P = np.full((S, 2), np.nan); P[steps] = g[["x", "y"]].to_numpy()
         noisy = P + np.random.default_rng([seed, int(aid)]).normal(0, args.noise, (S, 2))
-        Ps, Vs = F._kalman_cv(noisy, dt, r=max(args.noise, 0.05))
+        kq, kr = F.kalman_params(meta, args.noise)
+        Ps, Vs = F._kalman_cv(noisy, dt, q=kq, r=kr)
         obs.append(pd.DataFrame({"t": steps * dt, "agent_id": aid, "noisy_x": noisy[steps, 0], "noisy_y": noisy[steps, 1],
                                  "filt_x": Ps[steps, 0], "filt_y": Ps[steps, 1], "filt_vx": Vs[steps, 0], "filt_vy": Vs[steps, 1]}))
     pd.concat(obs).to_parquet(out / "observed.parquet")

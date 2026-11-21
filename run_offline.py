@@ -27,10 +27,13 @@ from foresight.core import schema
 def rows_for(data_dir, noise, seed=0, horizons=(1.0, 2.0), label_from="truth"):
     hz = "_".join(f"{h:g}" for h in horizons)
     lab = "" if label_from == "truth" else f"_{label_from}"
-    cache = Path(data_dir) / f"rows_{F.FEATURES_VERSION}_noise{noise}_h{hz}{lab}.parquet"
+    tracks, obst, meta = None, None, F.load_kalman(data_dir, {})
+    kq, kr = F.kalman_params(meta, noise)
+    cache = Path(data_dir) / f"rows_{F.FEATURES_VERSION}_noise{noise}_h{hz}{lab}_kq{kq:g}_kr{kr:g}.parquet"
     if cache.exists():
         return pd.read_parquet(cache)
     tracks, obst, meta = schema.load(data_dir)
+    F.load_kalman(data_dir, meta)
     t0 = time.perf_counter()
     df = F.build_rows(tracks, obst, meta, noise=noise, seed=seed, horizons=horizons, label_from=label_from)
     print(f"built {len(df)} rows from {df.episode.nunique()} episodes in {time.perf_counter() - t0:.0f} s")

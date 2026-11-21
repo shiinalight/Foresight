@@ -1,0 +1,9 @@
+{
+ "kalman_q": 0.1,
+ "kalman_r": 0.1,
+ "tuned_on": "data/hotel",
+ "episodes": "all",
+ "cv_err_2s": 0.28257231624133144,
+ "noise": 0.0,
+ "grid_edge": false
+}

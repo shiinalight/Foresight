@@ -137,7 +137,7 @@ def run_episode(pred, seed, args, log=False):
     sim, dt, L = make_sim(args.sim, seed, args)
     state = [dict(r, episode=seed) for r in sim.reset()]
     hist = [state]
-    meta = {"dt": dt, "bounds": [-L, -L, L, L], "episodes": {}}
+    meta = F.load_kalman(args.bank or f"data/{args.sim}", {"dt": dt, "bounds": [-L, -L, L, L], "episodes": {}})
     obstacles = getattr(sim, "obst", None) or getattr(sim, "obstacles", [])
     obst_df = pd.DataFrame([dict(episode=seed, obstacle_id=i, shape="circle", **o) for i, o in enumerate(obstacles)])
     every = max(1, round(args.replan / dt))

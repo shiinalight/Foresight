@@ -17,7 +17,8 @@ import pandas as pd
 # f2 (Sat 23:30): unrotated "no obstacle" padding (f1 leaked world heading when bounds=None), standing people
 # face the robot / nearest agent instead of the world x-axis, full-window history check. Never mix f1 and f2 rows.
 # f3 (Sat 23:55): mode label "unknown" (not "stop") when the agent has no data 2 s later (left the view / episode end).
-FEATURES_VERSION = "f3"
+# f4 (Sun 00:40): Kalman (q, r) tuned per dataset on training episodes (kalman.json; S1 gate), not q=2 everywhere.
+FEATURES_VERSION = "f4"
 OBS_STEP = 0.2      # seconds between history samples
 N_HIST = 5          # history samples (1 s)
 N_NEIGH = 3         # nearest agents described
@@ -68,6 +69,23 @@ def _kalman_cv(z, dt, q=2.0, r=0.1):
     return P_out, V_out
 
 
+def kalman_params(meta, noise):
+    """(q, r) for the forward Kalman filter: per-dataset tuned values (meta["kalman_q"], meta["kalman_r"],
+    from <dataset>/kalman.json via load_kalman) or the f1-f3 defaults q = 2, r = max(noise, 0.05)."""
+    return float(meta.get("kalman_q", 2.0)), float(meta.get("kalman_r", max(noise, 0.05)))
+
+
+def load_kalman(data_dir, meta):
+    """Copy the tuned filter settings from <data_dir>/kalman.json into meta (in place); returns meta."""
+    import json
+    from pathlib import Path
+    p = Path(data_dir) / "kalman.json"
+    if p.exists():
+        k = json.loads(p.read_text())
+        meta["kalman_q"], meta["kalman_r"] = k["kalman_q"], k["kalman_r"]
+    return meta
+
+
 def _obstacle_vec(p, obst, bounds):
     """Vector from p to the nearest obstacle surface point, and its distance."""
     best_d, best_v = FAR, np.array([FAR, 0.0])
@@ -98,6 +116,7 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
     Noise is drawn per agent from (seed, agent_id) over absolute time steps, so a growing history
     gives identical observations, also when agents enter or leave: live queries match offline rows."""
     dt = float(meta["dt"])
+    kq, kr = kalman_params(meta, noise)
     k = max(1, round(OBS_STEP / dt))
     hsteps = [round(h / dt) for h in horizons]
     every = max(1, round(row_every / dt))
@@ -134,7 +153,7 @@ def build_rows(tracks, obstacles, meta, horizons=(1.0, 2.0), row_every=0.5, nois
             Po[:, a_i] += np.random.default_rng([seed, int(aid)]).normal(0, noise, (S, 2))
         Ps = np.full_like(Pt, np.nan); Vs = np.full_like(Pt, np.nan)
         for a in range(A):
-            Ps[:, a], Vs[:, a] = _kalman_cv(Po[:, a], dt, r=max(noise, 0.05))
+            Ps[:, a], Vs[:, a] = _kalman_cv(Po[:, a], dt, q=kq, r=kr)
         step_iter = [S - 1] if query_only else range(N_HIST * k, S, every)
         for s in step_iter:
             if s < N_HIST * k:

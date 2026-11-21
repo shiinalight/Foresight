@@ -1,0 +1,9 @@
+{
+ "kalman_q": 0.01,
+ "kalman_r": 0.05,
+ "tuned_on": "data/crowd_cross",
+ "episodes": "train split",
+ "cv_err_2s": 0.8286185060785499,
+ "noise": 0.1,
+ "grid_edge": false
+}
