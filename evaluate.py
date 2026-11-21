@@ -46,6 +46,8 @@ def scores(Q, Y):
         a, b = QS.index(lo), QS.index(hi)
         out[f"cov{round(100 * (hi - lo))}"] = float(((Y >= Q[:, :, a]) & (Y <= Q[:, :, b])).mean())
         out[f"width{round(100 * (hi - lo))}"] = float((Q[:, :, b] - Q[:, :, a]).mean())
+        # joint: truth inside the 2D box on both axes at once (what the robot relies on)
+        out[f"joint{round(100 * (hi - lo))}"] = float(((Y >= Q[:, :, a]) & (Y <= Q[:, :, b])).all(axis=1).mean())
     return out
 
 

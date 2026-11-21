@@ -25,6 +25,18 @@ from foresight.domains.toy_crowd import BOUND, CrowdSim
 from run_offline import rows_for
 
 HZ = (1.0, 2.0)
+KEY = ["sim", "planner", "seed", "margin", "box_q", "version"]
+
+
+def load_closed(path="results/closed.csv", version="v2"):
+    """Closed-loop results, one row per (sim, planner, seed, margin, box_q, version): latest run wins."""
+    d = pd.read_csv(path)
+    for c, v in (("margin", 0.2), ("box_q", 0.05), ("version", "v1")):
+        if c not in d:
+            d[c] = v
+        d[c] = d[c].fillna(v)
+    d = d.drop_duplicates(KEY, keep="last")
+    return d[d.version == version] if version else d
 WINDOW = 12            # sim steps of history passed to the feature builder (>= 1.0 s + 1)
 
 
@@ -65,12 +77,12 @@ def run_episode(model, seed, args, log=False):
         goal = np.array([state[0]["goal_x"], state[0]["goal_y"]])
         if k % every == 0:
             win = pd.DataFrame([r for s in hist[-window:] for r in s])
-            q = F.build_rows(win, obst_df, meta, horizons=HZ, noise=args.noise, seed=k, query_only=True)
+            q = F.build_rows(win, obst_df, meta, horizons=args.hz, noise=args.noise, seed=k, query_only=True)
             t0 = time.perf_counter()
             pred = V.predict_rows(model, q, (args.box_q, 0.5, 1 - args.box_q)) if len(q) else q
             t_pred += time.perf_counter() - t0
             cmd, info = P.choose(p_robot, goal, pred, margin=args.margin, bounds=meta["bounds"],
-                                 obstacles=obstacles, horizons=HZ)
+                                 obstacles=obstacles, horizons=args.hz)
             n_plans += 1; n_freeze += int(np.hypot(*cmd) < 0.05); n_fallback += int(info["fallback"])
             if log:
                 plans.append({"t": k * dt, "pred": pred, "cmd": cmd, **info})
@@ -110,10 +122,12 @@ def main():
     ap.add_argument("--margin", type=float, default=0.2)
     ap.add_argument("--noise", type=float, default=0.1)
     ap.add_argument("--box-q", type=float, default=0.05, help="box = [q, 1-q] per axis (risk dial)")
+    ap.add_argument("--horizons", type=float, nargs="*", default=list(HZ), help="planner checks the boxes at these")
     ap.add_argument("--log", action="store_true")
     a = ap.parse_args()
 
-    bank = rows_for(a.bank or f"data/{a.sim}", a.noise, horizons=HZ)
+    a.hz = tuple(a.horizons)
+    bank = rows_for(a.bank or f"data/{a.sim}", a.noise, horizons=a.hz)
     out = []
     Path("results/closed").mkdir(parents=True, exist_ok=True)
     for kind in a.planners:
@@ -122,7 +136,7 @@ def main():
             t0 = time.perf_counter()
             res, logd = run_episode(model, seed, a, log=a.log)
             res |= {"sim": a.sim, "planner": kind, "wall_s": time.perf_counter() - t0, "margin": a.margin,
-                    "box_q": a.box_q, "version": "v2"}
+                    "box_q": a.box_q, "version": "v2", "horizons": " ".join(f"{h:g}" for h in a.hz)}
             out.append(res)
             print(f"{kind:<8} seed {seed}  reached {res['reached']}  t_goal {res['time_to_goal']}  "
                   f"collisions {res['collision_steps']} (moving {res['moving_collision_steps']})  min gap {res['min_gap']:.2f} m  "
@@ -131,6 +145,7 @@ def main():
                 with open(f"results/closed/{a.sim}_{kind}_{seed}.pkl", "wb") as f:
                     pickle.dump(logd, f)
     df = pd.DataFrame(out)
+    df["run_id"] = time.strftime("%Y%m%d-%H%M%S")
     path = Path("results/closed.csv")
     df.to_csv(path, mode="a", header=not path.exists(), index=False)
     print(df.groupby("planner")[["reached", "time_to_goal", "collided", "moving_collision_steps", "near_miss", "min_gap",

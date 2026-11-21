@@ -42,14 +42,29 @@ def main():
     ap.add_argument("--budget", type=int, default=1000)
     ap.add_argument("--h", type=float, default=2.0)
     ap.add_argument("--models", nargs="*", default=["tabpfn", "lgbm"])
+    ap.add_argument("--train-data", default=None,
+                    help="bank from another dataset; x axis becomes seconds in the scene (e.g. --train-data data/hotel --data data/eth)")
+    ap.add_argument("--horizons", type=float, nargs="*", default=[1.0, 2.0])
     a = ap.parse_args()
 
-    df = rows_for(a.data, a.noise, horizons=(1.0, 2.0))
+    df = rows_for(a.data, a.noise, horizons=tuple(a.horizons))
     df = df[np.isclose(df.h, a.h)]
-    tr, _, te = F.split_by_episode(df)
-    bank = C.Bank(df[tr])
-    glob = df[tr].sample(a.budget, random_state=0)
-    test = df[te & df.since_switch.notna()]
+    if a.train_data:
+        src = rows_for(a.train_data, a.noise, horizons=tuple(a.horizons))
+        src = src[np.isclose(src.h, a.h)]
+        bank, glob, test = C.Bank(src), src.sample(min(a.budget, len(src)), random_state=0), df.copy()
+        test["since_switch"] = test["t"]                       # seconds since the robot entered this scene
+        frozen = M.make("lgbm").fit(F.X_of(src), src[["ddx", "ddy"]].to_numpy())
+        global BINS
+        BINS = [(0, 5, "0-5 s"), (5, 10, "5-10 s"), (10, 20, "10-20 s"), (20, 40, "20-40 s"), (40, 61, "40-60 s")]
+        xlabel = "Seconds in the new scene"
+    else:
+        tr, _, te = F.split_by_episode(df)
+        bank = C.Bank(df[tr])
+        glob = df[tr].sample(a.budget, random_state=0)
+        test = df[te & df.since_switch.notna()]
+        frozen = None
+        xlabel = "Time since the crowd changed behaviour"
     eps = sorted(test.episode.unique())[: a.episodes]
     rows = []
     t0 = time.perf_counter()
@@ -65,8 +80,8 @@ def main():
                 ctx = glob if mix is None else C.select(q, bank, live=live, budget=a.budget, mix=mix)
                 if len(ctx) < 20:
                     continue                                   # recent-only before enough outcomes exist
-                for mname in a.models:
-                    m = M.make(mname).fit(F.X_of(ctx), ctx[["ddx", "ddy"]].to_numpy())
+                for mname in a.models + (["lgbm_frozen"] if frozen is not None and sname == "global" else []):
+                    m = frozen if mname == "lgbm_frozen" else M.make(mname).fit(F.X_of(ctx), ctx[["ddx", "ddy"]].to_numpy())
                     Q = m.predict_quantiles(F.X_of(q), (0.1, 0.5, 0.9))
                     Y = q[["ddx", "ddy"]].to_numpy()
                     err = np.linalg.norm(Q[:, :, 1] - Y, axis=1)
@@ -93,12 +108,18 @@ def main():
             if r is not None:
                 ax.plot(list(r.index.astype(str)), r.values, marker="o", lw=2, color=colors[s], label=labels[s])
         ax.set_title(V.MODEL_LABEL.get(mname, mname), fontsize=11, color=V.C_INK)
-        ax.set_xlabel("Time since the crowd changed behaviour", color=V.C_MUTED)
+        ax.set_xlabel(xlabel, color=V.C_MUTED)
+        if mname == "lgbm" and ("lgbm_frozen", "global") in tab.index:
+            r = tab.loc[("lgbm_frozen", "global")]
+            ax.plot(list(r.index.astype(str)), r.values, marker="s", lw=1.5, ls="--", color="#1f2328",
+                    label="Frozen, all rows of the other scene")
     axes[0].set_ylabel(f"Mean error at +{a.h:g} s (m)", color=V.C_MUTED)
     axes[-1].legend(frameon=False, fontsize=9, labelcolor=V.C_INK)
     fig.suptitle("Which context rows, after the crowd changes", fontsize=13, weight="bold", color=V.C_INK, x=0.06, ha="left")
-    fig.tight_layout(); fig.savefig("media/fig_adapt.png", dpi=150)
-    print("wrote results/adapt.csv and media/fig_adapt.png")
+    tag = f"_{Path(a.train_data).name}_to_{Path(a.data).name}" if a.train_data else ""
+    fig.tight_layout(); fig.savefig(f"media/fig_adapt{tag}.png", dpi=150)
+    res.to_csv(f"results/adapt{tag}.csv", index=False)
+    print(f"wrote results/adapt{tag}.csv and media/fig_adapt{tag}.png")
 
 
 if __name__ == "__main__":

@@ -80,8 +80,11 @@ def _closed_table(s):
     if not p.exists():
         _text(s, "[results/closed.csv to come]", Inches(0.6), Inches(3.2), Inches(12), Inches(1), 18, color=MUTED)
         return
-    df = pd.read_csv(p)
-    df = df[df.get("sim", "crowd") == "crowd"] if "sim" in df else df
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from run_closed import load_closed
+    df = load_closed(p)
+    df = df[(df.sim == "crowd") & (df.box_q == 0.05)]
     g = df.groupby("planner").agg(n=("seed", "nunique"), reached=("reached", "mean"), t=("time_to_goal", "mean"),
                                   coll=("collided", "mean"), gap=("min_gap", "mean"), freeze=("freeze_rate", "mean"))
     order = [k for k in ("cv", "cv_band", "lgbm", "tabpfn") if k in g.index]
