@@ -74,13 +74,23 @@ class LGBMQuantile:
         return out
 
 
+def best_device():
+    """cuda > mps (Apple GPU) > cpu, resolved here so the CPU large-context guard below still applies."""
+    import torch
+    if torch.cuda.is_available():
+        return "cuda"
+    if getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 class TabPFNQuantile:
     name = "tabpfn"
 
     def __init__(self, device=None, n_estimators=None, fast=False, fit_mode=None, api=False):
         import torch
         self.api = api                # hosted TabPFN (tabpfn-client): flat price per predict call
-        self.device = "api" if api else (device or ("cuda" if torch.cuda.is_available() else "cpu"))
+        self.device = "api" if api else (device or best_device())
         self.n_estimators = n_estimators
         self.fast = fast
         self.fit_mode = fit_mode      # "fit_with_cache" for many small predicts (closed loop)

@@ -176,6 +176,7 @@ A win on (1) is not a TabPFN win.
   - The TabPFN-2 weights are Apache 2.0 with an attribution requirement.
   - Prior Labs sells a commercial licence.
   - So this is a research prototype. A product would need the commercial licence or the v2 weights (the tier grid in `tools/tier_grid.py` includes v2 for that reason).
+- **Model size** (counted from the released checkpoints, every tensor in the safetensors header, float32): TabPFN-3.5 has 218,987,657 parameters (836 MB file); TabPFN-3.5-Fast has 83,534,985 (319 MB). The real-time tier (3.5 with 1 estimator, D-5) costs the larger model; the timing comparison is in `tools/latency.py`.
 - **Timings:** our CPU timings come from x64 Python emulated on an ARM laptop, which is a worst case, not a deployment number. We quote no industry compute figures.
 - **Latency:** the overnight closed-loop run assumes zero latency: a command applies on the step it is computed. A delayed-command run is planned.
 - **Not deployable:** `lgbm_live` retrains six LightGBM models every 2 s, so it is an ablation only ("is the gain the rows or TabPFN?"). It stays out of the headline and the product diagram.
