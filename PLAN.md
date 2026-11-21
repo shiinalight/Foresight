@@ -45,7 +45,9 @@ Rule: small tests with gates written in advance come first; the big run comes af
 | Sat night | T3: does live context recover when behaviour is new (crowd without erratic in the bank)? | builder session | running |
 | Sat night | Real-data adaptation, Hotel → ETH (local) | builder session | running |
 | After 01:00 | Real-data adaptation, ETH → Hotel (API, about 20M credits), then the model-size repeats (about 5M) | builder session | queued |
-| If T1 overlaps | T2: difficulty settings, chosen from the baselines alone by a rule fixed in advance; regenerate the bank | Nooshin / builder session | waiting on T1 |
+| If T1 overlaps | T2: difficulty settings, chosen from the baselines alone by a rule fixed in advance; regenerate the bank | knobs: CTO session (done, `d123543`); sweep: builder session | knobs in; sweep waits on T1 |
+| Sat night | Robustness tests: simulator (done, 11 tests), core pipeline, closed loop | CTO session + 2 subagents | running |
+| Sat night | Data cards for every dataset (`docs/DATA.md`) | CTO subagent | running |
 | Sun early | T4: refit interval, latency budget and calibration in the loop, 10 seeds each | builder session | waiting |
 | Sun early | T5: confirmatory run, 40 fresh seeds (3000–3039), dated amendment to the pre-registration | builder session | waiting |
 | Sun morning | Mac: MPS check and timings (`tools/check_mps.py`, `tools/latency.py`) | Nooshin | ready |
@@ -54,6 +56,12 @@ Rule: small tests with gates written in advance come first; the big run comes af
 | 12:30 → 16:00 | Freeze; README, slides, video; submit | everyone | fixed |
 
 ## 5. Working rules
+
+- **Who edits what (Sat night):**
+  - The CTO session owns `foresight/domains/crowd.py` and `tests/test_robustness_*.py`.
+  - The builder session owns the loop, planner, models, context, features, calibration, occupancy, `tools/` and `RESULTS.md`.
+  - **Nooshin:** `crowd.py` now has two difficulty settings, `robot_repulsion` and `ignore_robot` (`d123543`). Their defaults leave every episode exactly as before. Pull before editing `crowd.py`, so your next push doesn't collide.
+  - A bug found in someone else's file goes to its owner as a failing test with a proposed fix.
 
 - **Branches:** work goes on `darshak/core`. Plan documents (this page and `docs/`) are mirrored to `main` immediately with `tools/sync_docs.ps1`. Code and results reach `main` only once final and reviewed, by fast-forward, never by force. Before promoting, merge `origin/main` into `darshak/core`.
 - **Decisions:** no value enters a run without a row in `docs/DECISIONS.md` (backed, assumed or pending).
