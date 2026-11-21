@@ -81,7 +81,7 @@ def main():
     fig = plt.figure(figsize=(9.6, 7.2), facecolor="white")
     ax = fig.add_axes([0.07, 0.13, 0.60, 0.74])
     legend_items = [
-        Line2D([], [], marker="o", ls="", color=C_PERSON, ms=8, label="Person, now"),
+        Line2D([], [], marker="o", ls="", color=C_PERSON, ms=8, label="Person, now\n(no box: just entered, or no\nposition known 2 s later)"),
         Line2D([], [], color=C_MUTED, lw=1.2, label="Their path, last 2 s"),
         Line2D([], [], marker="o", ls="-", color=C_PRED, ms=4, lw=1, label=f"Predicted position in {a.h:g} s"),
         Patch(facecolor="none", edgecolor=C_PRED, lw=1.5, label="Predicted range (~80% sure)"),
@@ -147,7 +147,8 @@ def main():
                  f"predictions:             {len(seen):,}",
                  fontsize=9, color=C_INK, va="bottom", family="monospace", linespacing=1.6)
         fig.text(0.07, 0.025, "Boxes: model quantiles of the deviation from constant velocity, in each person's own frame.\n"
-                 "Positions observed with sensor noise and smoothed by a Kalman filter; the model never sees the future.",
+                 + (f"Positions observed with {a.noise:g} m simulated sensor noise and smoothed by a Kalman filter" if a.noise > 0
+                 else "Real annotated positions, smoothed by a Kalman filter") + "; the model never sees the future.",
                  fontsize=7.5, color=C_MUTED, linespacing=1.4)
         ax.legend(handles=legend_items, loc="upper left", bbox_to_anchor=(1.03, 0.97), frameon=False,
                   fontsize=8.5, labelcolor=C_INK, borderaxespad=0)
