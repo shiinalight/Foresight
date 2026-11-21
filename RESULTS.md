@@ -101,6 +101,34 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
   - **Caveat:** the two test sets differ, so compare the shapes. This is the reason for choosing context rows from the current scene (adaptation experiment, next).
 - **Hotel is easy for constant velocity:** about 45% of people there stand still. ETH is harder, and every learned model gains more there.
 
+## Calibration layer: on arrival and in the scene (`tools/conformal_eval.py`, `media/fig_conformal_*.png`)
+
+Every model's 10–90% box (per axis) is widened or narrowed by one offset, so that the 2D box holds the truth 80% of the time, jointly over both axes. This uses conformalised quantile regression with a joint score (`foresight/core/conformal.py`).
+
+- **Raw:** the model's own box.
+- **On arrival:** the offset is calibrated on a held-out 30% of the *training* scene's episodes, which is all a robot has when it arrives somewhere new.
+- **In the scene:** starting from that offset, it adapts online from the new scene's own completed rows (adaptive conformal, Gibbs and Candès 2021; strictly causal).
+- **Engine:** TabPFN here runs through the hosted API (`tabpfn-client`, default model).
+
+**Joint coverage of the box at +2 s (target 80%), and width after 20 s in the scene:**
+
+| Direction | Model | Raw | On arrival | In the scene, after 20 s | Width after 20 s |
+|---|---|---|---|---|---|
+| Hotel → ETH | Const. velocity + band | 50% | 68% | 79% | 1.40 m |
+| Hotel → ETH | LightGBM (1,500 rows) | 32% | 67% | 79% | 1.16 m |
+| Hotel → ETH | LightGBM (all rows) | 37% | 67% | 79% | 1.15 m |
+| Hotel → ETH | **TabPFN** | **62%** | **73%** | 80% | 1.43 m |
+| ETH → Hotel | Const. velocity + band | 75% | 92% | 83% | 1.19 m |
+| ETH → Hotel | LightGBM (1,500 rows) | 60% | 93% | 82% | 0.90 m |
+| ETH → Hotel | LightGBM (all rows) | 56% | 91% | 82% | 0.87 m |
+| ETH → Hotel | **TabPFN** | **80%** | 95% | 81% | 1.16 m |
+
+**What this says, plainly:**
+- **Out of the box, TabPFN is the only calibrated model.** With no calibration data at all, its box holds the truth 62% and 80% of the time; LightGBM's holds it 32–60%.
+- **On arrival, calibrating on the training scene does not fix a new place.** Going to ETH, every model stays overconfident (67–73%), and TabPFN is closest. Going to Hotel, every model is pushed too cautious (91–95%).
+- **After about 20 s of outcomes in the new scene, every model reaches about 80%,** and a conformally calibrated LightGBM does it with **narrower boxes** (0.87–1.16 m against TabPFN's 1.16–1.43 m). TabPFN does not win on sharpness once local calibration data exists, and we say so.
+- **So TabPFN's edge is the first seconds in a new place,** before there is anything to calibrate on, plus learning from the scene's own rows (adaptation experiment). For a robot, the first seconds in a new place are exactly when an overconfident box causes a collision.
+
 **Limits:**
 - Only two real scenes.
 - The test sets are capped (CPU time).

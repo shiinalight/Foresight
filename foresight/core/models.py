@@ -76,14 +76,20 @@ class LGBMQuantile:
 class TabPFNQuantile:
     name = "tabpfn"
 
-    def __init__(self, device=None, n_estimators=None, fast=False, fit_mode=None):
+    def __init__(self, device=None, n_estimators=None, fast=False, fit_mode=None, api=False):
         import torch
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.api = api                # hosted TabPFN (tabpfn-client): flat price per predict call
+        self.device = "api" if api else (device or ("cuda" if torch.cuda.is_available() else "cpu"))
         self.n_estimators = n_estimators
         self.fast = fast
         self.fit_mode = fit_mode      # "fit_with_cache" for many small predicts (closed loop)
 
     def _new(self):
+        if self.api:
+            import tabpfn_client
+            from tabpfn_client import TabPFNRegressor as ClientRegressor
+            tabpfn_client.set_access_token(os.environ["TABPFN_TOKEN"])
+            return ClientRegressor(**({"n_estimators": self.n_estimators} if self.n_estimators else {}))
         from tabpfn import TabPFNRegressor
         kw = {"device": self.device}
         if self.n_estimators:

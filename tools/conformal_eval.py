@@ -47,6 +47,7 @@ def main():
     ap.add_argument("--alpha", type=float, default=0.2)
     ap.add_argument("--eta", type=float, default=0.02)
     ap.add_argument("--models", nargs="*", default=["cv_band", "lgbm", "lgbm_all", "tabpfn"])
+    ap.add_argument("--api", action="store_true", help="TabPFN through the hosted API (tabpfn-client)")
     a = ap.parse_args()
     hz = (1.2, 2.0, 4.8) if any(s in a.train for s in ("eth", "hotel")) else (1.0, 2.0)
     src = rows_for(a.train, a.noise, horizons=hz); dst = rows_for(a.test, a.noise, horizons=hz)
@@ -60,7 +61,7 @@ def main():
         t0 = time.perf_counter()
         rows = fit if key in ("cv_band", "lgbm_all") else fit.sample(min(a.context, len(fit)), random_state=0)
         kind = "lgbm" if key == "lgbm_all" else key
-        m = M.make(kind).fit(F.X_of(rows), rows[["ddx", "ddy"]].to_numpy())
+        m = M.make(kind, **({"api": True} if (kind == "tabpfn" and a.api) else {})).fit(F.X_of(rows), rows[["ddx", "ddy"]].to_numpy())
         Qc, Qt = m.predict_quantiles(F.X_of(cal), QS), m.predict_quantiles(F.X_of(dst), QS)
         lo_c, hi_c, lo_t, hi_t = Qc[:, :, 0], Qc[:, :, 2], Qt[:, :, 0], Qt[:, :, 2]
         d_split = CF.split_offset(lo_c, hi_c, Yc, a.alpha)
