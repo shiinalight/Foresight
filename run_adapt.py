@@ -6,7 +6,10 @@ For test episodes with a regime switch, at moments every `--every` seconds, the 
 fresh context chosen by one of four strategies, then predicts the people at that moment:
   global   1,000 random rows from other episodes (fixed)
   knn      1,000 rows from other episodes most similar to the current situations
-  recent   only rows from this episode whose outcome is already known (t_known <= now)
+  recent   only rows from this episode whose outcome is already known (t_known <= now). Until the context.select
+           fix of Sun ~00:00 this arm was padded with random bank rows (not recency-only); rerun after that fix.
+           Note: in the first ~4 s of a scene no in-scene row has a known outcome (history + t_known = t + h), so
+           those bins are cold start for every strategy, not adaptation.
   mix      60% recent + 30% similar + 10% random, rare behaviours kept in (cold start: bank only)
 Each strategy runs with TabPFN and with LightGBM refitted on exactly the same rows.
 Writes results/adapt.csv and media/fig_adapt.png (error against seconds since the switch).
@@ -111,7 +114,10 @@ def main():
                     joint90 = ((Y >= Q[:, :, 0]) & (Y <= Q[:, :, 4])).all(axis=1)   # the robot's 5-95% box (~81%)
                     for e, c, j, j9, s, aid in zip(err, cov, joint, joint90, q.since_switch, q.agent_id):
                         rows.append(dict(episode=ep, agent_id=aid, t=t, since=s, strategy=sname, model=mname, err=e,
-                                         cov=c, joint=float(j), joint90=float(j9), n_ctx=len(ctx), thin=thin))
+                                         cov=c, joint=float(j), joint90=float(j9), n_ctx=len(ctx), thin=thin,
+                                         n_recent=int((ctx.source == "recent").sum()) if "source" in ctx else 0,
+                                         n_knn=int((ctx.source == "knn").sum()) if "source" in ctx else 0,
+                                         n_fill=int(ctx.source.str.startswith("fill").sum()) if "source" in ctx else 0))
         print(f"episode {ep} done ({time.perf_counter() - t0:.0f} s)")
     res = pd.DataFrame(rows)
     Path("results").mkdir(exist_ok=True); res.to_csv("results/adapt.csv", index=False)

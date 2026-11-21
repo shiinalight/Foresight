@@ -170,6 +170,70 @@ Show "none qualifies" if no setting does. Also report success rate, and compute 
 
 A win on (1) is not a TabPFN win.
 
+## Closed loop: pre-registration amendment 1 (timestamp: this commit)
+
+Written before any learned planner, the open-loop oracle included, has run in the crossing crowd.
+
+**What changed since the original pre-registration (Sat ~20:30), disclosed in full:**
+- **Pilot and T1:** the pilot (seeds 1000–1012) and T1 (100 seeds, default plaza, D-19) showed that the default plaza does not separate planners.
+- **Default-scene T2:** a T2 sweep in the default scene ran partly (`results/closed/*t2-r*`), then stopped when the scene changed.
+- **Criterion changed mid-sweep:** collisions are now judged on moving-robot collisions only (D-23).
+- **Scene changed:** the confirmatory scene is now the crossing crowd, people crossing the plaza and leaving (D-24, Darshak's decision).
+- **Features changed twice:** to f2/f3 (leaks and labels, D-20/D-22) and to f4 (tuned tracking filter, D-26). Everything below uses f4 only.
+- **Cross baselines seen before this rule:** some T2 baseline cells in the crossing crowd were visible before this definition was written (an f3 sweep, stopped, and the f4 sweep in progress).
+
+**T2 picker, defined mechanically:**
+- **Cells:** robot_repulsion {2, 1, 0.5} × ignore_robot {0, 0.2, 0.4} × people {16, 24, 32}, seeds 4100–4119, in the crossing crowd.
+- **Best baseline per cell:** of stop_go, cv m0.4, reactive m0.4 and vo w1, the one with the lowest moving-collision rate (share of seeds with at least one moving-collision step). Ties go to the lower mean intrusion_s.
+- **A cell qualifies** when its best baseline has a moving-collision rate ≥ 5%, or a mean intrusion_s ≥ 3 s.
+- **Mildest qualifying cell:** the one closest to the default crowd, ordered by highest robot_repulsion, then lowest ignore_robot, then fewest people. The first qualifying cell in that order is chosen.
+- **If no cell qualifies:** the closed loop is reported as a demo and a stress test, not as evidence for claim C.
+
+**In the chosen cell, every planner is swept over its own dial:**
+- constant velocity at margin {0.2, 0.4, 0.6, 0.8};
+- reactive at margin {0.2, 0.4, 0.6, 0.8};
+- velocity obstacles at weight {0.5, 1, 2};
+- stop_go once;
+- open-loop oracle at margin {0.2, 0.4, 0.6};
+- the primary TabPFN planner at box_q {0.10, 0.15, 0.20}, so its curve has three points;
+- the other learned planners (lgbm, lgbm_all, frozen tabpfn) at box_q {0.10, 0.15}.
+- q = 0.05 freezes the robot (D-6).
+- Smoothing (D-28) is on for every planner using the shared planner if, and only if, T4's gate passes.
+
+**Open-loop oracle gate (D-21), in the chosen cell, before T5:**
+- **Gate:** the oracle beats every baseline curve by the D-14 differences.
+- **Why "open-loop":** it rolls a twin forward on the current command, while the real people react to the chosen one, so it is not a true upper bound.
+- **If it fails:** T5 still runs, but the closed loop is reported as a stress test.
+
+**Primary comparison, named now.**
+- **The primary planner:** the live TabPFN setup decided at 02:00, named in amendment 2 before T5 launches; until then `tabpfn_live`.
+- **The primary test:** that planner against each of the four baselines (stop_go, constant velocity, reactive, velocity obstacles, each over its own dial), on both safety axes.
+- **Correction for four tests:** Holm–Bonferroni across the four baselines at 5%.
+- **Secondary planners:** frozen TabPFN, lgbm and lgbm_all are exploratory. They are reported but carry no claim.
+
+**Headline analysis.** This replaces the absolute ≤ 2% collisions and ≤ 1 s intrusion rule, which disqualifies baselines by construction in a scene chosen by T2.
+- **Curves:** for each planner, the mean time_capped over its dial, plotted against:
+  - (a) mean min_gap;
+  - (b) moving-collision rate.
+- **What "beats" means:** planner A beats planner B when, at B's safety level (interpolated along A's curve), A's mean time_capped is lower by more than 2 s (D-14), and the 95% paired-seed bootstrap interval of the difference excludes 0. It has to hold on both (a) and (b).
+- **Outside a curve's range, no interpolation.** If B's safety level lies outside A's curve, A beats B there only by dominance: some point of A is at least as safe as B's point on both axes, and more than 2 s faster, with the paired interval excluding 0. Otherwise the pair is "not comparable", which counts as not beating.
+- **Also reported:** success rate, intrusion_s, heading_change_per_m, on common seeds only.
+
+**Settings carried in from T4, declared in amendment 2 before T5:**
+- whether smoothing is on (D-28 gate);
+- the latency budget: the virtual-time delay before a command applies, and the delay before refreshed context can be used.
+
+Both apply to every planner. Amendment 2 also names the 02:00 TabPFN setup and is committed before T5 launches.
+
+**Run:**
+- seeds 3000–3039;
+- every seed with a crowd-wide switch at mid-episode;
+- crossing crowd at the chosen T2 cell;
+- features f4.
+- **TabPFN tier in the loop:** 3.5-Fast with 1 estimator, or the setup decided at 02:00 from the context-size test, stated per row (tabpfn_cfg). The deployed-tier documents name 3.5 with 1 estimator.
+
+**Fallback, written now:** if neither TabPFN planner beats every baseline curve under the rule above, the closed loop is reported as a stress test, not as evidence for claim C. Claims A and B then rest on the offline and real-data results.
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):

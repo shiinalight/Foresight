@@ -48,7 +48,7 @@ def select(queries, bank: Bank, live=None, budget=1500, mix=(0.6, 0.3, 0.1), rar
     if live is not None and mix[0] > 0:
         rec = live[live["t_known"] <= t_now].sort_values("t_known").tail(int(budget * mix[0]))
         parts.append(rec.assign(source="recent")); n_rec = len(rec)
-    rest = budget - n_rec
+    rest = budget - n_rec if (mix[1] + mix[2]) > 0 else 0     # recency-only means no bank rows at all
     share_knn = mix[1] / max(mix[1] + mix[2], 1e-9)
     n_knn = int(rest * share_knn); n_rand = rest - n_knn
     if n_knn > 0:

@@ -11,7 +11,8 @@ Planners (same seeds = same crowd, start and goal for all):
   tabpfn       TabPFN on --context random bank rows, fitted once (frozen)
   lgbm_live    refitted every --refit s on context.select(): this episode's completed rows
   tabpfn_live  (labelled from observed, filtered positions, as a robot would) + similar bank rows
-The 0.4 s constant-velocity safety check in planner.choose() applies to every planner.
+Short 0.4 s check: constant velocity from the filtered state for cv, cv_band, lgbm* and tabpfn*; people frozen for
+reactive; true positions for the open-loop oracle; none for vo (time-to-collision penalty) and stop_go (sim policy).
 
 Writes results/closed/<run_id>.csv (one row per planner x seed), robot features of the live
 queries to results/closed/robotfeat_<run_id>.csv (bank-vs-live shift check), and with --log
