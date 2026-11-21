@@ -342,6 +342,15 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
   - **Otherwise:** the offset is OFF in the primary and is reported as a secondary arm only (the rule closer to 80%).
 - **The same rule** applies to every secondary arm that carries the offset.
 
+**T4 addendum, part 2: how the smoothing gate is read** (written before any T4 smoothing result was read; `tools/t4_smooth.ps1`):
+- **Test:** seeds 5110–5119, T5 config, box_q 0.15, no offset; tabpfn_split, tabpfn, lgbm_all and cv m0.4, with smoothing off and on (D-28 defaults).
+- **D-28 gate, made exact:**
+  - For each learned planner (tabpfn_split, tabpfn, lgbm_all), mean heading_change_per_m drops by at least 30% with smoothing.
+  - Paired over the common seeds, mean time_capped is no worse by more than 2 s, and mean intrusion_s no worse by more than 1 s (the D-14 differences).
+  - The moving-collision rate rises by at most 0.1 (one seed in ten).
+- **Decision:** if all three learned planners pass, smoothing is ON for every planner using the shared planner in T5. Otherwise it is OFF.
+- **Latency arm:** set to the primary's measured ms per plan in the T5 config (T4 offset test), rounded up to the next 0.2 s simulation step.
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):
