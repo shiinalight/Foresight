@@ -45,7 +45,7 @@ Rule: small tests with gates written in advance come first; the big run comes af
 | Sat night | T3: does live context recover when behaviour is new (crowd without erratic in the bank)? | builder session | running |
 | Sat night | Real-data adaptation, Hotel → ETH (local) | builder session | running |
 | After 01:00 | Real-data adaptation, ETH → Hotel (API, about 20M credits), then the model-size repeats (about 5M) | builder session | queued |
-| If T1 overlaps | T2: difficulty settings, chosen from the baselines alone by a rule fixed in advance; regenerate the bank | knobs: CTO session (done, `d123543`); sweep: builder session | **running** since Sat 23:10: 27 cells x 20 fresh seeds (4000-4019), stop_go, cv m0.4, reactive m0.4, vo w1 (`tools/t2.ps1`) |
+| If T1 overlaps | T2: difficulty settings, chosen from the baselines alone by a rule fixed in advance; regenerate the bank | knobs: CTO session; sweep: builder session | **moved to the crossing crowd (D-24).** Default-scene sweep stopped. Cross bank built (data/crowd_cross), S0 passes (D-25: LightGBM 39.5% better than CV). Cross sweep running from Sun 00:20 |
 | Sat night | Robustness tests: simulator (done, 11 tests), core pipeline, closed loop | CTO session + 2 subagents | running |
 | Sat night | Data cards for every dataset (`docs/DATA.md`) | CTO subagent | running |
 | Sun early | T4: refit interval, latency budget and calibration in the loop, 10 seeds each | builder session | waiting |
