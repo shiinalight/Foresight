@@ -14,10 +14,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-# f2 (Sat 23:30): unrotated "no obstacle" padding (f1 leaked world heading when bounds=None), standing people
+# f2 (Sat 22:54): unrotated "no obstacle" padding (f1 leaked world heading when bounds=None), standing people
 # face the robot / nearest agent instead of the world x-axis, full-window history check. Never mix f1 and f2 rows.
-# f3 (Sat 23:55): mode label "unknown" (not "stop") when the agent has no data 2 s later (left the view / episode end).
-# f4 (Sun 00:40): Kalman (q, r) tuned per dataset on training episodes (kalman.json; S1 gate), not q=2 everywhere.
+# f3 (Sat 22:59): mode label "unknown" (not "stop") when the agent has no data 2 s later (left the view / episode end).
+# f4 (Sat 23:26): Kalman (q, r) tuned per dataset on training episodes (kalman.json; S1 gate), not q=2 everywhere.
 FEATURES_VERSION = "f4"
 OBS_STEP = 0.2      # seconds between history samples
 N_HIST = 5          # history samples (1 s)
