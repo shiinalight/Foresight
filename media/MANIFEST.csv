@@ -1,0 +1,18 @@
+figure,script,input,commit,status,note
+demo_hotel_tabpfn.gif,demo.py,data/hotel + data/eth (bounds leak),ae4b169,superseded,made before the field-of-view fix (B9); re-render
+demo_hotel_tabpfn.png,demo.py,data/hotel + data/eth (bounds leak),ae4b169,superseded,made before B9; re-render
+compare_hotel.png,compare.py,data/hotel + data/eth (bounds leak),dec878a,superseded,made before B9; re-render
+closed_crowd_1001_cv_vs_tabpfn.gif,render_closed.py,v2 closed loop (before train/serve parity),708c573,superseded,replace from a v4 trace
+closed_crowd_1001_cv_vs_tabpfn.png,render_closed.py,v2 closed loop (before train/serve parity),708c573,superseded,replace from a v4 trace
+fig_error_by_horizon.png,evaluate.py,results/eval.json (after B9),aea8af6,current,
+fig_calibration.png,evaluate.py,results/eval.json (after B9),aea8af6,current,per-axis intervals
+fig_data_efficiency.png,evaluate.py,results/eval.json (after B9),aea8af6,current,one seed: indicative
+fig_rows_place.png,tools/check_efficiency.py,data/eth + data/hotel (after B9),aea8af6,current,LightGBM 5 seeds
+fig_conformal_hotel_to_eth.png,tools/conformal_eval.py,API TabPFN default,4bd3d2f,current,
+fig_conformal_eth_to_hotel.png,tools/conformal_eval.py,API TabPFN default,4bd3d2f,current,
+fig_failure_hotel_to_eth.png,tools/failure_modes.py,data/hotel -> data/eth,aea8af6,current,person-bootstrap intervals
+fig_failure_crowd_to_crowd.png,tools/failure_modes.py,data/crowd,aea8af6,current,person-bootstrap intervals
+fig_adapt_hotel_to_eth.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6,superseded,replaced by the rerun with intervals
+fig_adapt.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6,superseded,replaced by the rerun with intervals
+fig_incontext_hotel_to_eth.png,tools/incontext_eval.py,pilot (98 rows),aea8af6,superseded,dense rerun running
+fig_incontext_eth_to_hotel.png,tools/incontext_eval.py,pilot (73 rows),aea8af6,superseded,dense rerun running
