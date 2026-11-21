@@ -32,10 +32,17 @@ def occupancy(rows, h, bounds, res=0.25, box_q=0.05, min_sd=0.05):
         sd_a = max((p.hi_a - p.lo_a) / (2 * z), min_sd); sd_c = max((p.hi_c - p.lo_c) / (2 * z), min_sd)
         cx, cy = p.px + p.vx * p.h, p.py + p.vy * p.h
         c, s = np.cos(p.theta), np.sin(p.theta)
-        dx, dy = X - cx, Y - cy
-        a, b = c * dx + s * dy, -s * dx + c * dy                 # into the person's frame
-        dens = np.exp(-0.5 * (((a - mu_a) / sd_a) ** 2 + ((b - mu_c) / sd_c) ** 2)) / (2 * np.pi * sd_a * sd_c)
-        free *= 1 - np.clip(dens * res * res, 0, 1)
+        # mass per cell: average the density over ss x ss points inside the cell (exact enough when the
+        # spread is narrower than a cell, where density x area at the centre is badly off)
+        ss = 1 if min(sd_a, sd_c) >= res else int(np.clip(np.ceil(3 * res / min(sd_a, sd_c)), 3, 15))
+        offs = (np.arange(ss) + 0.5) / ss * res - res / 2
+        mass = np.zeros_like(X)
+        for ox in offs:
+            for oy in offs:
+                dx, dy = X + ox - cx, Y + oy - cy
+                a, b = c * dx + s * dy, -s * dx + c * dy         # into the person's frame
+                mass += np.exp(-0.5 * (((a - mu_a) / sd_a) ** 2 + ((b - mu_c) / sd_c) ** 2)) / (2 * np.pi * sd_a * sd_c)
+        free *= 1 - np.clip(mass / (ss * ss) * res * res, 0, 1)
     return 1 - free, xs, ys
 
 
