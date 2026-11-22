@@ -179,9 +179,8 @@ From the wording audit on 22 Nov at about 09:15 Berlin. Section 2 of this page i
 - `docs/DEFENSE.md`: "the caution setting, not calibration, set the pace"; "Claims we can make" carries a superseded banner. Section 7 of this page holds the new Q&A.
 - `docs/PRESENTATION.md`, `docs/CEO-HANDOVER.md`, `docs/VIDEO_SCRIPT.md`: superseded banners.
 
-**In progress:**
-- `docs/explainer.html` (the published Overview page): lead with the sentence and the three proofs, add sections for cars and the five scenes, and fix the old limits box. [CTO subagent; republished after review]
-- `tools/build_deck.py` and `deck/Foresight.pptx`: the deck order in section 6, and the "when to use which" slide without "safer". [RoboDetect]
+- `docs/explainer.html`, the published Overview (version 11): it now leads with the sentence and the three proofs, has sections for cars and the five scenes, and the old limits box is fixed (226bddc). `media/fig_highway.png` is retitled "same core".
+- `deck/Foresight.pptx`: reordered to section 6 with 12 main slides plus 4 backup; "when to use which" no longer says "safer" (b4c00ed, 402ac6f; RoboDetect).
 
 **Open, owner a person:**
 - `README.md`: 9 `[confirm]` items (video link, artifact sharing, roles, AI-assistant line, pre-event code). [Darshak]
