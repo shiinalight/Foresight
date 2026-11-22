@@ -108,7 +108,7 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
   - vs LightGBM m50:n100: TabPFN is better on all three (−0.066, −0.101, −8.4 points).
 
 **What this says** (direction-dependent):
-- **TabPFN's boxes come closest to their promise in a new place.** In the hard direction they still under-cover: 75% against 80–90% nominal.
+- **TabPFN's boxes come closest to their promise in a new place, on these two scenes; on five scenes it ties (see the five-scene section).** In the hard direction they still under-cover: 75% against 80–90% nominal.
 - **Hotel → ETH:** TabPFN is clearly best (interval score and box miss, intervals excluding 0).
 - **ETH → Hotel:** TabPFN is level with LightGBM on all rows on interval score, and misses the box less often. LightGBM on all rows has the narrower boxes there.
 - **Point error:** level with LightGBM on all rows, and slightly better than a tuned constant velocity (0.403 against 0.428 m, and 0.244 against 0.254 m). The share of points more than 0.5 m off is level across the learned models.
