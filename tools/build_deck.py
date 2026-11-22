@@ -135,7 +135,8 @@ def build():
                     "clearly in 4 of 5 scenes). Against LightGBM trained on all rows of four scenes (about 15 times more) "
                     "it ties (−0.008 [−0.023, +0.007]); it is worse on Hotel and Zara1 and better on Univ. Say \"ties "
                     "with 15 times less data\". In the crowd simulator, TabPFN on 2,000 rows is about level with "
-                    "LightGBM on 20,000 (results/context_size.csv). Zara1 and Zara2 share a camera.")
+                    "LightGBM on 20,000 (results/context_size.csv). Zara1 and Zara2 share a camera. Hand-made interaction "
+                    "features added nothing measurable; TabPFN reads them out of the raw rows (D-36, docs/FEATURES_ENG.md).")
     image(s, "fig_loso5.png", max_h=Inches(5.1))
     caption(s, "Five real scenes, each held out once: beats LightGBM on the same rows; ties one trained on 15x more")
 

@@ -170,6 +170,25 @@ Plan, rule and results: `docs/LOSO5.md` (58c2d6b). Script `tools/loso5.py`; file
 
 **Caveat:** Zara1 and Zara2 share a camera, so those folds are not fully never-seen places.
 
+## Hand-made interaction features (exploratory; plan commit c85814d, 2026-11-22 04:04 +0100, before any TabPFN run; results f83186c, 04:10 +0100)
+
+Plan, rule and results: `docs/FEATURES_ENG.md`.
+- **The features:** 21 derived features added to the f4 rows on the five real scenes (leave one scene out, as `docs/LOSO5.md`):
+  - time and distance to closest approach per neighbour;
+  - threat, risk and blocked-ahead;
+  - companion;
+  - speed trend, path speed, straightness and curvature.
+- **Measure:** 90% interval score at +2 s, paired person bootstrap.
+
+**Not adopted by the rule:**
+- **Raw plus engineered ties raw:** TabPFN-eng − TabPFN-f4, pooled −0.001 [−0.006, +0.004].
+- **Engineered-only (compact) is worse:** +0.029 [+0.017, +0.042].
+- **LightGBM gains nothing either** (−0.001 [−0.009, +0.006]), so the TabPFN–LightGBM tie on five scenes is unchanged.
+
+**Reading:**
+- TabPFN already extracts this information from the raw history and the relative neighbour motion in the f4 rows.
+- LightGBM's largest gain shares go to path speed (12.9%) and companion relative speed (6.4%). The collision-avoidance features get about 1% each.
+
 ## Claim B on real data with the final live design (Sun 22 Nov)
 
 `tools/realdata_claimb.py` → `results/realdata_claimb.csv` (summary and bootstrap), `results/realdata_claimb_rows.csv` (per query row).
