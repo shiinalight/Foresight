@@ -60,7 +60,6 @@ The open items before submission, with owners, are in [CTO_CHANGES.md](CTO_CHANG
 |---|---|
 | Every number with its rule, amendment and limits | `RESULTS.md` |
 | The public front page, how to run, team | `README.md` |
-| The claims, the framework, the document map | `PLAN.md` |
 | Why each design decision was made (D-1 to D-36) | `docs/DECISIONS.md` |
 | The data: scenes, sizes, predictability | `docs/DATA.md` |
 | Literature, numbered | `docs/REFERENCES.md` |
@@ -70,4 +69,4 @@ The open items before submission, with owners, are in [CTO_CHANGES.md](CTO_CHANG
 | Three crowds, caution dials, feature engineering | `docs/GENERALISATION.md`, `docs/EXPLORATORY_DIALS.md`, `docs/FEATURES_ENG.md` |
 | Picture-first explainer; one decision stage by stage | `docs/explainer.html`, `docs/walkthrough.html` |
 
-**History, not needed day to day:** `docs/archive/` (old plans, the first video script, the CEO handover, the presentation plan), `docs/runs/`, `TEAM-PLAN.md`.
+**History:** `docs/runs/`. The old plans (`PLAN.md`, `docs/archive/`) were removed on 22 Nov; older documents cited elsewhere are in git history.

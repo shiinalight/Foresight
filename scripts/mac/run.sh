@@ -5,8 +5,8 @@
 #   e.g. bash scripts/mac/run.sh --sim crowd --bank data/crowd_cross --goal-mode cross --switch \
 #            --planners tabpfn_live --seeds 3000 3001 --tag mac
 #
-# The exact T5 command (planners, seeds, settings) is published in PLAN.md / docs/DECISIONS.md before
-# launch; copy it from there. Results land in results/closed/<run_id>-<tag>.csv; keep the lid open and
+# The exact T5 command (planners, seeds, settings) is in RESULTS.md and docs/DECISIONS.md;
+# copy it from there. Results land in results/closed/<run_id>-<tag>.csv; keep the lid open and
 # the charger in.
 set -euo pipefail
 cd "$(dirname "$0")/../.."

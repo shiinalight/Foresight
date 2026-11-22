@@ -1,4 +1,4 @@
-> **Copy of [`docs/LOSO5.md`](../docs/LOSO5.md)**, made by `tools/build_final.py` on 2026-11-22 13:51 (after commit `e788ade`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/LOSO5.md`](../docs/LOSO5.md)**, made by `tools/build_final.py` on 2026-11-22 14:01 (after commit `92ffc00`). Edit the source and rerun the script; do not edit this copy.
 
 # Exploratory: claim A on five real scenes, leave one scene out (written before any run; commit fa0b5de, 03:12 Berlin)
 

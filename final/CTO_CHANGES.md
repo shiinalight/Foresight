@@ -46,7 +46,7 @@ The video is now 176 s (was 173 s). Every line stays under 2.3 words per second.
 | P2 | Repo is still private; `main` already equals `darshak/core` | shiinalight |
 | P3 | Video edit: crop `fig_t5.png` to its right panel in proof 1; use `highway.gif` in proof 2 and `scenes5.gif` in proof 3; captions as in `02_VIDEO.md`; cut the 3D outro (its "Honest limits" panel is out of date) | whoever cuts |
 | P4 | If the voice-over is already recorded: re-record the street's first and last sentence, proof 2, proof 3 and the new-place sentence. If there is time for only one, the two street sentences | Darshak |
-| P5 | `README.md`: 5 `[confirm]` items; `PLAN.md` line 104 (item F9) | Darshak |
+| P5 | `README.md`: 5 `[confirm]` items; `PLAN.md` line 104 (item F9; PLAN.md removed 22 Nov) | Darshak |
 
 ## 5. One question to have ready
 

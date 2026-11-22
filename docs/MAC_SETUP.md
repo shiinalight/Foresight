@@ -12,7 +12,7 @@ The main laptop runs TabPFN on CPU under x64 emulation. Live TabPFN there needs 
    ```
    git clone https://github.com/shiinalight/Robodetect.git && cd Robodetect
    ```
-   Or `git pull` in an existing clone. Use `main` once it carries the current code; until then, run `git checkout darshak/core`. `PLAN.md` says which.
+   Or `git pull` in an existing clone. `main` carries the current code.
 2. **TabPFN licence token.** Accept the licence at https://ux.priorlabs.ai and copy your token, then:
    ```
    export TABPFN_TOKEN=...
@@ -51,7 +51,7 @@ The main laptop runs TabPFN on CPU under x64 emulation. Live TabPFN there needs 
    ```
    bash scripts/mac/run.sh <arguments>
    ```
-   This runs `run_closed.py` inside `.venv` and keeps the Mac awake. The exact command for each run (for example T5) is published in `PLAN.md` / `docs/DECISIONS.md` before launch. Keep the lid open and the charger in.
+   This runs `run_closed.py` inside `.venv` and keeps the Mac awake. The exact command for each run (for example T5) is in `RESULTS.md` and `docs/DECISIONS.md`. Keep the lid open and the charger in.
 
 ## If something differs
 

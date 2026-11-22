@@ -1,4 +1,4 @@
-> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 13:51 (after commit `e788ade`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 14:01 (after commit `92ffc00`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: finalist deck outline (5 minutes)
 

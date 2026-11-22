@@ -1,4 +1,4 @@
-> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 13:51 (after commit `e788ade`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 14:01 (after commit `92ffc00`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: the story we submit (single source of truth)
 
@@ -171,7 +171,7 @@ From the wording audit on 22 Nov at about 09:15 Berlin. Section 2 of this page i
 **Open, owner a person:**
 - **No LICENSE file**, while the video close and the README say "open source". Add a licence before the freeze or say "the code is public". [Darshak, shiinalight]
 - `README.md`: 9 `[confirm]` items (video link, artifact sharing, roles, AI-assistant line, pre-event code). [Darshak]
-- `PLAN.md`: the "second account" line (F9). [Darshak]
+- `PLAN.md`: the "second account" line (F9). Done: PLAN.md was removed on 22 Nov.
 - `media/v_limits.png` does not exist. The "where it stops" frame is specified in `docs/VIDEO_BRIEF.md` section 0. [whoever renders the video]
 
 **Added 22 Nov, about 11:50 (CEO check; full list in `final/CTO_CHANGES.md`):** `docs/VIDEO_BRIEF.md` section 3 and `docs/DECK_OUTLINE.md` carry seven wording and edit fixes; two clips were made, `media/demo/highway.gif` and `media/demo/scenes5.gif`; `final/` holds the short reference set.
