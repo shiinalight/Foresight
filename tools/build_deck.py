@@ -145,7 +145,8 @@ def build():
                     "reading this scene's last completed rows (split) keeps the box holding the truth 59.3% of the time, "
                     "against 49.3% for frozen TabPFN (+10.0 points [+8.4, +11.6]) and 41.3% for LightGBM; interval "
                     "score 5.03 vs 6.34 (−1.31 [−1.55, −1.08]); error −0.057 m. Before the switch it costs a little. "
-                    "No model reaches the 81% target. Simulation; real-data check: RESULTS.md.")
+                    "No model reaches the 81% target. Against LightGBM it holds in three crowds (open plaza +6.6, crossing "
+                    "+18.0, dense +19.7 points; GENERALISATION.md). Simulation; real data: a small gain (RESULTS.md).")
     image(s, "fig_t5.png", max_h=Inches(5.15))
     caption(s, "Right panel: box holds the true position at +2 s, before and after the switch (20 paired crowds)")
 
@@ -170,7 +171,9 @@ def build():
                 "The caution setting sets the pace, not calibration",
                 "LightGBM ~1 s faster, but its boxes hold 41% of people, ours 59%",
                 "Next: use the range's shape (chance-constrained cost), not done"])
-    caption(s, "At a lower caution setting it matches constant velocity's speed with more clearance (exploratory, not significant)")
+    caption(s, "At a lower caution setting it matches constant velocity's speed with more clearance (exploratory, not significant)",
+            top=Inches(6.4))
+    caption(s, "In the densest crowd: about half the collisions of standard planners at similar speed (exploratory)")
 
     s = slide(prs, "When to use which", kicker="Honest framing",
               notes="Familiar place, many rows: LightGBM is as good, with narrower boxes. New place or new behaviour, few "

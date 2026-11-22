@@ -606,6 +606,28 @@ Plan, amendment and full results: `docs/EXPLORATORY_DIALS.md` (plan committed be
 - **Reading:** prediction has to arrive within the replan period. The L4's 71 ms does; the laptop CPU's 452 ms would not.
 - The no-delay arm on the L4 (27.32 s / 7.5%) differs from the laptop T5 rows at the same seeds (27.20 s / 20%). That is the cross-device sensitivity documented in `docs/DEPLOYMENT.md`.
 
+## Generalisation: two more crowds (exploratory, Sun 22 Nov)
+
+Plan (committed before launch), amendment and results: `docs/GENERALISATION.md` (d869817).
+- **Crowds:** G1 open plaza (16 people, goals anywhere, nobody ignores the robot) and G2 dense crossing (32 people, half ignore the robot).
+- Seeds 3200–3219, every arm on 20 seeds. Devices are mixed (TabPFN arms on the L4; lgbm_all and the G2 baselines on the laptop), as disclosed there.
+
+**Results:**
+- **Claim C fails in both new crowds,** so it fails in all three. tabpfn_split beats no baseline under Holm. lgbm_all beats only stop_go, in G1.
+- **In-loop claim B, split against lgbm_all after the switch, holds in all three crowds.** Its size depends on the crowd:
+
+  | Crowd | Coverage | Interval score |
+  |---|---|---|
+  | G1 open plaza | +6.6 points [+5.7, +7.5] | −0.30 |
+  | T5 crossing | +18.0 points | −2.00 |
+  | G2 dense crossing | +19.7 points [+18.7, +20.8] | −2.05 |
+
+- **G2, safety at similar time** (descriptive; the matched-time curve test does not pass Holm):
+  - split q 0.35: 24.53 s, −0.008 m closest gap, 35% moving-collision crowds;
+  - constant velocity m0.2: 23.91 s, −0.158 m, 65%;
+  - velocity obstacles w1: 23.61 s, −0.199 m, 75%.
+  - That is about half the collision crowds at similar time.
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):
