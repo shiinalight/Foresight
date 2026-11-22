@@ -356,6 +356,26 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 - Part 2's rule (measured ms per plan rounded up) would have given ~2.0 s. It was replaced before any result because the ~1.9 s per plan comes from 8 contended processes on an x64-emulated CPU. That is a worst case no deployment would budget; a real system budgets one replan period.
 - **Fast-replan baselines:** reactive m0.4 and vo w1 replan every simulation step, 0.2 s. Amendment 2's "0.1 s" is below the 0.2 s simulation step and cannot be run.
 
+**T4 addendum, part 4: values, and the T5 launch** (`tools/t4_report.py`; written before any T5 result):
+- **Offset gate: ON, rule (ii) per batch** (eta_b 0.05 per 2 s refresh), on tabpfn_split over 6 seeds (5100–5105).
+  - Per row: coverage after the switch 76.8%, but stopped 4.40 s against OFF's 0.20 s and freeze rate 0.123 against 0.008. UNSTABLE: the oscillation froze the robot.
+  - Per batch: 61.4%, stopped 0.40 s, freeze 0.015. Stable.
+  - OFF: 59.5%.
+  - So the batch rule is chosen: it is the only stable rule, and it is closer to 80% than OFF, though only by 1.9 points.
+  - Every learned arm in T5 carries the offset with this rule.
+- **Smoothing gate: OFF.** At 8 of 10 seeds, run before the last 2 finished so nothing waited:
+  - tabpfn_split: heading change −19% (< 30%), time +5.0 s;
+  - tabpfn: −30% short of the line, time +1.2 s;
+  - lgbm_all: −25%, time +6.4 s.
+  - If the full 10 seeds reverse the verdict, the smoothing-ON sets below enter the analysis instead; this is stated before any T5 result.
+- **No time gates** (Darshak, Sun ~01:10: "do not block anything by time"):
+  - Every arm using choose/choose_vo (baselines, oracle, fast-replan) runs in BOTH smoothing modes (tags `*-sm` = ON). The smoothing gate picks the set that enters the analysis.
+  - The primary also runs at q 0.15 with smoothing ON as an extra process.
+- **Secondary arms run on seeds 3000–3019 to reduce compute (exploratory):** frozen tabpfn, lgbm_all, lgbm, the 0.4 s latency arm and the 0.2 s replan arms. The primary (tabpfn_split at q 0.10 / 0.15 / 0.20) and every baseline and oracle arm use all 40 seeds. A secondary process that finishes early may be extended to 40 seeds only while the CPU has spare capacity.
+- **Analysis sets:**
+  - Primary test: the smoothing-OFF rows at latency 0 and replan 0.4 s.
+  - The latency, fast-replan and smoothing-ON rows are reported separately.
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):

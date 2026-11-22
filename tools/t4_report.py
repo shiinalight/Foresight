@@ -75,7 +75,7 @@ def smoothing():
     d = d[d.seed.isin(common)]
     cols = ["heading_change_per_m", "reversals_45", "time_capped", "intrusion_s", "moving_collision_steps", "min_gap"]
     T = d.groupby(["planner", "setting"])[cols].mean()
-    T["mc_rate"] = d.groupby(["planner", "setting"]).moving_collision_steps.apply(lambda s: (s > 0).mean())
+    T["mc_rate"] = d.assign(mc=d.moving_collision_steps > 0).groupby(["planner", "setting"]).mc.mean()
     print(f"\nSMOOTHING TEST ({len(common)} common seeds)\n{T.round(3).to_string()}\n")
     ok_all = True
     for p in LEARNED:
