@@ -508,7 +508,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 37. **Q: Your TabPFN planner is slower than the baselines, so what does TabPFN buy?**
     - Calibrated ranges that adapt in the loop after a regime shift. After the crowd turns erratic, the split model (frozen bank plus this scene's recent rows) against frozen TabPFN: coverage 59.3% vs 49.3% (+10.0 pts [+8.4, +11.6]), interval score 5.03 vs 6.34 (−1.31 [−1.55, −1.08]), median error −0.057 m [−0.094, −0.021]. Against LightGBM on all rows: +18.0 pts, interval score −2.00 (`results/inloop_claimb.csv`, 20 paired seeds).
     - Limits: no model reaches 80% after the switch, and before it split is slightly worse (interval score +0.18). Simulation only; the real-data check is still to be added.
-    - Why it is slower: the planner turns calibration into caution. It uses only box width, so honest, wider boxes veto more moves.
+    - Why it is slower: not calibration. At the same caution setting (q 0.15) the split, frozen TabPFN and LightGBM planners all take about 26 s (split − frozen −0.12 s [−1.34, +1.26]; split − LightGBM +0.33 s [−1.34, +2.02], 20 paired seeds), although LightGBM's boxes are 0.63 m narrower after the switch. Better prediction did not change how this box planner drives; its caution setting did. An exploratory dial sweep on fresh seeds tests lower settings (`docs/EXPLORATORY_DIALS.md`).
     - Next work, not done: a planner that uses the shape of the range, not only its width, for example a chance-constrained cost.
 
 38. **Q: Do you use TabPFN for anything beyond one range model?**

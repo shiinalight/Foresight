@@ -61,7 +61,7 @@ They are not deployment evidence. Target-class hardware is a CUDA GPU or an Appl
 
 - Query size barely matters on the GPU (16 to 96 rows: 35 to 36 ms), so larger crowds cost almost nothing extra.
 - TabPFN-3.5 with 1 estimator (the larger model): split predict 111 ms, scene rebuild 799 ms.
-- **What this means:** TabPFN's part of a replan (71 ms) fits a 10 Hz loop on an L4-class GPU, and well inside our 0.4 s replan period. The 2 s scene rebuild (318 ms) has to run off the control path, as section 1 already plans. An embedded robot GPU (Jetson class) is slower than an L4; we have not measured one, so we make no claim for it.
+- **What this means:** TabPFN's part of a replan (71 ms) and the full loop on the pod (225 ms per plan) both fit inside our 0.4 s replan period. A 10 Hz loop would need the 2 s scene rebuild (318 ms) moved off the control path into a background thread. That is designed (section 1), not built, so we do not claim 10 Hz. An embedded robot GPU (Jetson class) is slower than an L4; we have not measured one, so we make no claim for it.
 - **Full real loop on the pod** (T5 config, tabpfn_split q 0.15, seeds 3013, 3001, 3002): 225 ms per plan on average, including the rebuilds inside the loop and the CPU feature building. All three reached the goal with 0 contacts.
 - **Parity:** the same context and query on GPU and laptop CPU give quantiles within 0.021 m at most (median 0.001 m).
 - **Closed loop is sensitive to tiny numeric differences:** seed 3013 on the GPU took 25.4 s with a 0.47 m closest gap, against 25.8 s and 0.01 m on the laptop. A 1 mm difference can flip which way the robot passes someone. This is why every paired comparison runs on one device (section 4, rule 4) and why we report over 20 paired seeds, not single runs.

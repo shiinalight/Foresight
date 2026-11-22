@@ -128,7 +128,7 @@ footer li { margin-bottom: 3px }
   <div class="cards">
     <div class="card"><span class="pill warn">Direction-dependent</span><h3>A · Honest ranges in a new place</h3><p>Real pedestrians: on target going to Hotel (86%), short but closest going to ETH (75%).</p></div>
     <div class="card"><span class="pill part">Simulation only</span><h3>B · Adapts by reading the scene</h3><p>Helped offline and in the robot loop, in simulation: 10 points more people inside the box after a behaviour change. No gain on real data so far; a new real-data check: result to be added.</p></div>
-    <div class="card"><span class="pill no">Not supported</span><h3>C · Beats standard navigation?</h3><p>No. The robot was slower than standard planners at similar safety: its more honest, wider ranges made it cautious.</p></div>
+    <div class="card"><span class="pill no">Not supported</span><h3>C · Beats standard navigation?</h3><p>No. The robot was slower than standard planners at similar safety: better ranges did not make it faster. All three learned planners, TabPFN or not, took about 26 s at the same caution setting.</p></div>
     <div class="card"><span class="pill part">Partly</span><h3>D · Deployable</h3><p>Model tier proposed; hardware timing pending.</p></div>
     <div class="card"><span class="pill warn">Real data, offline</span><h3>Intent, then ranges</h3><p>TabPFN used twice in a chain: it guesses each person's next move, then gives a range per move. Its ranges catch more of the real people who turn (37 people); no help in our simulator, where turns are random.</p></div>
   </div>
@@ -377,7 +377,7 @@ footer li { margin-bottom: 3px }
     <figcaption><b>Closed loop: a stress test.</b> Even an open-loop oracle (true futures under its current move) could not clear the pre-set 2 s bar: the fastest baseline is only 1.5 s above the robot's minimum time.</figcaption>
     <p class="src">20 crowds. results/oracle_gate_cross.csv</p>
   </figure>
-  <div class="pending"><b>[Final robot runs: done]</b><p>20 fresh crowds that turn erratic after 5 s, judged by a rule written in advance. The TabPFN robot beat none of the four standard planners: at similar safety it was slower, for example 4.3 s slower than walk-straight with a 0.4 m margin at equal clearance. Its boxes were more honest after the change (59% of people inside against 49% for the frozen model, still short of 80%), and wider boxes made it cautious. A robot given people's true future paths (under its current move) kept more clearance (0.22 m against 0.09 m) but mostly did not clearly cut collisions in 20 crowds. Showcase crowd 3013: media/demo/seed3013.gif. results/t5_primary.csv, results/inloop_claimb.csv</p></div>
+  <div class="pending"><b>[Final robot runs: done]</b><p>20 fresh crowds that turn erratic after 5 s, judged by a rule written in advance. The TabPFN robot beat none of the four standard planners: at similar safety it was slower, for example 4.3 s slower than walk-straight with a 0.4 m margin at equal clearance. Its boxes were more honest after the change (59% of people inside against 49% for the frozen model, still short of 80%), but that did not change the driving: at the same caution setting the TabPFN and LightGBM robots all took about 26 s. A robot given people's true future paths (under its current move) kept more clearance (0.22 m against 0.09 m) but mostly did not clearly cut collisions in 20 crowds. Showcase crowd 3013: media/demo/seed3013.gif. results/t5_primary.csv, results/inloop_claimb.csv</p></div>
 </section>
 
 <!-- 8. How we kept it honest -->
