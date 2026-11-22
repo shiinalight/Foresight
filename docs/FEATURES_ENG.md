@@ -172,13 +172,13 @@ They are added columns computed only from the 39 columns of the same row: no oth
 - **The engineered properties are already implicit in the raw 39.**
   - Adding them changes neither TabPFN (−0.001) nor LightGBM (−0.001).
   - Replacing the raw columns with them (compact) loses about 0.03 interval score and 1.3 cm median error for **both** models.
-  - So the raw history and neighbour vectors carry information that the summaries drop. Examples: the lateral history offsets, and the exact neighbour geometry beyond closest approach.
-- **The interaction features barely matter at +2 s on these scenes.** In LightGBM `lgbm_all`-eng, gain share averaged over the 5 folds, 2 axes and 5 quantiles:
+  - So the raw columns carry information that the summaries drop. Compact removes the raw history and the raw neighbour x/y/v together, so this test cannot say which block it comes from. Lateral history offsets and the exact neighbour geometry are guesses, not findings.
+- **Adding TCPA/DCPA/threat on top of the raw 39 gives no measurable gain at +2 s** (with 3 neighbours and no robot). Gain share is split among correlated columns, and the raw `n0_vx`/`n0_vy` already rank high, so the shares below do not show that the interactions are unimportant. In LightGBM `lgbm_all`-eng, gain share averaged over the 5 folds, 2 axes and 5 quantiles:
   - the history-kinematics summaries lead: `path_speed` is the **top feature overall** (12.9%), `speed_trend` has 3.0%, `straightness` 2.8%;
   - `comp_relspeed` (companion) is second overall (6.4%);
   - the collision-avoidance features are small: each `n{k}_dcpa` about 1%, `risk` 0.7%, `threat_dcpa` 0.7%, `threat_side` 0.6%, the TCPAs about 0.5% each.
   - The 21 engineered columns hold 35% of the gain in eng, and 62% in compact.
-  - Reading: a person's mean speed over the last 2 s (not the filtered instantaneous speed) and whether they walk with someone say most about where they will be in 2 s. Who is about to pass close says little on these real scenes, where avoidance manoeuvres are small and rare.
+  - Reading (a hypothesis): on these real scenes, avoidance manoeuvres within 2 s may be small and rare. That would explain why mean speed over the last 2 s and walking with someone carry more than who is about to pass close.
 - **One post-hoc pattern (not under the rule):**
   - With eng, TabPFN is no longer significantly worse than LightGBM-all in any scene: Hotel goes from +0.027 to +0.002, Zara1 from +0.032 to +0.037 [−0.000, +0.085].
   - But Univ also loses its significant win, and the pooled tie is unchanged. This is not a result.
@@ -187,3 +187,7 @@ They are added columns computed only from the 39 columns of the same row: no oth
 - If a later variant were adopted, the only change would be to call `engineer(df, hist_dt)` on the rows that `features.build_rows()` returns, in the offline training rows and in each live query. `features.py` itself would stay unchanged.
 - `hist_dt` must be the dataset's history step: 0.4 s on ETH/UCY, 0.2 s on the simulator. That is `max(1, round(0.2 / dt)) · dt`.
 - `features.py` is owned by the RoboDetect session.
+
+**Caveats:**
+- TabPFN-f4 comes from the LOSO5 hosted run (same rows, an earlier session of the hosted default model), not from this run.
+- The `tabpfn_f4 − lgbm_all_f4` intervals differ slightly from `docs/LOSO5.md` (pooled [−0.024, +0.009] against [−0.023, +0.007]). The point estimates are identical; only the bootstrap draw order differs.
