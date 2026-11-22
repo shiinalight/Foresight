@@ -150,6 +150,26 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
   - **Caveat:** the two test sets differ, so compare the shapes. This is the reason for choosing context rows from the current scene (adaptation experiment, next).
 - **Hotel is easy for constant velocity:** about 45% of people there stand still. ETH is harder, and every learned model gains more there.
 
+## Claim A on five scenes, leave one scene out (Sun 22 Nov; rule fixed before the run)
+
+Plan, rule and results: `docs/LOSO5.md` (58c2d6b). Script `tools/loso5.py`; files `results/loso5.csv`, `results/loso5_rows.csv`.
+- **Scenes:** ETH, Hotel, and the three UCY scenes (Zara1, Zara2, Univ), each held out once.
+- **Context:** 1,500 rows from the other four scenes (375 each), 3 context seeds.
+- **Measure:** 90% interval score at +2 s, paired person bootstrap.
+
+**Verdict by the rule: "not supported".**
+- **TabPFN (1,500 rows) against LightGBM trained on all rows of four scenes** (about 22k rows, ~15× more): pooled −0.008 [−0.023, +0.007], a tie.
+  - TabPFN is worse on Hotel (+0.027 [+0.003, +0.052]) and Zara1 (+0.032 [+0.002, +0.067]), and better on Univ (−0.050 [−0.095, −0.010]).
+- **Against constant velocity plus band,** TabPFN is better in every scene (pooled −0.365 [−0.405, −0.328]).
+
+**What holds:**
+- **Data efficiency:** on the same 1,500 rows, TabPFN beats LightGBM (pooled −0.130 [−0.154, −0.107]), clearly in 4 of 5 scenes.
+- **Coverage** is the most even across scenes: 77.5–87%, against 72–86% for LightGBM on all rows.
+
+**So:** TabPFN's edge is strongest when data is scarce and narrow, as in the two-scene claim A where LightGBM had one small scene to learn from. It ties a rival trained on about 15 times more varied data.
+
+**Caveat:** Zara1 and Zara2 share a camera, so those folds are not fully never-seen places.
+
 ## Claim B on real data with the final live design (Sun 22 Nov)
 
 `tools/realdata_claimb.py` → `results/realdata_claimb.csv` (summary and bootstrap), `results/realdata_claimb_rows.csv` (per query row).

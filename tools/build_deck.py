@@ -123,7 +123,9 @@ def build():
                     "bootstrap. Hotel → ETH: TabPFN's 5-95% box holds the truth 74.8% (LightGBM on all rows 57.7%); "
                     "interval score −0.303 [−0.425, −0.184] against LightGBM. ETH → Hotel: 86.4% vs 74.9%, interval "
                     "score level with LightGBM on all rows. Direction-dependent; in the hard direction TabPFN still "
-                    "under-covers (75% against about 81%). Point error level with LightGBM, slightly better than tuned CV.")
+                    "under-covers (75% against about 81%). Point error level with LightGBM, slightly better than tuned CV. On five scenes (leave one out, "
+                    "docs/LOSO5.md): edge strongest when data is scarce; ties a rival trained on 15x more varied data "
+                    "(pooled −0.008 [−0.023, +0.007]); on the same 1,500 rows it beats LightGBM (−0.130).")
     image(s, "fig_f4_claim_a.png")
 
     s = slide(prs, "Few rows are enough", kicker="Result · data efficiency",
