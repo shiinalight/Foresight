@@ -67,7 +67,54 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
   - **Above it:** too cautious, makes the robot slow.
 - **Data efficiency (`media/fig_data_efficiency.png`):** error at +2 s against the number of example rows (log scale), ETH → Hotel.
 
-## Numbers (rerun 21 Nov evening, after the leakage fix; 900 test rows per direction, 1,500 context rows)
+## Claim A on feature version f4 (Sun 22 Nov): honest boxes in a place never seen
+
+`tools/claim_a.py` → `results/claim_a_f4.md`; `tools/claim_a_boot.py` → `results/claim_a_boot_f4.csv`.
+
+**Setup:**
+- The test rows are the same 900 rows per direction as the pre-fix table (identified by episode, agent, t and h), scored on f4 features at +2 s: 324 rows from 195 people going to ETH, 335 rows from 169 people going to Hotel.
+- There are 5 context seeds, each a different 1,500-row sample of the training scene.
+- Constant velocity uses the tuned filter. LightGBM appears in three forms: on the same 1,500 rows; tuned for small data (m50, 100 trees); and on all training rows.
+- Intervals are paired person-bootstrap intervals (5,000 resamples by person).
+
+| Direction | Model | Joint 5–95 box (all / moving) | Box miss | Interval score 10–90 / 5–95 | Error +2 s | Point miss > 0.5 m |
+|---|---|---|---|---|---|---|
+| Hotel → ETH | Const. velocity | — | — | — | 0.428 m | 28.7% |
+| Hotel → ETH | Const. velocity + band | 68.5% / 68.3% | 31.5% | 1.49 / 1.99 | 0.428 m | 28.7% |
+| Hotel → ETH | LightGBM (1,500 rows) | 45.1% / 44.4% | 54.9% | 1.56 / 2.29 | 0.409 m | 27.0% |
+| Hotel → ETH | LightGBM m50:n100 (1,500 rows) | 58.6% / 58.6% | 41.4% | 1.44 / 2.03 | 0.409 m | 27.0% |
+| Hotel → ETH | LightGBM (all rows) | 57.7% / 57.8% | 42.3% | 1.45 / 2.05 | 0.405 m | 27.2% |
+| Hotel → ETH | **TabPFN** (1,500 rows) | **74.8% / 75.6%** | **25.3%** | **1.33 / 1.75** | **0.403 m** | 27.2% |
+| ETH → Hotel | Const. velocity | — | — | — | 0.254 m | 13.1% |
+| ETH → Hotel | Const. velocity + band | 92.2% / 87.9% | 7.8% | 1.02 / 1.34 | 0.254 m | 13.1% |
+| ETH → Hotel | LightGBM (1,500 rows) | 67.6% / 51.0% | 32.4% | 0.90 / 1.20 | 0.267 m | 12.5% |
+| ETH → Hotel | LightGBM m50:n100 (1,500 rows) | 78.0% / 65.8% | 22.0% | 0.87 / 1.14 | 0.258 m | 12.3% |
+| ETH → Hotel | LightGBM (all rows) | 74.9% / 64.5% | 25.1% | **0.78 / 1.04** | 0.253 m | 11.9% |
+| ETH → Hotel | **TabPFN** (1,500 rows) | 86.4% / 80.8% | 13.6% | 0.81 / 1.04 | **0.244 m** | 12.4% |
+
+**Nominal coverage:**
+- 5–95% box: 80–90% joint (81% if the axes are independent);
+- 10–90% per axis: 80%.
+- Box miss = 1 − joint coverage.
+- Point miss = share of rows whose median prediction is more than 0.5 m off at +2 s.
+
+**Paired person-bootstrap, TabPFN minus LightGBM (negative = TabPFN better):**
+- **Hotel → ETH (the hard direction):**
+  - vs LightGBM on all rows: interval score 10–90 −0.120 [−0.172, −0.069], 5–95 −0.303 [−0.425, −0.184], box miss −17.0 points [−21.0, −13.0];
+  - vs LightGBM m50:n100: −0.111 [−0.157, −0.070], −0.284 [−0.401, −0.181], −16.2 points [−19.0, −13.3].
+  - TabPFN is **better** on all three.
+- **ETH → Hotel:**
+  - vs LightGBM on all rows: interval score 10–90 +0.025 [−0.012, +0.058] and 5–95 +0.007 [−0.057, +0.065], so **level**. Box miss −11.5 points [−15.7, −7.5], so TabPFN misses less.
+  - vs LightGBM m50:n100: TabPFN is better on all three (−0.066, −0.101, −8.4 points).
+
+**What this says** (direction-dependent):
+- **TabPFN's boxes come closest to their promise in a new place.** In the hard direction they still under-cover: 75% against 80–90% nominal.
+- **Hotel → ETH:** TabPFN is clearly best (interval score and box miss, intervals excluding 0).
+- **ETH → Hotel:** TabPFN is level with LightGBM on all rows on interval score, and misses the box less often. LightGBM on all rows has the narrower boxes there.
+- **Point error:** level with LightGBM on all rows, and slightly better than a tuned constant velocity (0.403 against 0.428 m, and 0.244 against 0.254 m). The share of points more than 0.5 m off is level across the learned models.
+- **The fixed band** covers more going to Hotel (92%) but under-covers going to ETH (68.5%), and its interval score is worse than TabPFN's in both directions.
+
+## Numbers before f4 (rerun 21 Nov evening, after the leakage fix; 900 test rows per direction, 1,500 context rows; superseded by the f4 section above)
 
 | Direction | Model | Rows seen | Error +1.2 s | Error +2 s | Error +4.8 s | Per-axis coverage of 10–90% (+2 s) | Joint coverage of the 5–95% box (+2 s, target ~80% if the axes are independent) | 10–90% width (+2 s) | Pinball (+2 s) |
 |---|---|---|---|---|---|---|---|---|---|
@@ -375,6 +422,36 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 - **Analysis sets:**
   - Primary test: the smoothing-OFF rows at latency 0 and replan 0.4 s.
   - The latency, fast-replan and smoothing-ON rows are reported separately.
+
+**T4/T5 addendum, part 5: compute, reduced before results** (Sun 22 Nov 01:36 Berlin).
+- **Why:** split q0.20, seed 3000 took 1,030 s (16.2 s per plan), with the CPU at 100% under ~35 python processes. At that rate one split process needs ~11 h. Darshak wants the solution final tonight.
+- **No learned result was read** except that one q0.20 timing row, which is discarded (`results/closed/discarded/`).
+- **Learned set kept**, all on seeds 3000–3019 (20 seeds, paired), batch offset, smoothing OFF, latency 0, replan 0.4:
+  1. tabpfn_split q0.15 (**primary**);
+  2. tabpfn_split q0.10 (second curve point);
+  3. frozen tabpfn q0.15;
+  4. lgbm_all q0.15.
+  - The two split processes already running keep running and are stopped after seed 3019 (`tools/seed_cap.ps1`).
+  - tabpfn and lgbm_all q0.15 were restarted on their own (`tools/t5_pruned.ps1`).
+- **Not run (compute):**
+  - tabpfn_split q0.20;
+  - tabpfn_split q0.15 with smoothing ON;
+  - tabpfn_split q0.15 at 0.4 s latency;
+  - frozen tabpfn q0.10;
+  - lgbm q0.10 and q0.15;
+  - lgbm_all q0.10.
+  - Of the 0.2 s replan arms, reactive m0.4 (smoothing OFF) finished its 20 seeds. The other three were stopped part-way, and their partial rows are discarded.
+- **Baselines and the oracle** finish their 40 seeds in both smoothing modes. Comparisons with learned planners use the common seeds 3000–3019.
+- **Smoothing gate at the full 10 seeds: OFF**, as decided at 8:
+  - tabpfn_split: heading change −28%, time +3.6 s;
+  - tabpfn: −30% (just short of the line), time +2.0 s;
+  - lgbm_all: −31%, time +5.1 s.
+  - So the smoothing-OFF sets enter the analysis.
+- **Analysis changes:**
+  - **The primary test** (Holm across the 4 baselines) runs on 20 seeds. Its curve has two points (q0.10, q0.15).
+  - **Detectable time difference at n = 20:** about 2.6 s (80% power, 5% two-sided, the cell's median paired SD of 4.16 s), against 1.84 s at 40. Claim C is a stress test anyway.
+  - **Exploratory (a)** keeps its stated margins (0.158 m, 0.244), so it has less power at 20 seeds.
+  - **The in-loop claim B comparison** (split vs tabpfn vs lgbm_all at q0.15, before and after the switch, paired by seed) is now the main closed-loop question.
 
 ## Deployment notes (wording rules for the deck)
 
