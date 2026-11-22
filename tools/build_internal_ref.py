@@ -294,8 +294,8 @@ def gen_t5_status():
     n_ext = sum(t.endswith("-ext") for t in tags)
     return ('<p class="small">T5 analysed on 20 paired seeds (3000–3019): <code>results/t5_primary.csv</code>, '
             '<code>results/inloop_claimb.csv</code>, <code>results/t5_oracle_matchedtime.csv</code>; RESULTS "Closed loop T5 '
-            'results" (fce98a6). A 40-seed extension (same arms and rules) was declared at 02:20 (3226e4f); the 20-seed '
-            'analysis stays the confirmatory result; the 40-seed tables follow as an update, computed by the same scripts and '
+            'results" (fce98a6). A 40-seed extension (same arms and rules), declared in 3226e4f before its runs, is done (70fd9c8; results/t5_primary_40.csv, inloop_claimb_40.csv); the 20-seed '
+            'analysis stays the confirmatory result; the 40-seed tables are an update, computed by the same scripts and '
             'rules (RESULTS "Extension to 40 seeds", <code>tools/t5_extend.py</code>). At page build: '
             f'{len(tags)} T5 result tags in <code>results/closed/</code>, {n_ext} of them <code>-ext</code>.</p>')
 

@@ -146,7 +146,7 @@ Paired vehicle bootstrap, TabPFN minus rival, with 95% intervals:
 
 | Rival | Interval score | Error | Coverage |
 |---|---|---|---|
-| lgbm_all | **−0.49 [−0.66, −0.34]** | −0.16 m [−0.20, −0.13] | +3.5 pts [+1.9, +5.3] |
+| lgbm_all | **−0.49 [−0.66, −0.34]** | −0.16 m [−0.20, −0.13] | +3.5 pts [+1.8, +5.3] |
 | cv_band | **−4.21 [−4.80, −3.59]** | −0.57 m | +2.7 pts |
 | lgbm (same rows) | −1.45 [−1.67, −1.23] | | |
 
