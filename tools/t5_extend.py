@@ -47,12 +47,15 @@ def main():
                 print(f"{tag}: {len(miss)} seeds to run ({miss[0]}-{miss[-1]})")
         if not cmds:
             continue
-        script = "; ".join(cmds) + f" *> 'results\\overnight\\t5-{name}-ext.log'"
+        log = f"results\\overnight\\t5-{name}-ext.log"
         if not a.dry_run:
-            env_cmd = "$env:POLARS_SKIP_CPU_CHECK='1'; $env:PYTHONIOENCODING='utf-8'; $env:PYTHONUNBUFFERED='1'; " \
-                      f"Set-Location '{ROOT}'; " + script
-            subprocess.Popen(["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", env_cmd],
-                             creationflags=0x00000008 | 0x00000200)   # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+            ps1 = ROOT / "results" / "overnight" / f"t5-{name}-ext.ps1"     # one launcher script per process
+            lines = ["$env:POLARS_SKIP_CPU_CHECK='1'; $env:PYTHONIOENCODING='utf-8'; $env:PYTHONUNBUFFERED='1'",
+                     f"Set-Location '{ROOT}'"] + [f"{c} *>> '{log}'" for c in cmds]
+            ps1.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            subprocess.run(["powershell", "-NoProfile", "-Command",
+                            f"Start-Process powershell -ArgumentList '-NoProfile','-File','{ps1}' -WindowStyle Hidden"],
+                           check=True)
             print(f"started {name}")
     return 0
 
