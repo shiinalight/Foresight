@@ -1,20 +1,192 @@
 
 <h2 id="data"><span class="sec">04</span>Data</h2>
-<h3>Data cards</h3>
-<p>Plaza, calm→erratic, ETH, Hotel and toy numbers come from <code>docs/DATA.md</code> (<code>tools/data_cards.py</code>, Sat 22:53; constant-velocity error on ground truth, no noise). <code>crowd_cross</code> and <code>crowd_cross_t2</code> have no card in DATA.md; their numbers below were computed for this page from <code>tracks.csv</code> and the f4 row caches with the same method (read-only).</p>
+<p>Two sources feed every model: <strong>real pedestrians</strong> (ETH and Hotel, hand-annotated video from Zurich) and a <strong>social-force crowd simulator</strong> we wrote (<code>foresight/domains/crowd.py</code>). Real data answers "are the ranges honest for real people in a place the model never saw"; the simulator answers "what does a robot gain", because real recordings have no robot and nobody in them can react to one. This section says where each comes from, what exactly is simulated, how every characteristic of a person and their surroundings becomes a number, what each source produced, and which data problems were fixed. Facts cite <code>file: function</code>; tables marked "generated" are recomputed from the data files each time the page is built (<code>tools/build_internal_ref.py</code>, <code>gen_data_*</code>). The layer view of the same code is in <a href="#s0">S0</a>, <a href="#s1">S1</a> and <a href="#s2">S2</a>.</p>
+
+<h3 id="d-flow">From raw tracks to a feature row</h3>
+{{FILE:svg_dataflow.html}}
+
+<!-- ============================== real ============================== -->
+<h3 id="d-real">Real data: ETH and Hotel</h3>
+<div class="layer">
+<dl class="kv">
+  <dt>Source</dt><dd>ETH Walking Pedestrians (Pellegrini, Ess, Schindler, van Gool, ICCV 2009; <code>docs/REFERENCES.md</code> [5]), the files as copied by OpenTraj (Amirian et al., ACCV 2020, [7]): <code>datasets/ETH/seq_eth/obsmat.txt</code> and <code>seq_hotel/obsmat.txt</code>, fetched by the <code>curl</code> lines in <code>README.md</code> ("How to run"). Raw files are kept in <code>data/raw/&lt;scene&gt;/</code> (<code>obsmat.txt</code>, <code>H.txt</code>, <code>info.txt</code>) and not redistributed. UCY (Zara, Univ; Lerner et al. 2007) is not used.</dd>
+  <dt>Sensor and annotation</dt><dd>Overhead video, annotated by hand. <code>data/raw/eth/info.txt</code>: shot from the top of the ETH main building, Zurich, by Pellegrini and Ess in 2009, annotated at 2.5 fps (0.4 s). <code>data/raw/hotel/info.txt</code>: shot from the 4th floor of a hotel on Bahnhofstrasse, Zurich, at 25 fps, annotated at 2.5 fps. <code>obsmat.txt</code> holds world coordinates in metres and annotated velocities in m/s (columns frame, id, x, z, y, vx, vz, vy; z unused). <code>H.txt</code> is the image-to-world homography; we do not use it.</dd>
+  <dt>Conversion</dt><dd><code>foresight/domains/eth_ucy.py: convert(raw_dir, out_dir, window=60.0)</code>: x = column 2, y = column 4, vx = column 5, vy = column 7 (velocities kept as annotated, not recomputed); frame step = median frame difference (ETH 6 frames, Hotel 10 frames at 25 fps; 0.4 s in both); the recording is cut into 60 s windows, each an episode (150 steps); <code>agent_id</code> = the annotation id, so a person crossing a window edge appears in two episodes and their history restarts; <code>kind</code> person, <code>radius</code> 0.25 m (our choice), <code>is_ego</code> 0, <code>regime</code> = scene name; empty <code>obstacles.csv</code>; <code>meta.bounds = None</code> on purpose (B9: the bounding box of all positions is the camera's field of view, computed from future positions, and fed the wall features); <code>draw_bounds</code> for figures only.</dd>
+  <dt>Resampling and noise</dt><dd>None. The 0.4 s grid is kept, so horizons snap to it: 1.2, 2.0 and 4.8 s (D-1; 4.8 s only because published work reports it). Feature rows use sensor noise 0 (<code>rows_f4_noise0.0_…</code>), but the forward Kalman filter still runs, with q 0.1, r 0.1 tuned on the <em>other</em> scene (<code>data/eth/kalman.json</code>: <code>tuned_on</code> data/hotel; <code>data/hotel/kalman.json</code>: data/eth; D-26).</dd>
+  <dt>Splits</dt><dd>Never within a scene for claim A: context and training rows from one scene, test rows from the other, both directions (<code>tools/claim_a.py</code>, <code>tools/intent_layer.py</code>). Live variants Setting A: Hotel rows as bank, the first 6 ETH episodes as the live stream (<code>tools/live_variants.py</code>).</dd>
+  <dt>What it contains</dt><dd>Positions and velocities of everyone annotated in view, every 0.4 s. ETH 8,908 rows, 360 people (390 per-window tracks); Hotel 6,544 rows, 390 people (433 tracks); 12.9 and 12.0 minutes (<code>docs/DATA.md</code>, <code>tools/data_cards.py</code>). Walkers move alike in both scenes (walking speed 1.46 / 1.38 m/s); Hotel has many standers (25.1% of time below 0.2 m/s, 16.3% of rows annotated with exactly zero velocity).</dd>
+  <dt>What it does not contain</dt><dd>No robot (robot columns padded with 99 on 100% of real rows), no obstacles or walls (obstacle columns padded on 100%), no goals, no intent or manoeuvre labels (our <code>mode</code> label is derived from the next 2 s of annotated velocity, not annotated intent), no behaviour switch, no occlusion record (tracks are what the annotators drew; identity is as annotated). 25.1% (ETH) and 35.4% (Hotel) of frames have nobody in view; ETH has 12 annotation stalls and 19 rows above 3 m/s (DATA.md integrity checks).</dd>
+</dl>
+</div>
+
+<!-- ============================== simulated ============================== -->
+<h3 id="d-sim">Simulated data: what exactly is simulated</h3>
+<p>One episode = one robot (agent 0) and <code>n_people</code> people in a 20 × 20 m plaza with 2 circular pillars, advanced by explicit Euler steps of dt = 0.2 s for 40 s (201 frames including t = 0). Each step, every person's acceleration is the sum of the terms below (<code>crowd.py: CrowdSim.step</code>); the robot gets no force, its velocity is set directly. The model form is the social force model of Helbing &amp; Molnár (Phys. Rev. E 1995, REFERENCES [22]); <strong>every parameter value, the anticipation, the anisotropy, the obstacle steering and the regimes are our own choices</strong>, not fitted to data and not validated against real trajectories (REFERENCES row 14).</p>
+<div class="tbl dense"><table>
+  <thead><tr><th>Term</th><th>What it does</th><th>Formula / values</th><th>Where</th><th>Source of the values</th></tr></thead>
+  <tbody>
+    <tr><td>Driving</td><td>relax towards the desired velocity at the goal</td><td>(e·v_des − v) / τ; e = unit vector to the goal; v_des = v0 × jitter, 0 while stopped</td><td><code>step</code>, <code>REGIMES</code></td><td>form: Helbing &amp; Molnár; v0, τ ours</td></tr>
+    <tr><td>Person–person</td><td>keep distance, more for what is ahead</td><td>A·exp((r_i + r_j − d) / B)·w along the separation, d taken at the closest approach within the next <code>LOOKAHEAD</code> = 0.6 s; w = λ + (1 − λ)(1 + cos φ)/2, <code>LAMBDA</code> = 0.35 (φ = angle between the direction to the goal and the direction to the other person)</td><td><code>step</code></td><td>exponential form: Helbing &amp; Molnár; anticipation, λ and A, B ours</td></tr>
+    <tr><td>Person–robot</td><td>stronger, longer-range push away from the robot</td><td>same term × <code>robot_repulsion</code> (2.0 default), range max(B, <code>ROBOT_B</code> = 0.6 m); 0 for people drawn as ignoring the robot</td><td><code>step</code>, <code>reset</code></td><td>ours; T2 swept 2 / 1 / 0.5 and ignore share 0 / 0.2 / 0.4 (D-32 picked 2, 0.2)</td></tr>
+    <tr><td>Obstacles</td><td>push off pillars and walk around them</td><td>10·exp(−gap / 0.3) outward (<code>OBST_A</code>, <code>OBST_B</code>) + a sideways steer facing·clip(1 − gap/1.5, 0, 1)·v0/τ on the goal's side; hard constraint: anyone inside a pillar is moved to its edge (<code>_push_out_of_obstacles</code>)</td><td><code>step</code></td><td>ours</td></tr>
+    <tr><td>Walls</td><td>stay inside the plaza</td><td>3.0·exp(−d / 0.25) from each wall; positions clipped to ±(10 − 0.05) m</td><td><code>step</code></td><td>ours</td></tr>
+    <tr><td>Limits</td><td>keep Euler stable, cap speed</td><td>|F| ≤ <code>MAX_FORCE</code> 10 m/s²; speed ≤ 1.3 × max(v0, 0.5)</td><td><code>step</code></td><td>ours (stability at dt 0.2)</td></tr>
+  </tbody>
+</table></div>
+<h4>Regimes and per-person variation</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>Regime</th><th class="num">v0 (m/s)</th><th class="num">τ (s)</th><th class="num">A (m/s²)</th><th class="num">B (m)</th><th class="num">Stop rate (/s)</th><th>Stop length (s)</th><th class="num">Sharp-turn rate (/s)</th><th>Meant as</th></tr></thead>
+  <tbody>
+    <tr><td>calm</td><td class="num">0.9</td><td class="num">0.6</td><td class="num">2.0</td><td class="num">0.6</td><td class="num">0.02</td><td>1.0–3.0</td><td class="num">0</td><td>slow, wide berth, rare stops</td></tr>
+    <tr><td>hurried</td><td class="num">1.6</td><td class="num">0.35</td><td class="num">2.0</td><td class="num">0.3</td><td class="num">0.005</td><td>0.5–1.0</td><td class="num">0</td><td>fast, cuts close, almost never stops</td></tr>
+    <tr><td>erratic</td><td class="num">1.1</td><td class="num">0.3</td><td class="num">1.8</td><td class="num">0.4</td><td class="num">0.15</td><td>0.6–2.5</td><td class="num">0.2</td><td>synthetic stress: sudden stops and sharp turns</td></tr>
+  </tbody>
+</table></div>
+<p class="small tsrc"><code>crowd.py: REGIMES</code> (values are ours). Each person draws a fixed multiplicative jitter N(1, 0.1) clipped to [0.7, 1.3] for v0, A, B and the event rates (<code>CrowdConfig.jitter</code>, <code>reset</code>). Events are Bernoulli per step: a stop starts with probability stop × jitter × dt and lasts U(stop length); in erratic, a sharp turn happens with probability 0.2 × jitter × dt and sets a new goal 60–150° left or right (coin flip) of the current heading, 3–7 m away (<code>_turn_goal</code>).</p>
+<div class="tbl dense"><table>
+  <thead><tr><th>Element</th><th>How it is simulated</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>Spawn at t = 0</td><td>robot at x = ±9 m (random side), y ~ U(−5, 5), goal on the opposite side; people at free points in ±9 m, ≥ 2r + 0.3 m apart and clear of pillars; everyone starts at rest (so data cards drop the first step)</td><td><code>reset</code>, <code>_free_point</code></td></tr>
+    <tr><td>Goals, <code>goal_mode="anywhere"</code></td><td>any free point; a new one on arrival (within 0.5 m). People pick a goal about every 6 s; 75.5% of 2 s turns contain a goal change (DATA.md)</td><td><code>reset</code>, <code>step</code></td></tr>
+    <tr><td>Goals, <code>goal_mode="cross"</code></td><td>a point on the side opposite the nearest wall (spread ±0.8 × 9 m); on arrival the person leaves and a new person (new <code>agent_id</code>) enters at a random edge, already walking at v0 towards the far side. Made to resemble the through-walkers of ETH/Hotel (D-24)</td><td><code>_far_side_goal</code>, <code>_respawn</code></td></tr>
+    <tr><td>Regime switch</td><td>crowd-wide and instantaneous at <code>switch_t</code>: from that step every person uses the new regime's parameters (<code>regime_at</code>); the person-level jitter stays</td><td><code>CrowdConfig.regime_at</code></td></tr>
+    <tr><td>Obstacles</td><td><code>n_obstacles</code> = 2 circular pillars, centre in ±5 m, radius U(0.5, 1.2) m, ≥ r + 0.4 + 1.0 m from the robot's straight line, ≥ 1.5 m apart edge to edge</td><td><code>reset</code></td></tr>
+    <tr><td>Robot in the stored datasets</td><td>built-in policy: straight to its goal at robot_speed × clip((nearest person − 0.8) / 1.5, 0, 1), turning back on arrival. This is also the <code>stop_go</code> baseline</td><td><code>_robot_policy</code></td></tr>
+    <tr><td>Robot in the closed loop</td><td>the planner's command (<code>CrowdSim.step(robot_cmd)</code>); people react to it exactly as above</td><td><code>run_closed.py: run_episode</code></td></tr>
+    <tr><td>Who ignores the robot</td><td>share <code>ignore_robot</code> of people, drawn from a separate stream <code>rng([seed, 7919])</code>, so the rest of the crowd is identical whatever the share</td><td><code>reset</code></td></tr>
+    <tr><td>Bodies</td><td>discs: person 0.3 m, robot 0.4 m; <code>collided</code> = overlap with anyone or a pillar (0.26–0.60% of person rows in the stored sets, "Collided" column of the generated table below)</td><td><code>PERSON_R</code>, <code>ROBOT_R</code>, <code>_collisions</code></td></tr>
+    <tr><td>Output per step</td><td>ground truth: t, agent_id, kind, is_ego, x, y, vx, vy, radius, regime, goal_x, goal_y, collided</td><td><code>_state</code>, <code>COLUMNS</code></td></tr>
+    <tr><td>Episodes and seeds</td><td><code>generate(n, seed, config, switch_prob=0.5)</code>: <code>rng(seed)</code> draws each episode's seed (<code>integers(2**31)</code>), a start regime (uniform over the three) and, with probability 0.5, a different target regime and a switch time U(0.35, 0.65) × 40 s snapped to dt (14–26 s). Same seed, same dataset, on the same platform (MAC_SETUP rules)</td><td><code>generate</code>, <code>simulate</code></td></tr>
+    <tr><td>Sensing (not in the simulator)</td><td>applied when rows are built: N(0, 0.1 m) per axis on <em>every</em> agent, the robot included, from <code>rng([seed, agent_id])</code> over absolute steps, then the forward Kalman filter. (<code>crowd.observe()</code>, used only for quick checks, keeps the robot's pose exact.)</td><td><code>features.build_rows</code></td></tr>
+  </tbody>
+</table></div>
+<p><strong>Not simulated:</strong> occlusion, missed detections and identity switches (every person is seen every step, identity is perfect); groups walking together; long standing (Hotel's standers have no counterpart); body orientation, gaze or any cue that announces a stop or a turn; agent kinds other than person and robot.</p>
+
+<h4 id="d-sets">The simulated datasets</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>Dataset</th><th>How it was generated</th><th>What differs</th><th>Used by</th></tr></thead>
+  <tbody>
+    <tr><td><code>crowd</code></td><td><code>python -m foresight.domains.crowd --episodes 80 --seed 0 --out data/crowd</code> <span class="st open">reconstructed</span>: no literal command in the repo; matches meta.json (<code>config</code> without the T2 knobs) and episode 0's seed 1826701615 = first draw of <code>default_rng(0)</code></td><td>original plaza: <code>goal_mode</code> anywhere, 16 people, robot_repulsion 2.0, nobody ignores the robot</td><td>pilot and overnight run, T1 bank (<code>run_closed.py</code> default bank), tier grid, early S0 (D-12), <code>check_row_order</code>, <code>check_mps</code>, <code>latency.py</code>, old T3 bank (<code>run_adapt.py</code>)</td></tr>
+    <tr><td><code>crowd_c2e</code></td><td><code>python tools/make_switch_set.py --before calm --after erratic --episodes 12 --out data/crowd_c2e</code> (the script's docstring); seeds 5000–5011</td><td>every episode calm → erratic at exactly 20 s; anywhere, 16 people (meta.json has no <code>config</code>; 192 tracks = 12 × 16, nobody respawned)</td><td>old T3 test set (<code>run_adapt.py</code>, f1 era); <span class="st sup">superseded</span> by live variants Setting B</td></tr>
+    <tr><td><code>crowd_cross</code></td><td><code>python -m foresight.domains.crowd --episodes 80 --seed 0 --switch-prob 0.5 --goal-mode cross --out data/crowd_cross</code> (<code>README.md</code>, <code>scripts/mac/setup.sh</code>)</td><td>same 80 episode seeds, start regimes and switches as <code>crowd</code> (same generator seed), but crossing goals and respawns</td><td>S0 (D-25, D-27), Kalman tuning (D-26), context size (E10), live variants Setting B bank, T2 cross sweep and oracle gate bank (<code>tools/t2.ps1</code>, <code>tools/oracle_gate.ps1</code>)</td></tr>
+    <tr><td><code>crowd_cross_t2</code></td><td><code>python -m foresight.domains.crowd --episodes 120 --seed 24 --people 24 --robot-repulsion 2 --ignore-robot 0.2 --goal-mode cross --out data/crowd_cross_t2</code> <span class="st open">reconstructed</span>: RESULTS amendment 2 says "120 episodes generated in that cell (seed 24)"; meta.json <code>config</code> matches; episode 0's seed 821789028 = first draw of <code>default_rng(24)</code></td><td>the T2 cell (D-32): 24 people, 20% ignore the robot, crossing; filter retuned (q 0.01, r 0.05, r at the grid edge)</td><td>S0 and check_shift in the cell, T4, T5 bank (erratic episodes excluded), walkthrough, intent layer (sim), <code>latency_gpu.py</code>, <code>render_compare.py</code></td></tr>
+    <tr><td><code>toy</code></td><td><code>python -m foresight.domains.toy_crowd --episodes 40 --out data/toy</code> (default is 60; the stored set has 40); episode seed = episode index, even episodes switch</td><td>older, looser stand-in (<code>toy_crowd.py</code>: dt 0.1, regoal rates, no hard pillar constraint, no <code>collided</code>)</td><td>tests only; <code>run_offline.py</code> default</td></tr>
+    <tr><td>closed-loop crowds (not stored)</td><td>built per seed by <code>run_closed.py: make_sim</code>: start regime by seed (with <code>--switch-to</code>, the other two in turn), switch on odd seeds at mid-episode, or on every seed with <code>--switch-all</code> at <code>--switch-t</code></td><td>T5: cell r2 · i0.2 · p24, cross, everyone into erratic at 5 s, seeds 3000–3039. Live variants B: 6 cross episodes, seeds 7000+, calm → erratic at 20 s (<code>tools/live_variants.py</code>)</td><td>T1, T2, oracle gate, T4, T5, live variants B</td></tr>
+  </tbody>
+</table></div>
+<h4>What the stored tracks hold (generated)</h4>
+{{GEN:data_tracks}}
+
+<!-- ============================== reality ============================== -->
+<h3 id="d-reality">Relation to reality</h3>
+<div class="tbl dense"><table>
+  <thead><tr><th>Element</th><th>Taken from published work or real data</th><th>Our own choice</th><th>Known gap</th></tr></thead>
+  <tbody>
+    <tr><td>Real trajectories</td><td>ETH and Hotel annotations (Pellegrini et al. 2009, via OpenTraj)</td><td>60 s windows, radius 0.25 m, horizons 1.2 / 2 / 4.8 s, one scene → the other</td><td>two scenes, ~25 minutes, ~750 people; no robot, no obstacles in the files</td></tr>
+    <tr><td>Motion model</td><td>social-force form (Helbing &amp; Molnár 1995)</td><td>all values, anticipation 0.6 s, anisotropy 0.35, obstacle steer, walls, caps</td><td>not validated against real trajectories (REFERENCES row 14)</td></tr>
+    <tr><td>Where people walk</td><td>crossing mode copies the through-walking of ETH/Hotel (D-24)</td><td>far-side goals, respawn at edges</td><td>turns in 2 s windows 8–13% (cross) vs 2–3% real; anywhere mode 36% (DATA.md, D-24)</td></tr>
+    <tr><td>Speeds</td><td>—</td><td>v0 per regime</td><td>only hurried (1.51 m/s walking) is at real pace (ETH 1.46, Hotel 1.38); calm 0.76, erratic 1.00 are slower (DATA.md)</td></tr>
+    <tr><td>Predictability</td><td>checked against real data</td><td>—</td><td>constant-velocity error at +2 s, cross mode calm 0.33–0.35 m, hurried 0.42–0.47 m vs ETH 0.37, Hotel 0.25 (D-24); anywhere mode 2.5–4× worse than real</td></tr>
+    <tr><td>Erratic behaviour</td><td>—</td><td>a synthetic stress regime</td><td>no real counterpart; the "behaviour change" of claim B is ours</td></tr>
+    <tr><td><strong>Intent</strong></td><td>—</td><td>stops and turns are Bernoulli events per step; turn direction is a coin flip</td><td>nothing in the features can announce them. The intent chain exposed this: balanced accuracy 0.30 in simulation (chance 0.25) vs 0.49 on real data; adopted on real, not in simulation (D-34, E16)</td></tr>
+    <tr><td>Sensing</td><td>noise level "typical for lidar or camera people trackers" (D-10, an assumption)</td><td>N(0, 0.1 m) per axis, every agent, every step</td><td>no occlusion, no missed detections, perfect identity; the robot's own pose is noisy too</td></tr>
+    <tr><td>State estimate</td><td><strong>S1 gate</strong> against Schöller et al. (RA-L 2020) constant-velocity model, FDE at +4.8 s: ours ETH 1.123 m vs 1.15, Hotel 0.460 m vs 0.51 (within 10%)</td><td><strong>D-26 tuning</strong>: (q, r) per dataset on training data only, by CV error at +2 s (<code>tools/tune_kalman.py</code>, grids q 0.005–2, r 0.05–0.3)</td><td>published protocol differs (8 observed steps, leave-one-scene-out); a 3–14% gap remains depending on the window rule (DEFENSE attack 10)</td></tr>
+    <tr><td>Robot</td><td>—</td><td>bank robot = slow-down policy; live robot = planner</td><td>robot feature distributions checked bank vs live (check_shift, RESULTS amendment 2: robot within 2 m 5.6% vs 4.5%)</td></tr>
+    <tr><td>Reaction to the robot</td><td>—</td><td>people push away 2× harder, 20% ignore it in the T2 cell</td><td>real recordings show no reaction to a robot; reacting people break the exchangeability behind conformal guarantees (S0 limits)</td></tr>
+    <tr><td>Density</td><td>—</td><td>16 or 24 people at all times</td><td>real: 3.6–4.6 people per frame on average; median nearest person 2.0 m (sim) vs 1.1–1.2 m (real)</td></tr>
+    <tr><td>Benchmark</td><td>standard ETH/UCY protocol known (REFERENCES §2)</td><td>two scenes, fixed horizons, sampled rows</td><td>no leaderboard comparison (GATES §2)</td></tr>
+  </tbody>
+</table></div>
+
+<!-- ============================== encoding ============================== -->
+<h3 id="d-enc">Encoding: how every characteristic becomes a number</h3>
+<div class="layer">
+<dl class="kv">
+  <dt>One row</dt><dd>One person, one moment t, one horizon h (<code>features.build_rows</code>). Rows every 0.5 s per person (<code>row_every</code>, D-11), only if the person was seen at every step of the history window (no NaN history, no fresh Kalman restart; f2), never for the robot.</dd>
+  <dt>Frame</dt><dd>Everything is expressed in the person's own frame: x along the heading θ, y across (+ = left), via <code>_rot(θ)</code>. θ = filtered velocity heading above 0.2 m/s; else the displacement over the history window if above 0.05 m; else (standing) the direction to the robot, else to the nearest person (f2). Never the world x-axis. So the model sees no absolute position, no world heading, no scene layout beyond the nearest obstacle.</dd>
+  <dt>Not encoded</dt><dd>identity, absolute position and time, goals, <code>regime</code>, <code>kind</code> (one kind per scene so far; DEPLOYMENT §5 would declare it categorical once there are several), anything about people beyond the 3 nearest (except the count within 3 m).</dd>
+  <dt>Missing values</dt><dd>A missing neighbour, robot or obstacle is coded as distance 99 (<code>FAR</code>), offsets (99, 0), velocities and closing speed 0; the obstacle padding is not rotated into the agent frame (f2, after the f1 heading leak). A missing history step drops the row instead (f2).</dd>
+  <dt>Why not NaN</dt><dd>DEPLOYMENT §5 notes that TabPFN handles NaN natively and that 99 is a made-up value. It proposes an A/B test (Hotel → ETH and the crowd, 5 seeds, TabPFN and LightGBM) and sets the bar: adopt only if the gain exceeds the seed-to-seed spread and there is time to rerun, because switching invalidates every result so far and touches the kNN bank (scikit-learn rejects NaN), the <code>robot_dist &lt; 90</code> test in <code>failure_modes.py</code>, and <code>check_shift.py</code>. <span class="st open">Not run</span>: no result file for that A/B exists, so 99/0 stays and is reported as a finding.</dd>
+  <dt>Categorical, scaling</dt><dd>No categorical columns; nothing scaled or one-hot encoded (DEPLOYMENT §5, Prior Labs docs: "don't scale or one-hot encode"). Two models, one per axis (<code>ddx</code>, <code>ddy</code>).</dd>
+</dl>
+</div>
+<h4>The 39 model columns (generated)</h4>
+{{GEN:feature_table}}
+<h4>Target, labels and meta columns</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>Column</th><th>Definition</th><th>Used for</th></tr></thead>
+  <tbody>
+    <tr><td><code>ddx</code>, <code>ddy</code> (target)</td><td>R(θ)·(p_true(t+h) − p_obs(t) − v_obs(t)·h), metres, person frame. Offline rows: p_true from the simulator or the annotation (<code>label_from="truth"</code>); live rows in the loop: from observed, filtered positions (<code>label_from="observed"</code>, B6). Constant velocity is the all-zero prediction</td><td>the two regression targets; TabPFN predicts their quantiles; <code>to_world()</code> maps back</td></tr>
+    <tr><td><code>t_known</code></td><td>t + h: when the label exists</td><td>causality of live context (a row is usable at time now only if t_known ≤ now)</td></tr>
+    <tr><td><code>mode</code></td><td>from <em>true</em> velocities over the next 2 s, whatever h: <code>stop</code> if mean speed &lt; 0.2 m/s; <code>turn_left</code> / <code>turn_right</code> if the heading changes by more than 30°; else <code>straight</code>; <code>unknown</code> if there is no data 2 s later (f3, D-22)</td><td>analysis, the optional rare-move fill (D-31, off by default), labels of the intent classifier (D-34). Never an input</td></tr>
+    <tr><td><code>regime</code>, <code>since_switch</code></td><td>ground truth from tracks.csv / meta.json (scene name on real data)</td><td>slicing results before / after a switch, bank exclusion. Never an input</td></tr>
+    <tr><td><code>px, py, vx, vy, theta</code></td><td>the filtered state at t, world frame</td><td><code>to_world()</code>, the planner</td></tr>
+    <tr><td><code>true_x, true_y</code></td><td>future position used for the label, world frame</td><td>scoring</td></tr>
+    <tr><td><code>episode, t, agent_id, h, features_version</code></td><td>bookkeeping; <code>features_version</code> = f4 in every row and cache name</td><td>splits by episode, person bootstrap, never mixing versions</td></tr>
+  </tbody>
+</table></div>
+
+<h4 id="d-row">One worked row</h4>
+<p>The walkthrough's person P at its decision moment (closed loop, T5 configuration, demonstration seed 6001, after the switch into erratic). This is a live query row: built by the same <code>build_rows(query_only=True)</code> as the offline rows. Reading it: P walks at 1.02 m/s and is braking (<code>a_lon</code> −0.82) while veering right (<code>turn_rate</code> −0.50 rad/s); its last second lies straight behind it (<code>hist_x5</code> −1.17 m, <code>hist_y5</code> ≈ 0); the nearest person is 1.78 m ahead, slightly left, and almost still in the world (relative velocity <code>n0_vx</code> −1.01 m/s ≈ minus P's own 1.02 m/s), so P is walking up to them; the robot is 1.69 m away, ahead and to the right, closing at 0.97 m/s; the nearest pillar or wall is 5.19 m away; 5 people are within 3 m. No column is padded. The robot distance in the row (1.690 m) differs from <code>P_dist_m</code> = 1.609 m in meta.json because the row uses the <em>filtered, noisy</em> robot position (build_rows adds sensor noise to every agent), while <code>tools/walkthrough.py: choose_moment</code> measures from P to the robot's true position.</p>
+{{GEN:worked_row}}
+
+<!-- ============================== what we got ============================== -->
+<h3 id="d-got">What we got from each source</h3>
+<h4>Feature rows per dataset (generated)</h4>
+{{GEN:data_rows}}
+<h4>Who used which rows</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>Rows</th><th>Selection</th><th>Experiment</th></tr></thead>
+  <tbody>
+    <tr><td>ETH, Hotel (f4, noise 0)</td><td>context from one scene, test rows from the other: the f1 900-row sample re-scored on f4; at +2 s 335 rows / 169 people (ETH → Hotel) and 324 rows / 195 people (Hotel → ETH)</td><td>claim A (E9)</td></tr>
+    <tr><td>ETH, Hotel</td><td>Hotel rows as bank, first 6 ETH episodes as stream: 137 query rows over 44 moments, 83 people</td><td>live variants Setting A (E11)</td></tr>
+    <tr><td>ETH, Hotel (f4, noise 0)</td><td>both directions, every test episode, a moment every 2 s, queries at +2 s; frozen bank = 2,000 rows of the other scene (<code>context.frozen</code>), scene model on ≤ 250 recent rows labelled from observed positions; from 5 s on: 1,540 rows, 544 people pooled (<code>tools/realdata_claimb.py</code>)</td><td>claim B on real data (d7dccd2, <code>results/realdata_claimb.csv</code>)</td></tr>
+    <tr><td>ETH, Hotel tracks (not the caches)</td><td>gap-free windows of <code>tracks.csv</code>, noise as in build_rows (<code>tools/tune_kalman.py: tracks_by_agent, cv_errors</code>)</td><td>S1 gate and Kalman tuning (E7, D-26)</td></tr>
+    <tr><td>ETH, Hotel</td><td>train on one scene, up to 1,500 test rows from the other, 2,000 context rows (<code>intent_layer.py</code>: <code>N_CTX</code>, <code>N_TEST</code>)</td><td>intent chain (E16)</td></tr>
+    <tr><td>crowd_cross (f4, noise 0.1)</td><td><code>split_by_episode(test_frac=0.25, seed=0)</code>: 73,163 training rows at +2 s; 2,000 test rows sampled with <code>random_state 0</code></td><td>S0 (D-27), context size (E10)</td></tr>
+    <tr><td>crowd_cross</td><td>bank = training episodes of <code>split_by_episode</code> without any erratic regime: 30 of 60 episodes, 78,116 rows (recomputed with the filter of <code>live_variants.py: setting_b</code>); 6 new episodes (seeds 7000+) as stream</td><td>live variants Setting B = T3 (E11, E12)</td></tr>
+    <tr><td>crowd_cross_t2 (f4, noise 0.1)</td><td>episodes with no erratic regime before or after a switch (below); frozen context = 2,000 random rows at natural move frequency (<code>context.frozen</code>, D-31); scene model = this episode's ≤ 250 most recent completed live rows</td><td>T4, T5 (E14, E15), walkthrough (appendix)</td></tr>
+    <tr><td>crowd_cross_t2</td><td><code>split_by_episode(0.25, seed 0)</code>; 2,000 test rows for S0 (<code>s0_gate.py</code>), up to 1,500 for the intent chain (<code>intent_layer.py</code>)</td><td>S0 in the cell, intent chain (sim)</td></tr>
+    <tr><td>crowd (f4 cache, untuned filter)</td><td>all 80 episodes as bank (T1 ran on f1–f3 rows of this set)</td><td>T1 (E6), latency and MPS checks</td></tr>
+    <tr><td>live rows (not cached)</td><td>built during each closed-loop episode from its own observed history, labelled from observed positions once t + h has passed</td><td>every closed-loop learned planner</td></tr>
+  </tbody>
+</table></div>
+{{GEN:t5_bank}}
+
+<h4>Data cards (behaviour statistics)</h4>
+<p>Plaza, calm→erratic, ETH, Hotel and toy numbers come from <code>docs/DATA.md</code> (<code>tools/data_cards.py</code>, Sat 22:53; constant-velocity error on ground truth, no noise). <code>crowd_cross</code> and <code>crowd_cross_t2</code> have no card in DATA.md; their numbers below were computed for this page from <code>tracks.csv</code> and the f4 row caches with the same method (read-only). DATA.md's mode-label shares at horizons other than 2 s predate the f3 "unknown" label; the generated table above has the f4 shares.</p>
 <div class="tbl dense"><table>
   <thead><tr><th>Dataset</th><th>Kind</th><th>Episodes</th><th>dt</th><th>People / frame</th><th>Speed mean (m/s)</th><th>Stopped</th><th>CV error +2 s mean / p90 (m)</th><th>Turns &gt; 30° in 2 s</th><th>Feature rows (f4)</th><th>Used for</th></tr></thead>
   <tbody>
     <tr><td><code>eth</code></td><td>real, Pellegrini 2009 via OpenTraj</td><td>13 × 60 s (12.9 min); 360 people, 390 tracks</td><td>0.4 s</td><td>4.6 (max 27)</td><td>1.38</td><td>5.7%</td><td>0.37 / 0.73</td><td>2.9% (tracks); turn labels 5.1%</td><td>14,223 (all horizons)</td><td>claim A, tier grid, live variants A (test), S1 gate</td></tr>
     <tr><td><code>hotel</code></td><td>real, same source</td><td>13 × 60 s (12.0 min); 390 people, 433 tracks</td><td>0.4 s</td><td>3.6 (max 18)</td><td>1.04 (walking 1.38)</td><td>25.1% (16.3% exactly 0)</td><td>0.25 / 0.53</td><td>2.1%; labels 3.0%</td><td>7,640</td><td>claim A, live variants A (bank), S1 gate</td></tr>
-    <tr><td><code>crowd</code></td><td>sim, plaza, anywhere goals</td><td>80 × 40 s, 36 switch at 14–26 s</td><td>0.2 s</td><td>16</td><td>1.05</td><td>6.0%</td><td>0.93 / 2.29</td><td>36.4%; labels 41.8%</td><td>(f3 era)</td><td>pilot, T1 bank, early S0 (D-12), check_row_order</td></tr>
-    <tr><td><code>crowd_c2e</code></td><td>sim, calm → erratic at 20 s, seeds 5000+</td><td>12 × 40 s</td><td>0.2 s</td><td>16</td><td>0.79</td><td>9.5%</td><td>0.78 / 1.90 (calm 0.49 → erratic 1.10)</td><td>35.3%</td><td>—</td><td>old T3 test set (run_adapt)</td></tr>
-    <tr><td><code>crowd_cross</code></td><td>sim, crossing crowd, seed 0, switch-prob 0.5</td><td>80 × 40 s, 36 switch; start regimes hurried 28, calm 26, erratic 26</td><td>0.2 s</td><td>16 (4,241 people incl. entrants)</td><td>1.07</td><td>5.8%</td><td>0.58 / 1.45 (all regimes; calm 0.33–0.35, hurried 0.42–0.47 per D-24)</td><td>calm 11–13%, hurried 8.5% (D-24); turn labels at +2 s 26.0%</td><td>206,472 (98,033 at +2 s; 73,163 in the training split)</td><td>S0 D-25/D-27, context size, live variants B (bank without 38 erratic episodes → 42 left), T3</td></tr>
+    <tr><td><code>crowd</code></td><td>sim, plaza, anywhere goals</td><td>80 × 40 s, 36 switch at 14–26 s</td><td>0.2 s</td><td>16</td><td>1.05</td><td>6.0%</td><td>0.93 / 2.29</td><td>36.4%; labels 41.8%</td><td>241,920 (f4 cache, untuned q 2, r 0.1)</td><td>pilot, T1 bank, early S0 (D-12), check_row_order</td></tr>
+    <tr><td><code>crowd_c2e</code></td><td>sim, calm → erratic at 20 s, seeds 5000+</td><td>12 × 40 s</td><td>0.2 s</td><td>16</td><td>0.79</td><td>9.5%</td><td>0.78 / 1.90 (calm 0.49 → erratic 1.10)</td><td>35.3%</td><td>— (f1-era caches only)</td><td>old T3 test set (run_adapt)</td></tr>
+    <tr><td><code>crowd_cross</code></td><td>sim, crossing crowd, seed 0, switch-prob 0.5</td><td>80 × 40 s, 36 switch; start regimes hurried 28, calm 26, erratic 26</td><td>0.2 s</td><td>16 (4,241 people incl. entrants)</td><td>1.07</td><td>5.8%</td><td>0.58 / 1.45 (all regimes; calm 0.33–0.35, hurried 0.42–0.47 per D-24)</td><td>calm 11–13%, hurried 8.5% (D-24); turn labels at +2 s 26.0%</td><td>206,472 (98,033 at +2 s; 73,163 in the training split)</td><td>S0 D-25/D-27, context size, live variants B (bank = 30 of the 60 training episodes, those without erratic; 78,116 rows), T3</td></tr>
     <tr><td><code>crowd_cross_t2</code></td><td>sim, T2 cell r2 · i0.2 · p24, seed 24</td><td>120 × 40 s, 57 switch; start regimes hurried 41, erratic 41, calm 38</td><td>0.2 s</td><td>24 (9,299 people incl. entrants)</td><td>1.05</td><td>6.0%</td><td>0.61 / 1.47</td><td>turn labels at +2 s 27.8%</td><td>467,087 (221,909 at +2 s); 62 erratic-free episodes, 244,757 rows</td><td>T4, T5, walkthrough bank (erratic excluded)</td></tr>
     <tr><td><code>toy</code></td><td>old stand-in crowd</td><td>40 × 40 s</td><td>0.1 s</td><td>16</td><td>0.94</td><td>7.4%</td><td>0.85 / 1.92</td><td>37.7%</td><td>—</td><td>tests only (2,502 rows inside pillars)</td></tr>
   </tbody>
 </table></div>
 <p class="small tsrc">Integrity (DATA.md): ETH tracks match the raw <code>obsmat.txt</code> (8,908 rows), 12 annotation stalls, 19 rows above 3 m/s; Hotel rows match the raw file (6,544); plaza 0.45% of person rows collided. Hotel's cached rows hold more standers than its tracks (31.7% slow at t, 35.4% "stop" at +2 s), because rows need 2 s of history and a known future.</p>
+
+<!-- ============================== fixes ============================== -->
+<h3 id="d-fixes">Data issues fixed along the way</h3>
+<div class="tbl dense"><table>
+  <thead><tr><th>Issue</th><th>Effect</th><th>Fix</th><th>Decision / commit</th></tr></thead>
+  <tbody>
+    <tr><td>Field-of-view leak: real-data <code>bounds</code> = bounding box of all positions, future ones included, fed the wall features</td><td>errors moved up to 0.03 m in opposite directions per scene</td><td><code>bounds = None</code> for ETH/Hotel</td><td>B9, <code>2372cf4</code> Sat 19:11</td></tr>
+    <tr><td><strong>f1 heading leak</strong>: "no obstacle" padding (99, 0) rotated into the agent frame</td><td>obst_x / obst_y carried world heading on 100% of real rows; claim A on f1 withdrawn</td><td>padding left unrotated</td><td>D-20 (f2), <code>9f04ab1</code></td></tr>
+    <tr><td>Standing frame: standing people framed on the world x-axis</td><td>33% of Hotel and 7% of ETH rows carried a scene-direction cue</td><td>face the robot, else the nearest person</td><td>D-20 (f2)</td></tr>
+    <tr><td>History gap inside the window</td><td>NaN features in context rows</td><td>row kept only if every history step exists</td><td>D-20 (f2)</td></tr>
+    <tr><td>The unknown label: exits labelled <code>stop</code></td><td>ETH stop labels 15.5% at 1.2 s vs 6.5% truly slow; rare fill polluted</td><td><code>unknown</code> when no data 2 s later; not in the rare fill</td><td>D-22 (f3), <code>b7d3570</code></td></tr>
+    <tr><td><strong>Kalman tuning</strong>: q = 2 everywhere</td><td>CV 24–30% too weak at +2 s: every earlier "beats CV" gain inflated</td><td>(q, r) per dataset on training data only; S1 gate vs Schöller et al.</td><td>D-26 (f4), <code>22ce784</code></td></tr>
+    <tr><td>kalman.json recorded tuning on the scene itself</td><td>provenance wrong (values unchanged)</td><td>cross-scene <code>--apply-to</code>; <code>tuned_on</code> = the other scene</td><td>red team attack 10</td></tr>
+    <tr><td>Simulated people turned far too often (anywhere goals)</td><td>36% of 2 s windows turn vs 2–3% real; CV 2.5–4× worse than real</td><td>crossing crowd for all confirmatory work</td><td>D-24</td></tr>
+    <tr><td>Adaptation test was in-distribution: the bank held every regime and switch</td><td>live context had nothing new to learn</td><td>erratic held out of the bank (<code>--bank-exclude-regime erratic</code>)</td><td>DECISIONS §1.2, D-30</td></tr>
+    <tr><td><strong>Rare-move over-representation in the bank</strong> context</td><td>first <code>context.frozen()</code> forced up to half stops/turns (~25% turns), widening every box</td><td>natural move frequency, forced share capped at 5% and 0 by default</td><td>D-31, <code>d47e934</code> Sun 00:14</td></tr>
+  </tbody>
+</table></div>
+<p class="small">The full list of fixes, data and otherwise, is in <a href="#fixes">§7</a>.</p>
 
 <h3>Seed ranges (never reused across roles)</h3>
 <div class="tbl dense idfirst"><table>
@@ -30,6 +202,8 @@
     <tr><td>6001</td><td>walkthrough demonstration seed</td></tr>
     <tr><td>7000+</td><td>live variants Setting B test episodes (calm → erratic at 20 s)</td></tr>
     <tr><td>3000–3039</td><td>T5 confirmatory (fresh; learned arms 3000–3019 after part 5)</td></tr>
+    <tr><td>3100–3119</td><td>exploratory caution-dial sweep on the L4 pod (<code>docs/EXPLORATORY_DIALS.md</code>)</td></tr>
+    <tr><td>0, 24 (generator)</td><td><code>crowd</code> / <code>crowd_cross</code> and <code>crowd_cross_t2</code> episode seeds are drawn from these generator seeds (<code>crowd.generate</code>)</td></tr>
   </tbody>
 </table></div>
 
@@ -40,7 +214,7 @@
     <tr><td>Real data: test place never seen</td><td>Context and training rows from one scene, test on the other, both directions. Claim A test rows = the f1 900-row sample re-scored on f4; at +2 s 335 rows / 169 people (ETH → Hotel) and 324 rows / 195 people (Hotel → ETH)</td><td>evaluate.py, claim_a.py</td></tr>
     <tr><td>Simulation offline: split by episode</td><td><code>split_by_episode(test_frac=0.25, seed=0)</code>; 2,000 fixed test rows (random_state 0)</td><td>s0_gate.py, context_size.py</td></tr>
     <tr><td>Closed loop: fresh crowds</td><td>test crowds generated on the fly from seeds outside every bank; paired across planners</td><td>run_closed.py</td></tr>
-    <tr><td>Causality of context</td><td>a row is used at t only if <code>t_known = t + h ≤ t</code>; recency rows only from the same episode, bank rows only from other episodes</td><td>context.select, Predictor</td></tr>
+    <tr><td>Causality of context</td><td>a row is used at time now only if <code>t_known = t + h ≤ now</code>; recency rows only from the same episode, bank rows only from other episodes</td><td>context.select, Predictor</td></tr>
     <tr><td>Live labels</td><td>from observed (noisy, filtered) positions, as a robot would label them (B6); truth only for scoring</td><td><code>label_from="observed"</code></td></tr>
     <tr><td>No future in features</td><td>causality test scrambles the future and checks features; real-data <code>bounds = None</code> (B9)</td><td>test_features_blind_to_scrambled_future; eth_ucy.py</td></tr>
     <tr><td>No ground-truth behaviour as input</td><td><code>regime</code>, goals and <code>mode</code> never enter <code>X_of</code>; <code>mode</code> only picks rare rows from the bank (other episodes)</td><td>features.X_of, context</td></tr>
@@ -54,7 +228,8 @@
   <thead><tr><th>Question</th><th>Real (ETH, Hotel)</th><th>Simulated (crossing crowd)</th></tr></thead>
   <tbody>
     <tr><td>Honest ranges in a never-seen place</td><td>yes: the claim A test</td><td>no (one simulator, in-distribution)</td></tr>
-    <tr><td>Adapting to a new behaviour</td><td>weakly: no labelled behaviour change; Setting A shows no gain over CV</td><td>yes, by construction (erratic held out of the bank)</td></tr>
+    <tr><td>Adapting to a new behaviour</td><td>weakly: no labelled behaviour change. Setting A: no variant beats CV. Final live design, both directions: split vs frozen interval score −0.045 [−0.080, −0.009], coverage level: small and direction-dependent</td><td>yes, by construction (erratic held out of the bank)</td></tr>
+    <tr><td>Predicting intent (the next manoeuvre)</td><td>partly: balanced accuracy 0.49, turn recall 0 (D-34)</td><td>no: intent is random by construction</td></tr>
     <tr><td>What a robot gains</td><td>no: no robot, people cannot react</td><td>yes, but social-force people, synthetic erratic, more turns than real</td></tr>
     <tr><td>Point accuracy on the published benchmark</td><td>no: our protocol differs (two scenes, fixed horizons, random rows); we never compare with leaderboard numbers (GATES §2)</td><td>no</td></tr>
     <tr><td>How large a gain to expect</td><td>small headroom: CV already within 0.5 m on 76–89% of rows</td><td>inflated: CV is 2.5–4× worse than on real data in the plaza; gains do not transfer</td></tr>

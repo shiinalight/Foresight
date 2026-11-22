@@ -18,7 +18,8 @@
     <tr><td>E12</td><td><a href="#e12">T3 / WP-J2: split vs frozen, with the offset</a></td><td>Sun 00:15–00:18</td><td>f4</td><td><span class="st fin">final</span></td></tr>
     <tr><td>E13</td><td><a href="#e13">Open-loop oracle gate and time floor</a></td><td>Sun 00:17–00:22</td><td>f4</td><td><span class="st fin">final</span>: gate failed</td></tr>
     <tr><td>E14</td><td><a href="#e14">T4: offset rule, smoothing, latency</a></td><td>Sun 00:36–01:37</td><td>f4</td><td><span class="st fin">final</span></td></tr>
-    <tr><td>E15</td><td><a href="#e15">T5 confirmatory closed loop</a></td><td>Sun 01:12 → 08:00</td><td>f4</td><td><span class="st pend">pending</span></td></tr>
+    <tr><td>E15</td><td><a href="#e15">T5 confirmatory closed loop</a></td><td>Sun 01:12 → 02:09</td><td>f4</td><td><span class="st fin">final</span>: primary failed; in-loop B held</td></tr>
+    <tr><td>E16</td><td><a href="#e16">Intent chain (classifier → per-manoeuvre ranges)</a></td><td>Sun 02:16</td><td>f4</td><td><span class="st fin">final</span>: adopted on real, not in sim</td></tr>
   </tbody>
 </table></div>
 
@@ -135,10 +136,27 @@
 <h4>Latency and fast replan (part 3, before any latency run)</h4>
 <p>Latency arm fixed at 0.4 s (one replan period); fast-replan baselines at the 0.2 s simulation step (amendment 2's 0.1 s is impossible). Part 5 then dropped the latency arm for compute; of the 0.2 s replan arms only reactive m0.4 (smoothing OFF) finished its 20 seeds.</p>
 
-<h3 id="e15">E15. T5 confirmatory closed loop <span class="st pend">pending</span></h3>
-<p>Placeholder: no T5 outcome has been read. Running since Sun 01:12; pruned at 01:36 (addendum part 5, before results); hard stop 08:00 (<code>tools/cutoff.ps1</code>).</p>
+<h3 id="e15">E15. T5 confirmatory closed loop <span class="st fin">final</span></h3>
+<p>Analysed on the 20 common seeds 3000–3019 by the pre-registered rules (RESULTS "Closed loop T5 results", fce98a6). Pruned at 01:36 (addendum part 5, before results). Chosen cell r2 · i0.2 · p24, every seed switching into erratic at 5 s, smoothing OFF, latency 0, replan 0.4 s. A 40-seed extension (same arms and dials) was declared at 02:20 (3226e4f); the 20-seed analysis stays the confirmatory result.</p>
 <div class="tbl dense"><table>
-  <thead><tr><th>Arm</th><th>Planned (amendment 2, part 4)</th><th>Running after part 5</th><th>Role</th></tr></thead>
+  <thead><tr><th>Planner</th><th>Dial</th><th class="num">Time (s)</th><th class="num">Min gap (m)</th><th class="num">Collision rate</th></tr></thead>
+  <tbody>
+    <tr class="hl"><td><code>tabpfn_split</code> (primary)</td><td>q 0.10 / 0.15</td><td class="num">28.64 / 26.23</td><td class="num">0.232 / 0.158</td><td class="num">15 / 15%</td></tr>
+    <tr><td>constant velocity</td><td>m 0.2 / 0.4 / 0.6 / 0.8</td><td class="num">21.36 / 23.23 / 25.83 / 28.92</td><td class="num">0.089 / 0.199 / 0.323 / 0.254</td><td class="num">25 / 15 / 5 / 15%</td></tr>
+    <tr><td>reactive</td><td>m 0.2 / 0.4 / 0.6 / 0.8</td><td class="num">23.27 / 24.99 / 26.60 / 30.89</td><td class="num">−0.120 / 0.086 / 0.127 / 0.125</td><td class="num">50 / 10 / 15 / 10%</td></tr>
+    <tr><td>velocity obstacles</td><td>w 0.5 / 1 / 2</td><td class="num">20.08 / 21.32 / 22.31</td><td class="num">−0.038 / 0.064 / 0.053</td><td class="num">40 / 20 / 30%</td></tr>
+    <tr><td>stop_go</td><td>—</td><td class="num">31.38</td><td class="num">−0.174</td><td class="num">10%</td></tr>
+    <tr><td>open-loop oracle</td><td>m 0.2 / 0.4 / 0.6</td><td class="num">20.37 / 22.69 / 25.68</td><td class="num">0.221 / 0.385 / 0.388</td><td class="num">0 / 0 / 10%</td></tr>
+  </tbody>
+</table></div><p class="small tsrc">Copied from RESULTS "Closed loop T5 results" (mean time_capped, mean min_gap, moving-collision rate; 20 paired seeds).</p>
+<ul>
+  <li><strong>Primary (claim C, already a stress test):</strong> tabpfn_split beats no baseline; all four fail Holm–Bonferroni (p = 1.0). At cv m0.4's safety it is 4.3 s slower on the min_gap axis and 3.0 s on the collision axis. cv m0.2 and vo w0.5/w1/w2 are 3.9–6.2 s faster, compared by dominance, so not beaten either (<code>results/t5_primary.csv</code>).</li>
+  <li><strong>Exploratory (a), safety at matched time:</strong> the open-loop oracle beats no baseline on every point and both axes, so the primary was not tested there. Per point it buys clear clearance; collision-rate gains mostly stay below the 0.244 margin at 20 seeds; vo w0.5 is faster than every oracle point (<code>results/t5_oracle_matchedtime.csv</code>).</li>
+  <li><strong>Exploratory (b), in-loop claim B</strong> (q0.15, +2 s, after the switch, split minus other): vs frozen tabpfn coverage +10.0 pts [+8.4, +11.6], interval score −1.31 [−1.55, −1.08], median error −0.057 m [−0.094, −0.021]; vs lgbm_all +18.0 pts, −2.00. No model reaches 80%; before the switch split is slightly worse (+0.18). Why the split planner is slower: not because of calibration. Split, frozen TabPFN and LightGBM all take about 26 s at q 0.15 (split − frozen −0.12 s [−1.34, +1.26]; split − lgbm_all +0.33 s [−1.34, +2.02], 20 paired seeds), although LightGBM's boxes are 0.63 m narrower. The box planner's caution setting sets the speed. Exploratory dial sweep on fresh seeds: <code>docs/EXPLORATORY_DIALS.md</code> (<code>results/inloop_claimb.csv</code>).</li>
+  <li><strong>Showcase seed 3013</strong> (every primary-test planner reached the goal; tabpfn_split q0.15 at 25.8 s, closest to its median 26.40 s). Render: <code>media/demo/seed3013.gif</code>.</li>
+</ul>
+<div class="tbl dense"><table>
+  <thead><tr><th>Arm</th><th>Planned (amendment 2, part 4)</th><th>As run after part 5</th><th>Role</th></tr></thead>
   <tbody>
     <tr class="hl"><td><code>tabpfn_split</code> q0.15</td><td>40 seeds</td><td>20 seeds (3000–3019), batch offset, smoothing OFF</td><td><strong>primary</strong></td></tr>
     <tr><td><code>tabpfn_split</code> q0.10</td><td>40 seeds</td><td>20 seeds</td><td>second point of the primary curve</td></tr>
@@ -159,5 +177,14 @@
     <tr><td>Also reported</td><td>success, intrusion, heading change per metre, on common seeds; fast-replan and smoothing-ON rows separately</td><td>—</td></tr>
   </tbody>
 </table></div>
-<div class="note"><p><strong>File-glob caveat for the T5 analysis (found while building this page).</strong> <code>curve_compare.load()</code> keys arms as <code>planner:dial</code> and keeps the last row per (arm, seed). With <code>--glob "*t5-*"</code> the smoothing-ON files (<code>*-sm</code>) and the 0.2 s replan file (<code>t5-rea04-r02</code>, same arm as <code>t5-rea04</code>) share arm names with the primary set, so which row survives depends on file-name (start-time) order. Replaying <code>load()</code> read-only on the partial T5 files at ~01:55: 54 duplicated (arm, seed) rows; <code>cv:0.8</code> kept 3 smoothing-ON rows and <code>reactive:0.8</code> kept 4 among its smoothing-OFF rows; <code>reactive:0.4</code> kept only the 0.4 s rows, because <code>t5-rea04</code> happened to start after <code>t5-rea04-r02</code>. Fix for the analysis: <code>smooth</code> is stored in every row, so add <code>--query "smooth == False and latency == 0"</code>; <code>replan</code> is <strong>not</strong> stored, so the <code>*-r02*</code> files must be excluded by file name. The same holds for <code>run_closed.load_closed()</code>, whose <code>KEY</code> has no <code>replan</code>.</p></div>
+<div class="note"><p><strong>File-glob caveat for the T5 analysis (found while building this page).</strong> <code>curve_compare.load()</code> keys arms as <code>planner:dial</code> and keeps the last row per (arm, seed). With <code>--glob "*t5-*"</code> the smoothing-ON files (<code>*-sm</code>) and the 0.2 s replan file (<code>t5-rea04-r02</code>, same arm as <code>t5-rea04</code>) share arm names with the primary set, so which row survives depends on file-name (start-time) order. Replaying <code>load()</code> read-only on the partial T5 files at ~01:55: 54 duplicated (arm, seed) rows; <code>cv:0.8</code> kept 3 smoothing-ON rows and <code>reactive:0.8</code> kept 4 among its smoothing-OFF rows; <code>reactive:0.4</code> kept only the 0.4 s rows, because <code>t5-rea04</code> happened to start after <code>t5-rea04-r02</code>. Fix for the analysis: <code>smooth</code> is stored in every row, so add <code>--query "smooth == False and latency == 0"</code>; <code>replan</code> is <strong>not</strong> stored, so the <code>*-r02*</code> files must be excluded by file name. The same holds for <code>run_closed.load_closed()</code>, whose <code>KEY</code> has no <code>replan</code>. <strong>Fixed before the T5 analysis</strong> (1b22076): curve_compare drops <code>-sm</code>/<code>-r02</code>/<code>-lat</code> files, filters smooth False, latency 0, replan 0.4, and asserts one row per (arm, seed); <code>replan</code> is now in result rows and <code>KEY</code>.</p></div>
+
+<h3 id="e16">E16. Intent chain: classifier → per-manoeuvre ranges <span class="st fin">final</span></h3>
+<p>A TabPFN classifier predicts each person's next manoeuvre (straight / stop / turn left / turn right); per-manoeuvre TabPFN range models give the 2 s range, mixed by the classifier's probabilities (exact mixture CDF). Gate, fixed in <code>tools/intent_layer.py</code> before any result: adopt if, on turning people, the chain's interval score beats the single TabPFN range model with a paired person-bootstrap 95% interval excluding 0, and the overall interval score is not worse. Hosted TabPFN, 47 calls (ed06094).</p>
+<ul>
+  <li><strong>Real, Hotel → ETH</strong> (3 context seeds): balanced accuracy 0.49 (chance 0.25). <strong>Adopted.</strong> Turning people: interval score 3.59 → 3.33 (−0.263 [−0.481, −0.075]; 73 rows, 37 people). Overall level (−0.022 [−0.057, +0.009]). Joint coverage +5.0 pts overall, +16.9 on turns; median error +0.007 m (slightly worse). The classifier names no turn outright (turn recall 0).</li>
+  <li><strong>Simulated crowd</strong> (crowd_cross_t2, 2 context seeds): balanced accuracy 0.30, since simulated people pick turns at random. <strong>Not adopted:</strong> overall interval score worse (+0.229 [+0.175, +0.287]).</li>
+  <li>Class probabilities: TabPFN much better calibrated than LightGBM (log loss real 0.24 vs 0.71, sim 0.81 vs 1.53).</li>
+  <li>Limits: 37 turning people, few context seeds, offline only (not in the closed loop). Figure: <code>media/fig_intent_layer.png</code>; log: <code>results/intent_layer.log</code>.</li>
+</ul>
 {{GEN:t5_status}}

@@ -70,7 +70,7 @@
 <h3>TabPFN API credits</h3>
 {{GEN:api}}
 <p>Budget rules: D-17 (35M per day, stop at 30M) was replaced by D-29 when the monthly limit turned out to govern: 34,996,400 of 50,000,000 used by Sat ~23:50, reset 2026-12-01 00:00 UTC, so ~15M left. Plan: context size ~0.3M (spent), conformal both directions ≤ 1.5M, claim A local only, real-data in-context ETH → Hotel ≤ 4M, tier_seeds dropped, reserve ≥ 5M untouched without the CTO's OK, stop at 10M cumulative tonight. PLAN §5 still says "stop at 30M credits a day" (stale).</p>
-<h3>Latency and cost measurements (all emulated x64 on an ARM laptop CPU, a worst case)</h3>
+<h3>Latency and cost measurements (laptop rows: emulated x64 on an ARM laptop CPU, a worst case; GPU rows: rented NVIDIA L4)</h3>
 <div class="tbl dense"><table>
   <thead><tr><th>What</th><th>Time</th><th>Conditions</th><th>Source</th></tr></thead>
   <tbody>
@@ -83,7 +83,12 @@
     <tr><td>Closed loop under T5 load</td><td>split q0.20 seed 3000: 1,030 s, 16.2 s per plan (row discarded); the walkthrough episode's own timing is in appendix A.0 / A.8 (<code>timing_at_t</code>, <code>pred_ms_per_plan</code>)</td><td>~35 python processes, CPU at 100%</td><td>RESULTS part 5; walkthrough meta / s9</td></tr>
     <tr><td>Fit + predict, context size (local Fast-1)</td><td>18 s (500 rows) → 39 s (2,000 rows) for 2,000 test rows</td><td>context_size</td><td>context_size.csv</td></tr>
     <tr><td>Vendor reference</td><td>0.1–3 ms per test point, cached, batch 100</td><td>H100</td><td>TabPFN-3 report (INDUSTRY [M3])</td></tr>
-    <tr><td>GPU / Apple MPS</td><td><span class="st pend">not measured</span></td><td>Nooshin's M3</td><td><code>tools/latency.py</code>, <code>scripts/mac/smoke.sh</code></td></tr>
+    <tr class="hl"><td>GPU, split predict per replan (bank + scene model, shipped design: 3.5-Fast, 1 estimator)</td><td><strong>71 ms</strong> (laptop CPU 452 ms); predict on the cached 2,000-row bank alone 36 ms (244 ms); 3.5 with 1 estimator: 111 ms</td><td>NVIDIA L4 24 GB, torch 2.8 + CUDA 12.9, tabpfn 9.2.0, laptop weight files; 48 query rows (24 people × 2 horizons); median of 30 after a warm-up; 16→96 query rows 35→36 ms</td><td>DEPLOYMENT §2 "Measured on a GPU (Sun 22 Nov, 02:50)"; <code>results/latency_cuda_NVIDIA_L4.csv</code>, <code>results/pod_run_L4.log</code>; <code>tools/latency_gpu.py</code>, <code>scripts/gpu/pod_run.sh</code>; 81545dc</td></tr>
+    <tr><td>GPU, scene-model rebuild (250 rows, every 2 s) / frozen-bank fit (2,000 rows, once per episode)</td><td>318 ms (CPU 897 ms) / 490 ms (CPU 4.7 s); 3.5-1 rebuild 799 ms</td><td>same L4 run</td><td>same</td></tr>
+    <tr><td>GPU, full real loop (T5 config, tabpfn_split q 0.15, seeds 3013, 3001, 3002)</td><td>225 ms per plan, rebuilds and CPU feature building included; all 3 reached the goal, 0 contacts</td><td>same L4 pod</td><td>same</td></tr>
+    <tr><td>GPU vs CPU parity; cross-device divergence</td><td>quantiles within 0.021 m (median 0.001 m) for the same context and query. Seed 3013: 25.4 s, closest gap 0.47 m on the GPU vs 25.8 s, 0.01 m on the laptop: a 1 mm difference can flip which way the robot passes someone</td><td>same</td><td>DEPLOYMENT §2, §4 rule 4: every paired comparison runs on one device</td></tr>
+    <tr><td>Reading of the GPU rows</td><td>TabPFN's 71 ms and the 225 ms full loop fit the 0.4 s replan period. 10 Hz would need the 2 s scene rebuild moved to a background thread: designed (DEPLOYMENT §1), not built, so no 10 Hz claim. No Jetson-class measurement</td><td>—</td><td>DEPLOYMENT §2 (f4b0b59)</td></tr>
+    <tr><td>Apple MPS</td><td><span class="st pend">not measured</span></td><td>Nooshin's M3</td><td><code>tools/latency.py</code>, <code>scripts/mac/smoke.sh</code></td></tr>
   </tbody>
 </table></div>
 <h3>Process plan</h3>
@@ -111,8 +116,10 @@
 <div class="tbl dense"><table>
   <thead><tr><th>Question</th><th>What would settle it</th><th>Owner / when</th></tr></thead>
   <tbody>
-    <tr><td>Does split keep its calibration gain in the loop (in-loop claim B)?</td><td>T5 exploratory (b), seeds 3000–3019</td><td>builder session, 08:00 → 10:30</td></tr>
-    <tr><td>Is the robot safer at matched time with prediction?</td><td>T5 exploratory (a); low power at 20 seeds</td><td>same</td></tr>
+    <tr><td>Does split keep its calibration gain in the loop (in-loop claim B)?</td><td>Answered by T5 exploratory (b): yes, +10.0 pts coverage and interval score −1.31 vs frozen after the switch (simulation)</td><td>done (fce98a6)</td></tr>
+    <tr><td>Is the robot safer at matched time with prediction?</td><td>Answered by T5 exploratory (a): the open-loop oracle buys clearance, but beats no baseline on every point and both axes; collision gains mostly below the margin at 20 seeds</td><td>done (fce98a6)</td></tr>
+    <tr><td>Does claim B hold on real data?</td><td>Answered (<code>tools/realdata_claimb.py</code>, <code>results/realdata_claimb.csv</code>): From 5 s, split vs frozen, paired person bootstrap: pooled interval score −0.045 [−0.080, −0.009] (1,540 rows, 544 people), coverage +1.3 pts [−0.5, +3.1] (level), level with the offset on both. ETH→Hotel −0.046 [−0.086, −0.005] (narrower boxes at equal coverage); Hotel→ETH −0.045 [−0.093, +0.007] (level). vs lgbm_all pooled: +17.1 pts coverage, IS −0.254. Verdict: small and direction-dependent; the real scenes contain no sudden behaviour switch.</td><td>done (d7dccd2)</td></tr>
+    <tr><td>Can the planner turn calibration into speed? (In T5 speed was set by the caution dial, not by calibration: split, frozen and LightGBM all ~26 s at q 0.15)</td><td>Exploratory dial sweep on fresh seeds 3100–3119 (<code>docs/EXPLORATORY_DIALS.md</code>); a planner that uses the range's shape, not only box width (e.g. a chance-constrained cost): next work, not built</td><td>after the event</td></tr>
     <tr><td>Calibration on arrival and after 20 s on f4</td><td>conformal_eval.py on f4 (≤ 1.5M credits)</td><td>queued</td></tr>
     <tr><td>Real-data adaptation with person intervals on f4</td><td>incontext_eval + adapt_ci (≤ 4M credits)</td><td>queued</td></tr>
     <tr><td>Could frozen + a faster offset match split on sharpness?</td><td>offline offset with more update rounds</td><td>open</td></tr>
@@ -177,8 +184,8 @@
 {{GEN:walk}}
 
 <footer>
-  <p><strong>Where everything lives.</strong> Plan and claims: <code>PLAN.md</code>. Values: <code>docs/DECISIONS.md</code>. Gates: <code>docs/GATES.md</code>. Numbers, pre-registration and amendments: <code>RESULTS.md</code>. Red team: <code>docs/DEFENSE.md</code>. Data cards: <code>docs/DATA.md</code>. Deployment: <code>docs/DEPLOYMENT.md</code>, <code>docs/INDUSTRY.md</code>. Trace and visuals: <code>docs/VISUALS.md</code>. Mac: <code>docs/MAC_SETUP.md</code>. Story: <code>docs/PRESENTATION.md</code>. First review (historic): <code>docs/CTO-REVIEW.md</code>. Result files: <code>results/claim_a_f4.*</code>, <code>results/claim_a_boot_f4.csv</code>, <code>results/context_size.csv</code>, <code>results/live_variants*.csv</code>, <code>results/t1_gate.csv</code>, <code>results/t2_cross.csv</code>, <code>results/oracle_gate_cross*.csv</code>, <code>results/closed/*</code>. Tests: 127 collected in 6 files (crowd 14, parity 3, planners 5, robustness core 24 functions, loop 35, sim 12; parametrised to 127), 1 strict xfail. Code: github.com/shiinalight/Robodetect, branch <code>darshak/core</code>.</p>
-  <p>Assembled Sun 22 Nov ~01:50 Berlin. Tables marked "generated" were built from the result files at that time; T5 sections are placeholders until its analysis lands.</p>
+  <p><strong>Where everything lives.</strong> Plan and claims: <code>PLAN.md</code>. Values: <code>docs/DECISIONS.md</code>. Gates: <code>docs/GATES.md</code>. Numbers, pre-registration and amendments: <code>RESULTS.md</code>. Red team: <code>docs/DEFENSE.md</code>. Data cards: <code>docs/DATA.md</code>. Deployment: <code>docs/DEPLOYMENT.md</code>, <code>docs/INDUSTRY.md</code>. Trace and visuals: <code>docs/VISUALS.md</code>. Mac: <code>docs/MAC_SETUP.md</code>. Story: <code>docs/PRESENTATION.md</code>. First review (historic): <code>docs/CTO-REVIEW.md</code>. Result files: <code>results/claim_a_f4.*</code>, <code>results/claim_a_boot_f4.csv</code>, <code>results/context_size.csv</code>, <code>results/live_variants*.csv</code>, <code>results/t1_gate.csv</code>, <code>results/t2_cross.csv</code>, <code>results/oracle_gate_cross*.csv</code>, <code>results/t5_primary.csv</code>, <code>results/inloop_claimb.csv</code>, <code>results/t5_oracle_matchedtime.csv</code>, <code>results/intent_layer.*</code>, <code>results/closed/*</code>. Tests: 127 collected in 6 files (crowd 14, parity 3, planners 5, robustness core 24 functions, loop 35, sim 12; parametrised to 127), 1 strict xfail. Code: github.com/shiinalight/Robodetect, branch <code>darshak/core</code>.</p>
+  <p>Assembled Sun 22 Nov ~01:50 Berlin; tables regenerated and the T5 and intent-chain text added by hand at 02:20. Rebuilt from the fragments (<code>tools/build_internal_ref.py</code>) with the full data section (§4), L4 GPU timing (§9), real-data claim B and the corrected "why slower" reading. Tables marked "generated" were built from the result files at that time.</p>
 </footer>
 </main>
 </div>

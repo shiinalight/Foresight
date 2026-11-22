@@ -1,7 +1,8 @@
 """Assemble docs/overview.html (Foresight Internal Reference) from hand-written fragments plus tables
 generated from the repository's result files. Read-only on the repo except the one output file.
 
-    python build.py
+    python tools/build_internal_ref.py              # writes docs/overview.html
+    python tools/build_internal_ref.py --out X.html # writes X.html instead (to diff before overwriting)
 """
 import glob
 import html
@@ -287,12 +288,16 @@ def gen_api():
 
 def gen_t5_status():
     fs = sorted(glob.glob(str(REPO / "results/closed" / "*t5-*.csv")))
-    tags = sorted({re.sub(r"^\d{8}-\d{6}-", "", Path(f).stem) for f in fs})
+    tags = sorted({re.sub(r"^\d{8}-\d{6}-", "", Path(f).stem) for f in fs if not Path(f).name.startswith("robotfeat_")})
     if not tags:
         return "<p>No T5 result files yet.</p>"
-    chips = " ".join(f"<code>{esc(t)}</code>" for t in tags)
-    return (f"<p class=\"small\">Arms with a result file in <code>results/closed/</code> at page build time "
-            f"({len(tags)} tags; partial, still running, no outcome read): {chips}</p>")
+    n_ext = sum(t.endswith("-ext") for t in tags)
+    return ('<p class="small">T5 analysed on 20 paired seeds (3000–3019): <code>results/t5_primary.csv</code>, '
+            '<code>results/inloop_claimb.csv</code>, <code>results/t5_oracle_matchedtime.csv</code>; RESULTS "Closed loop T5 '
+            'results" (fce98a6). A 40-seed extension (same arms and rules) was declared at 02:20 (3226e4f); the 20-seed '
+            'analysis stays the confirmatory result; the 40-seed tables follow as an update, computed by the same scripts and '
+            'rules (RESULTS "Extension to 40 seeds", <code>tools/t5_extend.py</code>). At page build: '
+            f'{len(tags)} T5 result tags in <code>results/closed/</code>, {n_ext} of them <code>-ext</code>.</p>')
 
 
 # ---------------------------------------------------------------- walkthrough appendix
@@ -429,14 +434,230 @@ def gen_walk():
     return "".join(parts)
 
 
+# ---------------------------------------------------------------- data section (section 4)
+DATASETS = ["eth", "hotel", "crowd", "crowd_c2e", "crowd_cross", "crowd_cross_t2", "toy"]
+
+
+def _f4_cache(name):
+    fs = sorted(glob.glob(str(REPO / "data" / name / "rows_f4_*.parquet")))
+    return Path(fs[0]) if fs else None
+
+
+def gen_data_tracks():
+    """Per dataset, from tracks.csv + meta.json (+ obstacles.csv): what the raw/simulated tracks hold."""
+    rows = []
+    for name in DATASETS:
+        d = REPO / "data" / name
+        if not (d / "tracks.csv").exists():
+            continue
+        t = pd.read_csv(d / "tracks.csv")
+        m = json.loads((d / "meta.json").read_text(encoding="utf-8"))
+        eps = m.get("episodes", {})
+        ppl = t[t.kind == "person"]
+        n_sw = sum(1 for v in eps.values() if v.get("regime_switch_t") is not None)
+        sw_t = [v["regime_switch_t"] for v in eps.values() if v.get("regime_switch_t") is not None]
+        starts = pd.Series([v["regime_before"] for v in eps.values()]).value_counts()
+        cfg = m.get("config", {})
+        cfg_s = ", ".join(f"{k} {v}" for k, v in cfg.items() if k in ("n_people", "goal_mode", "robot_repulsion", "ignore_robot"))
+        ob = pd.read_csv(d / "obstacles.csv") if (d / "obstacles.csv").exists() else pd.DataFrame()
+        rows.append([f"<code>{esc(name)}</code>", esc(m.get("sim", "?")), f"{float(m['dt']):g} s", fnum(t.episode.nunique()),
+                     fnum(len(ppl)), fnum(ppl.groupby(["episode", "agent_id"]).ngroups), fnum(ppl.agent_id.nunique()),
+                     "yes" if (t.is_ego == 1).any() else "no", fnum(len(ob)),
+                     (f"{n_sw} ({min(sw_t):g}–{max(sw_t):g} s)" if n_sw else "0"),
+                     (f"{100 * ppl['collided'].mean():.2f}%" if "collided" in ppl else "—"),
+                     esc(", ".join(f"{k} {v}" for k, v in starts.items())), esc(cfg_s) if cfg_s else "—"])
+    return table(rows, ["Dataset", "meta.sim", "dt", "Episodes", "Person rows", "Person tracks (episode, id)", "Distinct ids",
+                        "Robot", "Obstacles", "Episodes with a switch", "Collided (person rows)", "Start regime (episodes)", "meta.config knobs"],
+                 num={3, 4, 5, 6, 8, 10},
+                 caption="Generated at build time from <code>data/&lt;name&gt;/tracks.csv</code>, <code>meta.json</code> and "
+                         "<code>obstacles.csv</code> (read-only). \"Person tracks\" counts (episode, agent_id) pairs: ETH/Hotel "
+                         "people who cross a 60 s window edge count twice; in cross mode every entrant gets a new id "
+                         "(<code>crowd.py: CrowdSim._respawn</code>). Distinct ids in the simulator repeat across episodes "
+                         "(ids restart at 0 each episode). No <code>config</code> in a meta.json means the set predates "
+                         "the T2 knobs (defaults reproduce the original crowd, <code>CrowdConfig</code> comment).")
+
+
+def gen_data_rows():
+    """Per f4 row cache: what the feature rows hold (counts per horizon, labels, padding)."""
+    rows = []
+    for name in DATASETS:
+        p = _f4_cache(name)
+        if p is None:
+            rows.append([f"<code>{esc(name)}</code>", "no f4 cache", *["—"] * 9])
+            continue
+        d = pd.read_parquet(p)
+        h = d.groupby(d.h.round(2)).size()
+        h2 = d[np.isclose(d.h, 2.0)]
+        ms = h2["mode"].value_counts(normalize=True)
+        unk = (d["mode"] == "unknown").mean()
+        lab = " / ".join(f"{100 * ms.get(k, 0):.1f}" for k in ("straight", "stop", "turn_left", "turn_right"))
+        pad = " / ".join(f"{100 * (d[c] >= 99).mean():.1f}" for c in ("n0_dist", "n2_dist", "robot_dist", "obst_dist"))
+        rows.append([f"<code>{esc(name)}</code>", f"<code>{esc(p.name)}</code>", fnum(len(d)),
+                     esc(" · ".join(f"{k:g} s: {v:,}" for k, v in h.items())), fnum(d.episode.nunique()),
+                     fnum(d.groupby(["episode", "agent_id"]).ngroups), lab, f"{100 * unk:.1f}%", pad,
+                     f"{h2.ddx.std():.2f} / {h2.ddy.std():.2f}", esc(", ".join(d.features_version.unique()))])
+    return table(rows, ["Dataset", "f4 cache file", "Rows", "Rows per horizon", "Episodes with rows", "People with rows",
+                        "Labels at +2 s: straight / stop / left / right (%)", "unknown (all h)",
+                        "Padded 99: n0 / n2 / robot / obstacle (%)", "Target sd at +2 s, ddx / ddy (m)", "Version"],
+                 num={2, 4, 5, 7, 9},
+                 caption="Generated at build time from <code>data/&lt;name&gt;/rows_f4_*.parquet</code>, the caches written by "
+                         "<code>run_offline.rows_for()</code> (file name = features version, sensor noise, horizons, Kalman q and r). "
+                         "Real data: noise 0, horizons 1.2 / 2 / 4.8 s; simulation: noise 0.1 m, horizons 1 / 2 s. "
+                         "<code>crowd</code>'s cache uses the untuned q 2, r 0.1 (no kalman.json); <code>crowd_c2e</code> and "
+                         "<code>toy</code> have no f4 cache (crowd_c2e only unversioned f1-era caches). Labels at +2 s never "
+                         "include <code>unknown</code>, because a +2 s row needs the person 2 s later.")
+
+
+def gen_t5_bank():
+    """The T5 / walkthrough bank: crowd_cross_t2 without any episode that is erratic before or after a switch."""
+    p = _f4_cache("crowd_cross_t2")
+    mp = REPO / "data/crowd_cross_t2/meta.json"
+    if p is None or not mp.exists():
+        return "<p class=\"small\">crowd_cross_t2 cache not present.</p>"
+    d = pd.read_parquet(p, columns=["episode", "h", "mode"])
+    em = json.loads(mp.read_text(encoding="utf-8"))["episodes"]
+    bad = {int(e) for e, v in em.items() if "erratic" in (v.get("regime_before"), v.get("regime_after"))}
+    keep = d[~d.episode.isin(bad)]
+    ms = keep["mode"].value_counts(normalize=True)
+    return (f'<p class="small tsrc">Recomputed at build time from <code>{esc(p.name)}</code> and <code>meta.json</code>: '
+            f'{len(em) - len(bad)} of {len(em)} episodes have no erratic regime before or after a switch; they hold '
+            f'{len(keep):,} of {len(d):,} rows ({(np.isclose(keep.h, 2.0)).sum():,} at +2 s). Move shares in that bank: '
+            + ", ".join(f"{esc(k)} {100 * v:.1f}%" for k, v in ms.items())
+            + '. Same filter as <code>run_closed.py --bank-exclude-regime erratic</code>. '
+            + (lambda s4: f'The walkthrough <code>meta.json</code> (s4) records {s4.get("frozen_episodes", "?")} episodes / '
+                          f'{s4.get("bank_rows", "?"):,} rows for the bank it used.' if s4 else '')(_json("meta.json").get("s4", {}))
+            + '</p>')
+
+
+FEAT_DOC = {   # name -> (meaning, unit, frame)
+    "h_f": ("horizon the row asks about", "s", "—"),
+    "speed": ("filtered speed |v|", "m/s", "scalar"),
+    "a_lon": ("acceleration along the heading, (v(t) − v(t − k·dt)) / (k·dt)", "m/s²", "agent"),
+    "a_lat": ("acceleration across the heading (+ = left)", "m/s²", "agent"),
+    "turn_rate": ("heading change over one history step / (k·dt); 0 when speed ≤ 0.2", "rad/s", "scalar (+ = left)"),
+    "radius": ("body radius from tracks.csv", "m", "scalar"),
+}
+for _j in range(1, 6):
+    FEAT_DOC[f"hist_x{_j}"] = (f"filtered position {_j} history step(s) ago minus now, along", "m", "agent")
+    FEAT_DOC[f"hist_y{_j}"] = (f"same, across (+ = left)", "m", "agent")
+for _n, _w in enumerate(("nearest", "2nd nearest", "3rd nearest")):
+    FEAT_DOC[f"n{_n}_x"] = (f"{_w} other person (robot excluded): offset along", "m", "agent")
+    FEAT_DOC[f"n{_n}_y"] = (f"{_w}: offset across", "m", "agent")
+    FEAT_DOC[f"n{_n}_vx"] = (f"{_w}: velocity relative to the person, along", "m/s", "agent")
+    FEAT_DOC[f"n{_n}_vy"] = (f"{_w}: relative velocity, across", "m/s", "agent")
+    FEAT_DOC[f"n{_n}_dist"] = (f"{_w}: centre distance", "m", "scalar")
+FEAT_DOC.update({
+    "robot_x": ("robot centre offset, along", "m", "agent"), "robot_y": ("robot centre offset, across", "m", "agent"),
+    "robot_dist": ("distance to the robot centre", "m", "scalar"),
+    "robot_closing": ("−(d · (v_robot − v)) / |d|: approach speed, + = closing", "m/s", "scalar"),
+    "obst_x": ("vector to the nearest pillar surface or wall, along", "m", "agent (padding unrotated, f2)"),
+    "obst_y": ("same, across", "m", "agent (padding unrotated, f2)"),
+    "obst_dist": ("distance to that surface", "m", "scalar"),
+    "density_3m": ("other people (not the robot) within 3 m", "count", "scalar"),
+})
+
+
+def _pad_rule(name):
+    if name.startswith("n") and name[1].isdigit():
+        return {"x": "99", "y": "0", "vx": "0", "vy": "0", "dist": "99"}[name.split("_", 1)[1]], f"n{name[1]}_dist"
+    if name.startswith("robot_"):
+        return {"x": "99", "y": "0", "dist": "99", "closing": "0"}[name.split("_", 1)[1]], "robot_dist"
+    if name.startswith("obst_"):
+        return {"x": "99", "y": "0", "dist": "99"}[name.split("_", 1)[1]], "obst_dist"
+    if name.startswith("hist_"):
+        return "row dropped", None
+    if name == "density_3m":
+        return "0 (a count)", None
+    return "never missing", None
+
+
+def gen_feature_table():
+    import sys
+    sys.path.insert(0, str(REPO))
+    from foresight.core.features import feature_names
+    names = ["h_f"] + feature_names()[1:]
+    assert len(names) == 39 and set(names) == set(FEAT_DOC), "FEAT_DOC out of sync with features.feature_names()"
+    caches = {n: pd.read_parquet(p) for n in ("eth", "hotel", "crowd_cross_t2") if (p := _f4_cache(n)) is not None}
+    rows = []
+    for i, n in enumerate(names, 1):
+        meaning, unit, frame = FEAT_DOC[n]
+        code, key = _pad_rule(n)
+        shares = " / ".join(f"{100 * (c[key] >= 99).mean():.1f}" if key else "—" for c in caches.values())
+        rows.append([str(i), f"<code>{esc(n)}</code>", esc(meaning), esc(unit), esc(frame), esc(code), shares, "no"])
+    return table(rows, ["#", "Column", "Meaning", "Unit", "Frame", "When absent", "Padded share % (" + " / ".join(caches) + ")",
+                        "Categorical"], num={0}, cls="tbl dense idfirst",
+                 caption="Generated at build time: names and order from <code>foresight/core/features.py: feature_names()</code> "
+                         "(the builder asserts 39 and that every name is documented); padding codes from <code>build_rows()</code> "
+                         "(<code>FAR = 99.0</code>); padded shares measured on the f4 caches. History step k = max(1, round(0.2/dt)) "
+                         "steps: 0.2 s in simulation, 0.4 s on ETH/Hotel (Python rounds 0.5 to 0), so the five history samples cover "
+                         "1.0 s in simulation and 2.0 s on real data. No column is declared categorical (no "
+                         "<code>categorical_features_indices</code> anywhere in the repo); <code>h_f</code> takes 2–3 values "
+                         "and <code>radius</code> one value per dataset, both passed as numbers.")
+
+
+def gen_worked_row():
+    p = WT / "s3_features.csv"
+    if not p.exists():
+        return "<p class=\"small\">docs/walkthrough/s3_features.csv not present.</p>"
+    d = pd.read_csv(p)
+    meta = _json("meta.json")
+    rows = []
+    for i, r in enumerate(d.itertuples(index=False), 1):
+        v1, v2 = getattr(r, "_2"), getattr(r, "_3")
+        cell = f"{v1:.3f}" if abs(v1 - v2) < 1e-12 else f"{v1:.3f} / {v2:.3f}"
+        unit = FEAT_DOC.get(r.feature, ("", "", ""))[1]
+        rows.append([str(i), f"<code>{esc(r.feature)}</code>", esc(r.group), cell, esc(unit), esc(r.meaning)])
+    t = table(rows, ["#", "Column", "Group", "Value (h 1 s / 2 s if different)", "Unit", "Meaning (walkthrough's own label)"],
+              num={0, 3}, cls="tbl dense idfirst",
+              caption=f"Generated at build time from <code>docs/walkthrough/s3_features.csv</code>: person P = id "
+                      f"{esc(meta.get('P'))}, seed {esc(meta.get('seed'))}, t = {esc(meta.get('t'))} s, features "
+                      f"{esc(meta.get('features_version'))}, filter q {esc(meta.get('kalman_q'))}, r {esc(meta.get('kalman_r'))}, "
+                      f"commit {esc(meta.get('commit'))}. One live query row per horizon; only <code>h_f</code> differs "
+                      "between the two.")
+    q = WT / "s5_quantiles.csv"
+    if q.exists():
+        s = pd.read_csv(q)
+        a = s.groupby(["horizon", "axis"]).actual.first()
+        t += ('<p class="small tsrc">The label this row later received (<code>s5_quantiles.csv</code>, column "actual" = where P really went in the simulator, in P&#39;s frame, relative to the walk-straight point): '
+              + "; ".join(f"{esc(h)} {esc(ax.split(' ')[0])} {v:+.3f} m" for (h, ax), v in a.items())
+              + ". Along: " + ", ".join(f"{esc(h)} {abs(v):.2f} m {'short of' if v < 0 else 'beyond'}"
+                                       for (h, ax), v in a.items() if ax.startswith("along"))
+              + " the walk-straight point (row: <code>a_lon</code> "
+              + f"{float(d.loc[d.feature == 'a_lon'].iloc[0, 2]):+.2f} m/s²). Across: "
+              + ", ".join(f"{esc(h)} {v:+.2f} m ({'left' if v > 0 else 'right'})" for (h, ax), v in a.items() if ax.startswith("across"))
+              + ".</p>")
+    return t
+
+
 GEN = {"claim_a": gen_claim_a, "claim_a_boot": gen_claim_a_boot, "context_size": gen_context_size, "live_variants": gen_live_variants, "t3cp": gen_t3cp,
        "t1": gen_t1, "t2": gen_t2, "oracle": gen_oracle, "t4off": gen_t4off, "t4sm": gen_t4sm, "tier": gen_tier,
-       "api": gen_api, "t5_status": gen_t5_status, "walk": gen_walk}
+       "api": gen_api, "t5_status": gen_t5_status, "walk": gen_walk,
+       "data_tracks": gen_data_tracks, "data_rows": gen_data_rows, "t5_bank": gen_t5_bank,
+       "feature_table": gen_feature_table, "worked_row": gen_worked_row}
 
 
-def main():
+def main(out=OUT):
+    # Section fragments in file-name order. Optional fragments (e.g. p05b_validation.html, written by another session)
+    # are picked up when present and skipped otherwise: "p05_exp" < "p05b_validation" < "p06_decisions", because "_" < "b".
     parts = sorted(FRAG.glob("p*.html"))
+    names = [p.name for p in parts]
+    if "p05b_validation.html" in names:
+        assert names.index("p05_exp.html") + 1 == names.index("p05b_validation.html"), names
     text = "".join(p.read_text(encoding="utf-8") for p in parts)
+
+    def nav_opt(m):
+        """{{NAVOPT:fragment.html}} in the contents rail: one <li> linking the fragment's first <h2 id=...>, or nothing
+        when the fragment does not exist. Label = section number (leading zeros dropped) + heading text."""
+        p = FRAG / m.group(1)
+        if not p.exists():
+            return ""
+        h = re.search(r'<h2 id="([^"]+)"[^>]*>(.*?)</h2>', p.read_text(encoding="utf-8"), re.S)
+        if not h:
+            return ""
+        sec = re.search(r'<span class="sec">(.*?)</span>', h.group(2))
+        title = re.sub(r"<[^>]+>", "", re.sub(r'<span class="sec">.*?</span>', "", h.group(2))).strip()
+        num = (sec.group(1).lstrip("0") + " ") if sec else ""
+        return f'<li><a href="#{esc(h.group(1))}">{esc(num)}{esc(title)}</a></li>'
 
     def file_sub(m):
         return (FRAG / m.group(1)).read_text(encoding="utf-8")
@@ -447,13 +668,17 @@ def main():
         except Exception as e:  # keep the page buildable; show the problem inline
             return f'<p class="small"><strong>Table {esc(m.group(1))} could not be generated:</strong> {esc(e)}</p>'
 
+    text = re.sub(r"[ \t]*\{\{NAVOPT:([\w.\-]+)\}\}\n?", lambda m: (lambda s: f"    {s}\n" if s else "")(nav_opt(m)), text)
     text = re.sub(r"\{\{FILE:([\w.\-]+)\}\}", file_sub, text)
     text = re.sub(r"\{\{GEN:(\w+)\}\}", gen_sub, text)
     css = (FRAG / "style.css").read_text(encoding="utf-8")
     text = text.replace("{{CSS}}", css)
-    OUT.write_text(text, encoding="utf-8", newline="\n")
-    print("wrote", OUT, len(text.encode("utf-8")), "bytes")
+    out = Path(out)
+    out.write_text(text, encoding="utf-8", newline="\n")
+    print("wrote", out, len(text.encode("utf-8")), "bytes")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    # optional: --out PATH writes elsewhere (e.g. a temp file to diff against docs/overview.html)
+    main(sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else OUT)

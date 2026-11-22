@@ -1,0 +1,49 @@
+<ol class="pipe" aria-label="Data flow from raw tracks to a cached feature row">
+  <li><b>Source</b><span>Real: <code>data/raw/&lt;scene&gt;/obsmat.txt</code> (ETH Walking Pedestrians via OpenTraj). Sim: <code>CrowdSim.reset/step</code> in <code>foresight/domains/crowd.py</code>.</span></li>
+  <li><b>Tracks (INTERFACE.md)</b><span><code>eth_ucy.convert()</code> or <code>crowd.generate()</code> + <code>save()</code> write <code>tracks.csv</code>, <code>obstacles.csv</code>, <code>meta.json</code>. <code>schema.load()/validate()</code> checks columns, dt grid, duplicates, one ego, speed ≤ 5 m/s.</span></li>
+  <li><b>Sensing</b><span><code>features.build_rows()</code>: Gaussian noise per agent from <code>rng([seed, agent_id])</code> (sd 0.1 m sim, 0 real), then the forward Kalman filter <code>_kalman_cv(q, r)</code> with (q, r) from <code>kalman.json</code>.</span></li>
+  <li class="tab"><b>Row</b><span>Every 0.5 s per person with a gap-free history window, one row per horizon: 39 numbers in the person's own frame (<code>feature_names()</code>).</span></li>
+  <li><b>Target and labels</b><span><code>ddx, ddy</code> = deviation from the walk-straight point; <code>mode</code>, <code>regime</code>, <code>since_switch</code> as meta columns, never inputs (<code>X_of()</code>).</span></li>
+  <li><b>Cache and use</b><span><code>run_offline.rows_for()</code> writes <code>rows_f4_noise…_h…_kq…_kr….parquet</code>; experiments read the cache, the closed loop builds the same rows live (<code>run_closed.py</code>).</span></li>
+</ol>
+<figure>
+  <div class="fig">
+  <svg viewBox="0 0 520 268" role="img" aria-label="How one person's surroundings are encoded in that person's own frame">
+    <circle cx="140" cy="150" r="90" class="grid" style="stroke-dasharray:3 4"/>
+    <text x="20" y="54" class="tl">density_3m: people inside the 3 m circle</text>
+    <line x1="140" y1="150" x2="262" y2="150" class="axis"/>
+    <path d="M262 150 l-7 -4 v8 z" fill="currentColor" style="fill:var(--muted)"/>
+    <line x1="140" y1="150" x2="140" y2="66" class="axis"/>
+    <path d="M140 66 l-4 7 h8 z" fill="currentColor" style="fill:var(--muted)"/>
+    <text x="134" y="74" class="tl" text-anchor="end">across (y, + = left)</text>
+    <text x="198" y="166" class="tl">along (x) = heading θ</text>
+    <circle cx="116" cy="152" r="3.5" class="hist"/><circle cx="92" cy="155" r="3.5" class="hist"/>
+    <circle cx="68" cy="156" r="3.5" class="hist"/><circle cx="44" cy="155" r="3.5" class="hist"/><circle cx="22" cy="153" r="3.5" class="hist"/>
+    <text x="16" y="176" class="tl">hist_x1…5, hist_y1…5</text>
+    <circle cx="140" cy="150" r="9" class="p-dot"/>
+    <text x="140" y="196" class="tk" text-anchor="middle">P now</text>
+    <line x1="150" y1="150" x2="330" y2="150" class="cvline"/>
+    <circle cx="334" cy="150" r="4" style="fill:var(--muted)"/>
+    <text x="340" y="170" class="tl">walk-straight point p + v·h</text>
+    <line x1="334" y1="150" x2="318" y2="150" class="dev"/><line x1="318" y1="150" x2="318" y2="116" class="dev"/>
+    <line x1="312" y1="108" x2="324" y2="120" class="mk-x"/><line x1="324" y1="108" x2="312" y2="120" class="mk-x"/>
+    <text x="312" y="138" class="tv tab" text-anchor="end">ddx, ddy</text>
+    <text x="330" y="124" class="tl">true position at t + h</text>
+    <line x1="146" y1="143" x2="223" y2="86" class="ref"/>
+    <circle cx="230" cy="80" r="7" class="p-dot" style="opacity:0.7"/>
+    <line x1="230" y1="80" x2="204" y2="66" class="arrow"/>
+    <text x="242" y="64" class="tl">n0_x, n0_y, n0_dist</text>
+    <text x="242" y="77" class="tl">n0_vx, n0_vy (relative)</text>
+    <line x1="147" y1="157" x2="224" y2="209" class="ref"/>
+    <circle cx="230" cy="214" r="8" class="r-dot"/>
+    <text x="244" y="212" class="tl">robot_x, robot_y, robot_dist,</text>
+    <text x="244" y="225" class="tl">robot_closing</text>
+    <circle cx="446" cy="66" r="24" class="axis"/>
+    <line x1="149" y1="148" x2="423" y2="72" class="ref"/>
+    <text x="446" y="104" class="tl" text-anchor="middle">pillar or wall</text>
+    <text x="300" y="36" class="tl">obst_x, obst_y, obst_dist</text>
+    <text x="20" y="252" class="tl">Absent neighbour, robot or obstacle: distance 99, offset (99, 0), velocity 0.</text>
+  </svg>
+  </div>
+  <figcaption>One person's row, drawn in the person's own frame. Every vector is rotated by R(θ) (<code>features._rot</code>), so the model never sees world position or world heading. θ is the filtered velocity heading above 0.2 m/s, else the displacement over the history window (1 s in simulation, 2 s on real data) above 0.05 m, else the direction to the robot or the nearest person (f2). The orange gap is the target; the model predicts its quantiles per axis.</figcaption>
+</figure>

@@ -1,0 +1,451 @@
+
+<h2 id="validation"><span class="sec">05b</span>Validation: what we tested, how, and why</h2>
+<p>This section is the validation methodology in one place: what each claim says, which test could have proved it wrong, the order in which the tests ran (cheap offline gates first, the closed loop last), the statistics and why we chose them, every KPI we track and where it is computed, how we kept the comparisons fair, what came out, and the limits of the validation itself. Every number names its source file and section. Where two sources disagree, the last subsection lists it rather than picking one silently.</p>
+
+<h3 id="val-claims">Claims and the test that could falsify each</h3>
+<p>The two closed-loop questions stay separate from the start: a win against standard navigation is not a TabPFN win, and a TabPFN-vs-LightGBM win is not a navigation win (<code>RESULTS.md</code>, original pre-registration, "Two claims, kept separate"). Claim statements are from <code>PLAN.md</code> §2.</p>
+<div class="tbl dense idfirst"><table>
+  <thead><tr><th>#</th><th>Claim</th><th>Test that could falsify it</th><th>Rule written before the result</th><th>Data</th></tr></thead>
+  <tbody>
+    <tr><td>A</td><td>TabPFN's boxes keep their nominal coverage best in a scene it has never seen; <strong>no point-error gain is claimed</strong></td><td>Cross-scene ETH ↔ Hotel at +2 s: LightGBM (all rows, or the regularised m50:n100) matching TabPFN on box miss and interval score within the paired person-bootstrap interval</td><td>No numeric gate. The protocol (<code>docs/GATES.md</code> §2: 5 context seeds, intervals that resample whole people, joint box coverage, a proper score) and the wording rule ("no point-error gain over a well-filtered CV" unless the intervals say otherwise, <code>docs/DEFENSE.md</code> attack 1) were fixed before the f4 rerun</td><td>Real: ETH, Hotel</td></tr>
+    <tr><td>B</td><td>Reading the new scene's own completed rows improves TabPFN without retraining</td><td>T3: frozen models lose coverage after an unseen regime arrives and live context does not recover it (<code>docs/DECISIONS.md</code> §3, T3). Then the same contrast in the loop (T5 exploratory b) and on real data</td><td>T3 gate (DECISIONS §3); WP-J2 decision rule printed by <code>tools/live_variants_cp.py</code> before its numbers; T5 (b) metrics named in amendment 2</td><td>Simulated switch to a held-out regime; real Hotel → ETH</td></tr>
+    <tr><td>C</td><td>Prediction-aware planning beats standard navigation</td><td>T1 (plaza), then the open-loop oracle gate (D-21), then the T5 primary test: tabpfn_split more than 2 s faster than each of 4 baselines at matched safety, on both safety axes, Holm-corrected</td><td>T1 gate (DECISIONS §3); D-21 (Sat 22:59); amendment 1 (<code>0d5d335</code>, Sat 23:51) with its fallback: "if neither TabPFN planner beats every baseline curve … reported as a stress test, not as evidence for claim C"</td><td>Simulated crossing crowd</td></tr>
+    <tr><td>D</td><td>Deployable</td><td>Prediction time per replan above the 0.4 s replan period on target-class hardware</td><td>GATES §1 S8: "replan time per step reported"; §3 item 15: "replan within budget". No numeric threshold beyond the 0.4 s replan (D-2)</td><td>Rented NVIDIA L4, laptop CPU</td></tr>
+    <tr><td>—</td><td>TabPFN learns more per example row</td><td>LightGBM matching TabPFN's error at equal rows</td><td>None: a decision input for the 02:00 real-time setup (PLAN §0)</td><td>Simulated crossing crowd</td></tr>
+    <tr><td>—</td><td>Intent chain (TabPFN classifier → per-manoeuvre TabPFN range models)</td><td>Turn-row interval score not lower, or overall interval score worse</td><td>Gate in the docstring of <code>tools/intent_layer.py</code>, printed first in <code>results/intent_layer.log</code></td><td>Real Hotel → ETH; simulated crowd</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="val-prereg">Pre-registration, amendments and the stop rule</h3>
+<p><strong>The stop rule.</strong> "Small tests come before big runs. A finding that something doesn't work stops the work built on it, the same evening" (<code>docs/DECISIONS.md</code>, header). PLAN §4 repeats it: "small tests with gates written in advance come first; the big run comes after them". Every chosen value needs a DECISIONS row, marked backed, assumed or pending (DECISIONS header).</p>
+<div class="tbl dense"><table>
+  <thead><tr><th>When (Berlin)</th><th>Document</th><th>What it fixed</th><th>Written before</th></tr></thead>
+  <tbody>
+    <tr><td>Sat ~20:30</td><td>Original pre-registration (<code>RESULTS.md</code>, "Closed loop: pre-registered analysis")</td><td>Seeds 1000–1099, same top speed and seeds for every planner, dial sweeps, headline rule (≤ 2% collisions, ≤ 1 s intrusion, lowest <code>time_capped</code>), paired-seed bootstrap</td><td>the overnight run</td></tr>
+    <tr><td>Sat 22:40–22:59</td><td>DECISIONS §1 (pilot stopped), §3 (T1–T5 gates), D-21 (oracle gate)</td><td>Each small test with its gate and its "if it fails"</td><td>T1, T2, the oracle run</td></tr>
+    <tr><td>Sat 23:51</td><td>Amendment 1 (<code>0d5d335</code>)</td><td>Mechanical T2 picker; matched-safety curve rule replaces the absolute headline rule; oracle gate wording; primary = live TabPFN vs 4 baselines with Holm; secondary planners exploratory; f4 only; fallback to "stress test"</td><td>any learned planner in the crossing crowd</td></tr>
+    <tr><td>Sun 00:18</td><td>WP-J2 rule (<code>306a2ab</code>)</td><td>Split vs frozen with the online offset; the rule is printed by <code>tools/live_variants_cp.py</code></td><td>the printout (rule and result share the commit; see limits)</td></tr>
+    <tr><td>Sun 00:34</td><td>Amendment 2 (<code>889bc36</code>)</td><td>Oracle gate failed → claim C a stress test; T5 design (cell, bank, switch at 5 s, arms, offset spec); exploratory (a) matched-time safety and (b) in-loop claim B, labelled as added after the gate was seen</td><td>any planner on seeds 3000–3039</td></tr>
+    <tr><td>Sun 00:36</td><td>T4 addendum part 1 (<code>bec10b7</code>)</td><td>Offset update rule test and its gate</td><td>any T4 offset result</td></tr>
+    <tr><td>Sun ~00:38</td><td>Part 2</td><td>Smoothing gate made exact (D-28)</td><td>any T4 smoothing result</td></tr>
+    <tr><td>Sun, before any latency run</td><td>Part 3</td><td>Latency arm 0.4 s; fast replan at the 0.2 s simulation step</td><td>any latency run (none ever ran)</td></tr>
+    <tr><td>Sun ~01:10</td><td>Part 4</td><td>Offset ON (batch rule), smoothing OFF at 8 seeds, analysis sets</td><td>any T5 result</td></tr>
+    <tr><td>Sun 01:36, ~01:52</td><td>Parts 5 and 6</td><td>Compute cut: learned arms on 20 seeds (3000–3019), the primary curve has 2 points; smoothing-ON and baseline seeds beyond 3019 stopped</td><td>any learned T5 result (one discarded timing row only)</td></tr>
+    <tr><td>Sun 02:20</td><td>40-seed extension (<code>3226e4f</code>, <code>tools/t5_extend.py</code>)</td><td>Same arms and rules on seeds 3020–3039; the 20-seed analysis stays confirmatory</td><td>any result from seeds 3020–3039</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Confirmatory vs exploratory.</strong> Confirmatory: only the T5 primary test (tabpfn_split vs the 4 baselines, Holm), on fresh seeds. Everything else is labelled exploratory or selection-stage: secondary planners (amendment 1), exploratory (a) and (b) (amendment 2, "carrying no claim-C verdict"), the live-setup choice made on simulated data (D-30, disclosed in amendment 2), and the pilot seeds 1000–1012, which became "pilot data from now on" (DECISIONS §1). DEFENSE Q23: "Treat everything outside the pre-registered contrast as exploratory." After part 5 the in-loop claim B comparison became "the main closed-loop question" while keeping its exploratory label.</p>
+<p><strong>Seed hygiene.</strong> Each stage used its own seed range, so no confirmatory seed was seen while choosing settings: pilot and T1 1000–1099 (DECISIONS §1, D-19); default-scene T2 4000–4019 (DEFENSE attack 3); crossing-crowd T2 and oracle gate 4100–4119 (amendment 1, 2); logging check 5199 and old-bank smoke 9001 (amendment 2); T4 offset 5100–5105 (part 1); T4 smoothing 5110–5119 (part 2); T5 3000–3039, learned arms 3000–3019 (part 5).</p>
+<p><strong>Why pre-register, and the literature.</strong> The attack we expected is the "garden of forking paths": the scene and the judging rule changed after seeing results (<code>docs/DEFENSE.md</code> attack 3, with its commit-time table). Its fix list (a)–(f) became amendment 1. <code>docs/REFERENCES.md</code> has <strong>no</strong> pre-registration or forking-paths paper (no Gelman &amp; Loken, Nosek et al. or Simmons et al.); the term appears only in DEFENSE. The nearest entries are Francis et al. 2025 [25] (compare policies on the same scenarios, distributional reporting) and Agarwal et al. 2021 [33] (interval estimates instead of point estimates for few-run comparisons), both under REFERENCES #21. We cite nothing else for this.</p>
+
+<h3 id="val-ladder">The test ladder: offline gates to closed loop</h3>
+<p>The pipeline is a modular sense–predict–plan stack, so "each stage has its own gate metric, and the system has one end-to-end metric … the closed loop has the final say" (<code>docs/GATES.md</code> §1). The ladder runs cheap and offline first, then the closed loop. A failed rung redirected the work instead of being worked around.</p>
+<figure>
+  <div class="fig"><svg viewBox="0 0 760 660" role="img" aria-label="Test ladder from offline gates to the closed loop, with each outcome and redirect">
+<text x="64" y="20" class="tl">test, with the rule written before it ran</text>
+<text x="432" y="20" class="tl">outcome</text>
+<text x="596" y="20" class="tl">what it changed</text>
+<text x="8" y="40" class="ct">Offline: prediction</text>
+<line x1="50" y1="68" x2="50" y2="298" class="axis"/>
+<g>
+<text x="8" y="72" class="tk">S0</text><circle cx="50" cy="68" r="5" style="fill:var(--good)"/>
+<rect x="64" y="48" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="65" class="tk">S0 bank sanity: does the scene teach anything?</text>
+<text x="74" y="80" class="tl">learned model beats CV by ≥ 15% at +2 s (GATES §1)</text>
+<rect x="432" y="48" width="156" height="40" rx="6" style="fill:none;stroke:var(--good)"/>
+<text x="440" y="65" class="tv" style="fill:var(--good)">pass, narrowly</text>
+<text x="440" y="80" class="tl">LGBM 16.0%, TabPFN 8.4%</text>
+<text x="596" y="65" class="tl">T2 bank kept</text>
+<text x="596" y="80" class="tl">(amendment 2)</text>
+</g>
+<g>
+<text x="8" y="118" class="tk">S1</text><circle cx="50" cy="114" r="5" style="fill:var(--good)"/>
+<rect x="64" y="94" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="111" class="tk">S1 tracking filter: is our CV a fair floor?</text>
+<text x="74" y="126" class="tl">CV at +4.8 s within 10% of Schöller et al. 2020 (D-26)</text>
+<rect x="432" y="94" width="156" height="40" rx="6" style="fill:none;stroke:var(--good)"/>
+<text x="440" y="111" class="tv" style="fill:var(--good)">pass</text>
+<text x="440" y="126" class="tl">ETH 1.123, Hotel 0.460 m</text>
+<text x="596" y="111" class="tl">CV 24–30% stronger:</text>
+<text x="596" y="126" class="tl">everything rerun on f4</text>
+</g>
+<g>
+<text x="8" y="164" class="tk">f1→f4</text><circle cx="50" cy="160" r="5" style="fill:var(--warn)"/>
+<rect x="64" y="140" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="157" class="tk">Feature audits: leaks, labels, filter</text>
+<text x="74" y="172" class="tl">a broken input stops the work built on it (DECISIONS)</text>
+<rect x="432" y="140" width="156" height="40" rx="6" style="fill:none;stroke:var(--warn)"/>
+<text x="440" y="157" class="tv" style="fill:var(--warn)">f1–f3 withdrawn</text>
+<text x="440" y="172" class="tl">B9, D-20, D-22, D-26</text>
+<text x="596" y="157" class="tl">f4 only from</text>
+<text x="596" y="172" class="tl">amendment 1 on</text>
+</g>
+<g>
+<text x="8" y="210" class="tk">A</text><circle cx="50" cy="206" r="5" style="fill:var(--good)"/>
+<rect x="64" y="186" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="203" class="tk">Claim A: honest boxes in a never-seen scene</text>
+<text x="74" y="218" class="tl">5 context seeds, person bootstrap; wording fixed first</text>
+<rect x="432" y="186" width="156" height="40" rx="6" style="fill:none;stroke:var(--good)"/>
+<text x="440" y="203" class="tv" style="fill:var(--good)">supported</text>
+<text x="440" y="218" class="tl">direction-dependent</text>
+<text x="596" y="203" class="tl">no point-error</text>
+<text x="596" y="218" class="tl">gain claimed</text>
+</g>
+<g>
+<text x="8" y="256" class="tk">rows</text><circle cx="50" cy="252" r="5" style="fill:var(--good)"/>
+<rect x="64" y="232" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="249" class="tk">Data efficiency: error against context rows</text>
+<text x="74" y="264" class="tl">decision input for the 02:00 real-time setup (PLAN §0)</text>
+<rect x="432" y="232" width="156" height="40" rx="6" style="fill:none;stroke:var(--good)"/>
+<text x="440" y="249" class="tv" style="fill:var(--good)">supported (sim)</text>
+<text x="440" y="264" class="tl">0.04–0.06 m at equal rows</text>
+<text x="596" y="249" class="tl">context 2,000 rows</text>
+<text x="596" y="264" class="tl">(D-30, D-31)</text>
+</g>
+<g>
+<text x="8" y="302" class="tk">T3</text><circle cx="50" cy="298" r="5" style="fill:var(--warn)"/>
+<rect x="64" y="278" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="295" class="tk">T3, Settings A and B: does live context help?</text>
+<text x="74" y="310" class="tl">WP-J2 rule printed before the numbers (306a2ab)</text>
+<rect x="432" y="278" width="156" height="40" rx="6" style="fill:none;stroke:var(--warn)"/>
+<text x="440" y="295" class="tv" style="fill:var(--warn)">B: split wins (sim)</text>
+<text x="440" y="310" class="tl">A (real): no gain vs CV</text>
+<text x="596" y="295" class="tl">primary = tabpfn_split</text>
+<text x="596" y="310" class="tl">(D-30)</text>
+</g>
+<text x="8" y="342" class="ct">Closed loop: navigation</text>
+<line x1="50" y1="370" x2="50" y2="554" class="axis"/>
+<g>
+<text x="8" y="374" class="tk">T1</text><circle cx="50" cy="370" r="5" style="fill:var(--bad)"/>
+<rect x="64" y="350" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="367" class="tk">T1: can the plaza separate planners at all?</text>
+<text x="74" y="382" class="tl">learned beats every baseline by 2 s or 1 s (D-14)</text>
+<rect x="432" y="350" width="156" height="40" rx="6" style="fill:none;stroke:var(--bad)"/>
+<text x="440" y="367" class="tv" style="fill:var(--bad)">FAIL</text>
+<text x="440" y="382" class="tl">LightGBM on the CV curve</text>
+<text x="596" y="367" class="tl">→ T2: make the scene</text>
+<text x="596" y="382" class="tl">a fair test (D-19)</text>
+</g>
+<g>
+<text x="8" y="420" class="tk">T2</text><circle cx="50" cy="416" r="5" style="fill:var(--good)"/>
+<rect x="64" y="396" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="413" class="tk">T2: difficulty sweep, 27 cells, baselines only</text>
+<text x="74" y="428" class="tl">best baseline ≥ 5% moving collisions or ≥ 3 s intrusion</text>
+<rect x="432" y="396" width="156" height="40" rx="6" style="fill:none;stroke:var(--good)"/>
+<text x="440" y="413" class="tv" style="fill:var(--good)">cell chosen</text>
+<text x="440" y="428" class="tl">r2 · i0.2 · p24 (D-32)</text>
+<text x="596" y="413" class="tl">bank regenerated,</text>
+<text x="596" y="428" class="tl">S0 and shift rerun</text>
+</g>
+<g>
+<text x="8" y="466" class="tk">D-21</text><circle cx="50" cy="462" r="5" style="fill:var(--bad)"/>
+<rect x="64" y="442" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="459" class="tk">Open-loop oracle gate: is there headroom at all?</text>
+<text x="74" y="474" class="tl">true futures beat every baseline by 2 s (D-21)</text>
+<rect x="432" y="442" width="156" height="40" rx="6" style="fill:none;stroke:var(--bad)"/>
+<text x="440" y="459" class="tv" style="fill:var(--bad)">FAIL</text>
+<text x="440" y="474" class="tl">+1.59 s vs cv m0.2</text>
+<text x="596" y="459" class="tl">→ claim C reported as</text>
+<text x="596" y="474" class="tl">a stress test (D-33)</text>
+</g>
+<g>
+<text x="8" y="512" class="tk">T4</text><circle cx="50" cy="508" r="5" style="fill:var(--warn)"/>
+<rect x="64" y="488" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="505" class="tk">T4: offset rule, smoothing, latency</text>
+<text x="74" y="520" class="tl">stability; heading change −30%; values fixed before T5</text>
+<rect x="432" y="488" width="156" height="40" rx="6" style="fill:none;stroke:var(--warn)"/>
+<text x="440" y="505" class="tv" style="fill:var(--warn)">offset ON (batch)</text>
+<text x="440" y="520" class="tl">smoothing OFF, no latency</text>
+<text x="596" y="505" class="tl">T5 settings</text>
+<text x="596" y="520" class="tl">(addendum parts 1–5)</text>
+</g>
+<g>
+<text x="8" y="558" class="tk">T5</text><circle cx="50" cy="554" r="5" style="fill:var(--bad)"/>
+<rect x="64" y="534" width="360" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="551" class="tk">T5 confirmatory: split vs 4 baselines, Holm</text>
+<text x="74" y="566" class="tl">&gt; 2 s faster at matched safety, both axes, 20 seeds</text>
+<rect x="432" y="534" width="156" height="40" rx="6" style="fill:none;stroke:var(--bad)"/>
+<text x="440" y="551" class="tv" style="fill:var(--bad)">primary FAIL</text>
+<text x="440" y="566" class="tl">in-loop claim B holds</text>
+<text x="596" y="551" class="tl">C not supported;</text>
+<text x="596" y="566" class="tl">B holds in the loop (sim)</text>
+</g>
+<text x="8" y="600" class="ct">Side checks</text>
+<rect x="64" y="610" width="226" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="74" y="627" class="tk">Intent chain (gate in the script)</text>
+<text x="74" y="642" class="tl">real: adopted · simulated: not</text>
+<rect x="298" y="610" width="226" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="308" y="627" class="tk">Robustness and parity tests</text>
+<text x="308" y="642" class="tl">127 tests: 126 pass, 1 strict xfail</text>
+<rect x="532" y="610" width="224" height="40" rx="6" class="floor" style="stroke:var(--line)"/>
+<text x="542" y="627" class="tk">GPU latency (rented L4)</text>
+<text x="542" y="642" class="tl">split predict 71 ms per replan</text>
+</svg></div>
+  <figcaption>Logical order of the validation, cheapest first. Green: passed or supported; amber: mixed or a setting decided; red: the gate failed and the arrow says where the work went instead. In wall-clock time the offline and closed-loop rungs overlapped (DEFENSE attack 3 has the commit-time table). Sources per rung in the table below.</figcaption>
+</figure>
+
+<div class="tbl dense idfirst"><table>
+  <thead><tr><th>Rung</th><th>What and why</th><th>Where (script → result)</th><th>Rule fixed in advance</th><th>Outcome</th></tr></thead>
+  <tbody>
+    <tr><td>S0 bank sanity</td><td>Does the simulated scene teach anything a physics model can't? "Otherwise the scene teaches nothing" (GATES §1)</td><td><code>tools/s0_gate.py</code>: split by episode 75/25, up to 2,000 test rows at +2 s; LightGBM on all training rows vs TabPFN-3.5-Fast-1 on 1,000 rows</td><td>A learned model beats CV by ≥ 15% at +2 s (GATES §1, S0)</td><td>Plaza (f1–f3): CV 1.347 vs TabPFN 0.979 m, 27% (D-12). Cross f3: 39.5% (D-25, superseded). Cross f4: LightGBM 18.7%, TabPFN 7.5% (D-27). T2 bank f4: CV 0.848, LightGBM 0.712 m (16.0%), TabPFN 0.777 m (8.4%) (amendment 2). Only LightGBM on all rows clears 15%; "a TabPFN-only S0 would fail at 1,000 rows" (D-27)</td></tr>
+    <tr><td>S1 CV against Schöller et al. 2020</td><td>A weak CV inflates every learned "gain" and every box is measured against a noisy CV point (D-26). Schöller et al. 2020 [1] show CV is a strong pedestrian baseline (REFERENCES #1)</td><td><code>tools/tune_kalman.py</code>: forward Kalman (q, r) per dataset, tuned on training data by CV error at +2 s, stored in <code>&lt;dataset&gt;/kalman.json</code></td><td>As run: CV FDE at +4.8 s within 10% of the published CVM (D-26). GATES §1 had defined S1 as "filtered velocity error … reported at 0.1 m noise" plus parity test B8 (see discrepancies)</td><td>ETH 1.457 → 1.123 m (published 1.15); Hotel 0.662 → 0.460 m (published 0.51); CV at +2 s 24–30% lower (D-26). The figure depends on the window rule: on our own evaluation rows Hotel is 0.58 m at 4.8 s (DEFENSE attack 10). Everything rerun on f4</td></tr>
+    <tr><td>Feature fixes f1 → f4</td><td>Inputs that leak or mislabel make every downstream number meaningless</td><td><code>foresight/core/features.py</code>; <code>FEATURES_VERSION</code> written into every row, cache name and result; f-versions never mixed (D-20)</td><td>Stop rule (DECISIONS header)</td><td>B9: the field-of-view bound came from future positions; removing it moved errors by up to 0.03 m and LightGBM's ETH coverage 64% → 55% (RESULTS, pre-f4 "Leakage fix"). f2 (D-20): world heading leaked on 100% of real rows; standing agents on the world axis; NaN on gaps. f3 (D-22): exits were labelled "stop" (15.5% vs 6.5% genuinely slow). f4 (D-26): tuned filter. On f4 the tuned CV was at or below every f1 learned error (DEFENSE attack 1), so the f1 tables were withdrawn</td></tr>
+    <tr><td>Causality and parity</td><td>No feature or context row may use the future; the loop must build the same features as the offline rows</td><td><code>tests/test_parity.py</code> (B8); <code>test_robustness_core.py</code> (<code>test_features_blind_to_scrambled_future</code>, <code>test_select_is_causal_bounded_and_unique</code>)</td><td>GATES §1 S2 (causality test) and §0 B8</td><td>Pass ("Leakage and parity tests pass", PLAN §3 S2; test run below)</td></tr>
+    <tr><td>Claim A offline, both directions</td><td>The claim that sets TabPFN apart for a robot arriving somewhere new: does its box keep its promise in a place never seen?</td><td><code>tools/claim_a.py</code> → <code>results/claim_a_f4.csv/.md</code>; <code>tools/claim_a_boot.py</code> → <code>results/claim_a_boot_f4.csv</code>. Same 900-row test sample per direction as the f1 table; at +2 s, 324 rows / 195 people to ETH, 335 rows / 169 people to Hotel; 5 context seeds of 1,500 rows (RESULTS, claim A setup)</td><td>GATES §2 protocol; wording rule (DEFENSE attack 1); LightGBM m50:n100 added before the run (DEFENSE attack 2 fix)</td><td>Supported, direction-dependent (verdict table below)</td></tr>
+    <tr><td>Context size</td><td>How many and which rows should TabPFN read in the loop, against LightGBM at every size?</td><td><code>tools/context_size.py</code> → <code>results/context_size.csv</code>; crowd_cross f4, +2 s, 3 context seeds (PLAN §2)</td><td>None (decision input for the 02:00 decision, PLAN §0); <span class="st exp">exploratory</span></td><td>At equal rows TabPFN beats LightGBM by 0.04–0.06 m at every size; TabPFN-3.5 on 20k rows 0.593 m vs LightGBM on all 73k rows 0.606 m; similarity selection adds nothing (PLAN §2). Fed D-30 (2,000-row frozen bank, no kNN)</td></tr>
+    <tr><td>T3: Settings A and B</td><td>Does live context matter when behaviour is genuinely new? The pilot was in-distribution: erratic was in 33 of 80 bank episodes (DECISIONS §1.2)</td><td><code>tools/live_variants.py</code> → <code>results/live_variants.csv</code>; <code>tools/live_variants_cp.py</code> → <code>results/live_variants_cp.csv</code>. Setting B: 6 calm → erratic episodes, switch at 20 s, erratic held out of the bank, moments every 4 s, 636 query rows (PLAN §2 B; script docstring). Setting A: Hotel bank → ETH, 137 query rows, 44 moments, 83 people (amendment 2)</td><td>T3 gate (DECISIONS §3): frozen models lose coverage after the switch and live context recovers it, intervals separating. WP-J2 rule (printed by the script): split2k+offset must beat frozen2k+offset on interval score (paired CI below 0) without worse coverage</td><td>Setting B, after the switch: split2k+offset − frozen2k+offset interval score −1.29 [−1.70, −0.94], coverage +12.6 pts [+9.0, +16.3], median error −0.057 m [−0.092, −0.021]; no variant reaches 80% (best 68.4%). Setting A: split vs CV −0.015 m [−0.041, +0.010] (amendment 2). Deviation: 6 episodes, not 12 (D-30). Selection-stage, since split was chosen on this data</td></tr>
+    <tr><td>T1</td><td>Can the default plaza separate planners at all, before spending a night on it?</td><td><code>tools/t1.ps1</code>, <code>tools/t1_gate.py</code> → <code>results/t1_gate.csv</code>; 100 common seeds 1000–1099</td><td>A learned planner beats every baseline's time-vs-intrusion curve by more than the D-14 differences (DECISIONS §3, T1)</td><td>Failed (D-19): LightGBM q0.15 23.3 s / 0.80 s intrusion sits on the CV-margin curve (cv m0.6 23.8 s / 0.87 s); vo w0.5 fastest (18.8 s). → T2</td></tr>
+    <tr><td>T2 sweep and cell rule</td><td>Pick a crowd where standard navigation actually struggles, from baselines alone, before any learned planner runs there</td><td><code>tools/t2.ps1</code>; <code>tools/t2_pick.py</code> → <code>results/t2_cross.csv</code>; robot_repulsion {2, 1, 0.5} × ignore_robot {0, 0.2, 0.4} × people {16, 24, 32}, seeds 4100–4119</td><td>Amendment 1: best baseline per cell = lowest moving-collision rate among stop_go, cv m0.4, reactive m0.4, vo w1 (ties: lower intrusion); qualifies if ≥ 5% or intrusion ≥ 3 s; mildest qualifying cell (highest repulsion, lowest ignore, fewest people)</td><td>r2 · i0.2 · p24: cv m0.4 collides while moving in 2 of 20 seeds (10%), intrusion 2.57 s; qualifies by one seed over r2 · i0.2 · p16 (0%, 1.94 s) (D-32). Disclosed: default sweep partial, criterion changed mid-sweep (D-23), some cross cells visible before the picker was written (amendment 1)</td></tr>
+    <tr><td>Oracle gate (D-21)</td><td>Separate "scene too easy" from "no predictor could help this planner" (D-21)</td><td><code>tools/oracle_gate.ps1</code>; <code>tools/curve_compare.py --a oracle</code> → <code>results/oracle_gate_cross.csv</code>; seeds 4100–4119, every baseline dial</td><td>The open-loop oracle beats every baseline curve by the D-14 differences at matched safety; if not, the closed loop is a stress test (D-21, amendment 1)</td><td>Failed (D-33): beats stop_go; vs cv m0.2 only +1.59 s [0.86, 2.39]; vo w0.5 (19.24 s) faster than every oracle point. Time floor 17.74 s (17.50–19.13); vo w0.5 runs 1.50 s above it, cv m0.2 3.70 s (amendment 2). Claim C became a stress test</td></tr>
+    <tr><td>T4 offset rule</td><td>In the loop the offset gets ~2,500 correlated row updates per episode; one update per row can make the box oscillate and freeze the robot (part 1)</td><td><code>tools/t4_offset.ps1</code>, <code>tools/t4_report.py</code> → <code>results/t4_report.txt</code>; seeds 5100–5105</td><td>Part 1 (<code>bec10b7</code>): stable if seconds_stopped ≤ OFF + 0.4 s and freeze_rate ≤ OFF + 0.02; among stable rules, coverage after the switch closest to 80%; ON only if closer than OFF</td><td>Per row 76.8% but 4.40 s stopped vs 0.20 s, freeze 0.123 vs 0.008: unstable. Per batch 61.4%, 0.40 s, 0.015: stable; OFF 59.5%. Offset ON, batch rule (part 4)</td></tr>
+    <tr><td>T4 smoothing</td><td>Learned planners zig-zag (D-28); smoothing must not cost time or safety</td><td><code>tools/t4_smooth.ps1</code> → <code>results/t4_report.txt</code>; seeds 5110–5119</td><td>Part 2 (D-28 made exact): heading change per metre −30% or more for each learned planner; paired time no worse by &gt; 2 s, intrusion by &gt; 1 s; moving-collision rate up by ≤ 0.1</td><td>OFF at 8 seeds and at 10 (tabpfn_split −28% / +3.6 s; tabpfn −30%, just short / +2.0 s; lgbm_all −31% / +5.1 s) (part 5). Disclosed: the test ran learned planners at margin 0.4, not 0.2 (part 2)</td></tr>
+    <tr><td>T4 latency</td><td>Is the gain robust to stale predictions?</td><td>Planned: tabpfn_split q0.15 <code>--latency 0.4</code></td><td>Part 3: one replan period, 0.4 s</td><td><span class="st pend">not run</span>: dropped for compute (part 5). No latency run exists</td></tr>
+    <tr><td>T5 primary</td><td>Claim C on fresh seeds, already a stress test</td><td><code>tools/curve_compare.py --a tabpfn_split --holm</code> → <code>results/t5_primary.csv</code>, <code>_points.csv</code></td><td>Amendment 1 rule, unchanged in amendment 2; Pareto-front reading (below)</td><td>Beats no baseline; all four fail Holm (p = 1.0) (RESULTS, T5 results)</td></tr>
+    <tr><td>T5 exploratory (a)</td><td>Does perfect prediction buy safety at matched time? Oracle first; primary only against baselines the oracle beats</td><td><code>curve_compare.py --matched safety</code> → <code>results/t5_oracle_matchedtime.csv</code></td><td>Amendment 2: margins min_gap 0.158 m, moving-collision 0.244; <span class="st exp">exploratory</span></td><td>Oracle beats no baseline on every point and both axes, so the primary was not tested; clear min_gap gains per point, collision gains mostly below 0.244 at 20 seeds (RESULTS)</td></tr>
+    <tr><td>T5 exploratory (b)</td><td>Claim B in the loop: split vs frozen TabPFN vs lgbm_all at q 0.15, before (t &lt; 5 s) and after the switch</td><td><code>tools/inloop_claimb.py</code> → <code>results/inloop_claimb.csv</code></td><td>Amendment 2 metrics; paired by seed, 95% bootstrap, no multiplicity correction; <span class="st exp">exploratory</span></td><td>Holds after the switch; slightly worse before it (verdict table)</td></tr>
+    <tr><td>Intent test</td><td>Is a person's next manoeuvre predictable, and does feeding it into per-manoeuvre range models give better boxes on turns?</td><td><code>tools/intent_layer.py</code> → <code>results/intent_layer.log</code>, <code>.csv</code>, <code>media/fig_intent_layer.png</code>; hosted TabPFN, 47 calls, ~1.8M credits (RESULTS, intent)</td><td>Docstring gate: adopt iff the upper CI of chained − single on turn rows &lt; 0 and the lower CI overall ≤ 0; 2,000 person-bootstrap draws; decided per setting</td><td>Real: adopted. Simulated: not adopted (D-34)</td></tr>
+    <tr><td>Robustness suite</td><td>Properties the pipeline relies on, checked "against independent ground truth (raw tracks, hand-built scenes), not against a copy of the code" (<code>test_robustness_core.py</code> docstring)</td><td><code>tests/</code>: 127 collected, 104 in <code>test_robustness_{core,loop,sim}.py</code>, 23 in <code>test_crowd.py</code>, <code>test_parity.py</code>, <code>test_planners.py</code></td><td>Golden checksums: the difficulty knobs at their defaults must reproduce pre-knob episodes (<code>test_robustness_sim.py</code>); known bugs kept as strict xfails (<code>test_robustness_loop.py</code>)</td><td>Run on this branch for this page: 126 passed, 1 xfailed (<code>test_split_offset_tiny_calibration_still_covers</code>: split_offset clips the conformal rank for n &lt; (1 − α)/α). <code>docs/MAC_SETUP.md</code> states the same count</td></tr>
+    <tr><td>GPU latency</td><td>CPU timings were x64 emulated on an ARM laptop, a worst case (DEPLOYMENT §2)</td><td><code>tools/latency_gpu.py</code>, <code>scripts/gpu/pod_run.sh</code> → <code>results/latency_cuda_NVIDIA_L4.csv</code>, <code>pod_run_L4.log</code>, parity <code>latency_parity_*.npz</code></td><td>Measurement: median of 30 repeats after a discarded warm-up. Parity: "must agree within a small tolerance" (DEPLOYMENT §4 rule 3, no number set)</td><td>Split predict 71 ms per replan on the L4 (laptop 452 ms); full loop 225 ms per plan on 3 seeds; quantiles within 0.021 m (DEPLOYMENT §2)</td></tr>
+    <tr><td>Real-data claim B, final design</td><td>Does the scene model help on real pedestrians, with the shipped split design and the batch offset?</td><td><code>tools/realdata_claimb.py</code> → <code>results/realdata_claimb.csv</code></td><td>Docstring: paired person bootstrap of split − frozen and split − lgbm_all from 5 s on</td><td><span class="st pend">pending</span>: no result file exists ("result to be added", PLAN §2 B)</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="val-stats">Statistical methods, and why each</h3>
+<h4>Paired seeds (common random numbers)</h4>
+<p>Every planner sees the same crowds: same seed, same start, goal and people (DEFENSE Q12; <code>run_closed.py</code> runs seed-outer, planner-inner, amendment 2). <code>curve_compare.load()</code> keeps only seeds present in every arm, so a run cut short still gives paired comparisons. <strong>Why:</strong> crowd-to-crowd variation is much larger than planner-to-planner differences (pilot paired time SDs 2.3–2.8 s, D-14), and pairing removes the shared part. <strong>Backing:</strong> REFERENCES #21 says plainly that no paper we checked prescribes paired seeds: "That is standard common-random-numbers practice and our own design choice, so state it as a choice." Francis et al. 2025 [25] recommend comparing policies on the same scenarios. The T1 intervals were marginal per configuration, not paired, which is conservative (DEFENSE Q12).</p>
+<h4>Person-level bootstrap (offline)</h4>
+<p>Intervals on offline differences resample <strong>whole people</strong>, not rows. <strong>Why:</strong> "rows 0.4 s apart are near-copies" (<code>docs/CTO-REVIEW.md</code> §3), so a row bootstrap would treat one person's 20 near-identical rows as 20 independent observations and give intervals that are far too narrow. GATES §2 requires it. <strong>How:</strong> <code>tools/claim_a_boot.py</code> computes the per-row difference (TabPFN minus LightGBM, averaged over the 5 context seeds), sums it per person (episode, agent_id), draws persons with replacement 5,000 times and takes the ratio of summed differences to summed row counts; 95% percentile interval. The intent gate uses the same scheme with 2,000 draws (<code>tools/intent_layer.py</code> docstring). Agarwal et al. 2021 [33] back bootstrap interval estimates in general; REFERENCES notes they use a stratified bootstrap over runs and tasks, not ours.</p>
+<h4>Paired-seed bootstrap (closed loop)</h4>
+<p>Seeds are resampled with replacement, the same draw for every arm, and the whole comparison is recomputed per draw: 2,000 draws in <code>curve_compare.compare()</code>, 5,000 in <code>inloop_claimb.py</code>; 95% percentile intervals. In <code>curve_compare</code>, a draw in which the comparison can't be made (the baseline point falls outside the front and no dominance exists) counts as −∞, i.e. against the planner under test. The one-sided p-value is the share of draws with difference ≤ 0.</p>
+<h4>Matched-safety curves on the Pareto front</h4>
+<p>A single operating point can't separate "safer" from "slower" (CTO-REVIEW §3), and the original absolute rule (≤ 2% collisions, ≤ 1 s intrusion) "disqualifies baselines by construction in a scene chosen by T2" (amendment 1). So each planner is swept over its own dial and compared as a curve.</p>
+<ol class="pipe">
+  <li><b>Points</b><span>per arm (planner × dial): mean <code>time_capped</code>, mean <code>min_gap</code>, moving-collision rate over the common seeds</span></li>
+  <li><b>Front</b><span>per planner and safety axis, dominated dial points dropped (safer never faster) so interpolation is well defined (amendment 2)</span></li>
+  <li class="tab"><b>Inside the front</b><span>interpolate A's time at baseline point b's safety; A beats b if more than 2 s faster with the 95% paired interval excluding 0</span></li>
+  <li><b>Outside the front</b><span>no extrapolation: only dominance (a point of A at least as safe on both axes and &gt; 2 s faster), else "not comparable" = not beaten</span></li>
+  <li><b>Both axes, every point</b><span>A beats planner B only if it beats every dial point of B on min_gap and on collision rate</span></li>
+  <li><b>Holm across 4 baselines</b><span>p per baseline = worst point and axis; sorted, p₍ᵢ₎ ≤ 0.05 / (4 − i), stop at the first failure</span></li>
+</ol>
+<figure>
+  <div class="fig"><svg viewBox="0 0 560 345" role="img" aria-label="T5 points on the min-gap axis with the split planner's front range and how each baseline point is compared">
+<line x1="60" y1="279.2" x2="540" y2="279.2" class="grid"/><text x="54" y="282.7" class="tl" text-anchor="end">20</text>
+<line x1="60" y1="237.7" x2="540" y2="237.7" class="grid"/><text x="54" y="241.2" class="tl" text-anchor="end">22</text>
+<line x1="60" y1="196.2" x2="540" y2="196.2" class="grid"/><text x="54" y="199.7" class="tl" text-anchor="end">24</text>
+<line x1="60" y1="154.6" x2="540" y2="154.6" class="grid"/><text x="54" y="158.1" class="tl" text-anchor="end">26</text>
+<line x1="60" y1="113.1" x2="540" y2="113.1" class="grid"/><text x="54" y="116.6" class="tl" text-anchor="end">28</text>
+<line x1="60" y1="71.5" x2="540" y2="71.5" class="grid"/><text x="54" y="75.0" class="tl" text-anchor="end">30</text>
+<line x1="60" y1="30" x2="540" y2="30" class="grid"/><text x="54" y="33.5" class="tl" text-anchor="end">32</text>
+<line x1="60" y1="300" x2="540" y2="300" class="axis"/>
+<line x1="60" y1="300" x2="60" y2="304" class="axis"/><text x="60" y="316" class="tl" text-anchor="middle">−0.2</text>
+<line x1="147.3" y1="300" x2="147.3" y2="304" class="axis"/><text x="147.3" y="316" class="tl" text-anchor="middle">−0.1</text>
+<line x1="234.5" y1="300" x2="234.5" y2="304" class="axis"/><text x="234.5" y="316" class="tl" text-anchor="middle">0</text>
+<line x1="321.8" y1="300" x2="321.8" y2="304" class="axis"/><text x="321.8" y="316" class="tl" text-anchor="middle">0.1</text>
+<line x1="409.1" y1="300" x2="409.1" y2="304" class="axis"/><text x="409.1" y="316" class="tl" text-anchor="middle">0.2</text>
+<line x1="496.4" y1="300" x2="496.4" y2="304" class="axis"/><text x="496.4" y="316" class="tl" text-anchor="middle">0.3</text>
+<text x="300" y="337" class="tk" text-anchor="middle">mean closest gap, m (right is safer)</text>
+<text x="14" y="165" class="tk" text-anchor="middle" transform="rotate(-90 14 165)">mean time to goal, s (capped at 40)</text>
+<rect x="372.4" y="30" width="64.6" height="270" class="band"/>
+<text x="404.7" y="44" class="tl" text-anchor="middle">split's front: interpolate</text>
+<line x1="234.5" y1="30" x2="234.5" y2="300" class="ref"/>
+<text x="238" y="58" class="tl">touching (gap 0)</text>
+<polyline points="312.2,251.0 408.2,212.1 516.4,158.1 456.2,94.0" class="ln-cv"/>
+<circle cx="312.2" cy="251.0" r="3.5" class="d-cv"/><circle cx="408.2" cy="212.1" r="3.5" class="d-cv"/><circle cx="516.4" cy="158.1" r="3.5" class="d-cv"/><circle cx="456.2" cy="94.0" r="3.5" class="d-cv"/>
+<polyline points="129.8,211.3 309.6,175.6 345.4,142.2 343.6,53.1" class="ln-cv2"/>
+<circle cx="129.8" cy="211.3" r="3.5" class="d-cv2"/><circle cx="309.6" cy="175.6" r="3.5" class="d-cv2"/><circle cx="345.4" cy="142.2" r="3.5" class="d-cv2"/><circle cx="343.6" cy="53.1" r="3.5" class="d-cv2"/>
+<polyline points="201.4,277.6 290.4,251.8 280.8,231.3" class="ln-cv3"/>
+<circle cx="201.4" cy="277.6" r="3.5" class="d-cv3"/><circle cx="290.4" cy="251.8" r="3.5" class="d-cv3"/><circle cx="280.8" cy="231.3" r="3.5" class="d-cv3"/>
+<circle cx="82.7" cy="42.9" r="4" class="d-cv2"/>
+<polyline points="372.4,149.8 437.0,99.8" class="ln-tab"/>
+<circle cx="372.4" cy="149.8" r="5" class="d-tab"/><circle cx="437.0" cy="99.8" r="5" class="d-tab"/>
+<line x1="408.2" y1="212.1" x2="408.2" y2="122.0" class="ref2" style="stroke-dasharray:3 3"/>
+<circle cx="408.2" cy="122.0" r="4" style="fill:none;stroke:var(--box);stroke-width:1.5"/>
+<text x="414" y="126" class="tv tab">4.34 s slower</text>
+<text x="430" y="88" class="tv tab" text-anchor="end">split q0.10</text>
+<text x="366" y="164" class="tv tab" text-anchor="end" style="paint-order:stroke;stroke:var(--surface);stroke-width:3px">split q0.15</text>
+<text x="414" y="228" class="tl">cv m0.4</text>
+<text x="318" y="264" class="tl">cv m0.2</text>
+<text x="208" y="292" class="tl">vo w0.5</text>
+<text x="522" y="172" class="tl">cv m0.6</text>
+<text x="90" y="40" class="tl">stop_go</text>
+</svg></div>
+  <div class="legend"><span><i style="background:var(--box)"></i>tabpfn_split (q 0.10, 0.15)</span><span><i style="background:var(--cv)"></i>constant velocity m 0.2–0.8</span><span><i style="background:var(--lgbm2)"></i>reactive m 0.2–0.8, stop_go (large dot)</span><span><i style="background:var(--lgbm)"></i>velocity obstacles w 0.5 / 1 / 2</span></div>
+  <figcaption>The rule drawn on the real T5 points, min_gap axis (<code>results/t5_primary_points.csv</code>, 20 paired seeds). cv m0.4 falls inside split's front (green band): split's interpolated time at that gap is 4.34 s <em>slower</em> (<code>t5_primary.csv</code>). cv m0.2 and vo w0.5 lie outside it on the unsafe side: split has points safer on both axes, so they are compared by dominance, and split is 4.87 s and 6.15 s slower, not faster. cv m0.6 is outside on the safe side and no split point is as safe: not comparable. stop_go has a lower collision rate (10%) than either split point (15%), so on both axes it is not comparable. The same reading runs on the collision-rate axis.</figcaption>
+</figure>
+<p><strong>A consequence stated in advance:</strong> "a baseline point faster than the primary's fastest arm can only be beaten by dominance" (amendment 2). With only two curve points after part 5, split's front is short (min_gap 0.158–0.232 m), so most baseline points were judged by dominance or were not comparable. Every "not comparable" pair carries p = 1, which is why all four baselines show Holm p = 1.0 in <code>t5_primary.csv</code>.</p>
+<h4>Holm–Bonferroni across the four baselines</h4>
+<p>The primary test is four comparisons (stop_go, constant velocity, reactive, velocity obstacles), corrected at 5% familywise with Holm's step-down procedure (amendment 1; <code>curve_compare.main</code>, <code>--holm</code>). <strong>Why Holm:</strong> it controls the familywise error like Bonferroni with more power. <strong>Reference:</strong> Holm 1979 is <strong>not</strong> in REFERENCES.md. Only the primary is corrected; the exploratory analyses are reported without correction and say so (amendment 2, (b); <code>inloop_claimb.py</code> docstring).</p>
+<h4>Margins, power and the number of seeds</h4>
+<ul>
+  <li><strong>The 2 s margin (D-14)</strong> is the smallest difference worth claiming, chosen as a detectability margin from the pilot's paired spread. It is "not an estimate of the headroom" (amendment 2); the oracle gate showed the headroom is smaller (time floor 17.74 s, vo w0.5 1.50 s above it).</li>
+  <li><strong>Power calculation (D-14):</strong> pilot paired SDs (time 2.3–2.8 s; intrusion 0.4–1.6 s, from 10–33 pilot seeds), 80% power, 5% two-sided: 2 s needs 11–16 seeds, 1 s of intrusion 2–21, 0.5 s 7–84. So 40 confirmatory seeds (3000–3039), replacing GATES §2's "at least 100", which had "never been derived" (DECISIONS §1.4).</li>
+  <li><strong>Detectable difference at the run size</strong> (part 5): with the T2 cell's median paired SD of 4.16 s, about 2.6 s at n = 20 and 1.84 s at n = 40.</li>
+  <li><strong>Exploratory (a) margins</strong> (amendment 2): from baseline rows only (the T2 cell's 12 baseline arms, all 66 pairs, median paired SD: min_gap 0.356 m, moving-collision indicator 0.550), the detectable differences at 40 seeds are 0.158 m and 0.244. They were kept at 20 seeds, so (a) has less power (part 5).</li>
+  <li><strong>Formula (our reconstruction; no power script is in the repo):</strong> δ = (z<sub>0.975</sub> + z<sub>0.80</sub>) · SD / √n ≈ 2.80 · SD / √n. It reproduces 2.6 s (4.16, n 20), 1.84 s (n 40), 0.158 m (0.356, n 40), 0.244 (0.550, n 40), and D-14's 11–16 and 2–21 seeds as n = (2.80 · SD / δ)². D-14's 0.5 s row (7–84) is slightly above this normal approximation (6–81).</li>
+  <li><strong>Why 20 seeds, not 40:</strong> split q0.20 on seed 3000 took 1,030 s (16.2 s per plan) with the CPU at 100% under ~35 Python processes, so one split process needed ~11 h, and the result had to be final that night (part 5). The cut was made before any learned result was read, except that one timing row, which was discarded (part 5).</li>
+  <li><strong>The extension:</strong> the same arms and rules on seeds 3020–3039, declared at 02:20 before any of those results (<code>3226e4f</code>); running when this page was written, not analysed here. The 20-seed analysis stays the confirmatory result (RESULTS, T5).</li>
+</ul>
+<h4>Proper scores: interval score and pinball loss</h4>
+<p>Coverage alone is not a proper score: very wide boxes always cover (REFERENCES #20). We report a proper score next to every coverage number.</p>
+<ul>
+  <li><strong>Interval score</strong> of a central (1 − α) interval [l, u] for truth y: (u − l) + (2/α)(l − y)·1[y &lt; l] + (2/α)(y − u)·1[y &gt; u], per axis, averaged over the two axes (<code>tools/claim_a.py: interval_score</code>; <code>run_closed.py: inloop_stats</code> uses 2/α = 20 for the 5–95% box). Gneiting &amp; Raftery 2007 [31], Sec. 6.2: width plus a 2/α penalty on the miss distance, so misses cost more for higher-confidence intervals.</li>
+  <li><strong>Pinball (quantile) loss</strong> ρ<sub>q</sub>(d) = max(q·d, (q − 1)·d), d = y − prediction, averaged over levels and axes (<code>foresight/core/eval.py: metrics</code>; <code>claim_a.score</code>). The quantile-score family is proper for quantile forecasts (Gneiting &amp; Raftery [31], Sec. 6.1; quantile regression from Koenker &amp; Bassett 1978 [30]). GATES §2 lists pinball first among the metrics.</li>
+  <li><strong>Width at matched coverage</strong>: GATES §2 metric 3, the honest comparison once both models are calibrated. <code>live_variants_cp.py</code> computes it with a post-hoc constant offset per variant giving 80% joint coverage.</li>
+</ul>
+<h4>Joint coverage and its nominal range</h4>
+<p>The robot plans around a 2D box, so we score the <strong>joint</strong> coverage of exactly that box, both axes at once (CTO-REVIEW §2.2). The 5–95% box per axis has a nominal joint coverage of 80–90%: 80% is the Bonferroni floor, 81% holds if the axes are independent, 90% if fully dependent (DEFENSE attack 5; RESULTS, claim A "Nominal coverage"). The 10–90% box has 60–80%. Per-person coverage is not scene safety: with 24 people and 2 horizons, some person is likely outside their box at any moment (GATES §1).</p>
+<h4>Online conformal offset</h4>
+<p>The box is widened or narrowed by one offset d learned from completed rows. Offline: d ← d + η (miss − α) per completed row, α 0.2, η 0.02, on the raw 5–95% box (D-13; amendment 2 spec). In the loop: the batch rule d ← d + 0.05 (batch miss rate − 0.2) once per 2 s refresh (T4 part 1, chosen in part 4), labels from observed (filtered) positions, the planner box widened by the same d. <strong>Backing:</strong> adaptive conformal inference, Gibbs &amp; Candès 2021 [17], which "provably achieves the desired coverage frequency over long-time intervals"; the guarantee is <strong>long-run average</strong> coverage, not per step, per person or conditional (REFERENCES #11). Part 1's reason for the batch rule: adaptive conformal assumes one update per time step, not 2,500 correlated rows per episode. Also on the list: Dixit et al. 2023 [16] (adaptive conformal for multistep predictions in MPC), Angelopoulos &amp; Bates 2023 [18]. We claim <strong>no safety guarantee</strong>: Lindemann et al. 2023 [15] need the robot not to change the agents' behaviour (Assumption 1), and Huang et al. 2024 [32] argue calibration must depend on the plan (REFERENCES #12). The offline "on arrival" layer uses conformalised quantile regression with a joint score (<code>foresight/core/conformal.py</code>, RESULTS calibration section); no CQR paper is in REFERENCES.</p>
+<h4>The open-loop oracle as a reference, not an upper bound</h4>
+<p><code>run_closed.oracle_rows</code> deep-copies the simulator at each replan, rolls it forward holding the <em>current</em> command, and gives the planner every person's true position at +0.4 s and at the planner horizons as zero-width boxes (D-21). People then react to the command actually chosen, so it knows the future under an action it may not take: "a strong reference for what better prediction could buy, not a strict upper bound" (DEFENSE attack 7; amendment 1). A per-candidate oracle would cost about 22× the simulation and was not built (DEFENSE attack 7). Its use as a gate: if even true futures can't beat the baselines by the margin, no learned predictor can show claim C in that scene (D-21).</p>
+
+<h3 id="val-kpi">Every KPI we track</h3>
+<p>Role: <span class="tag b">primary</span> named in a pre-registered rule or gate; <span class="tag a">secondary</span> reported next to it, carries no verdict on its own; <span class="tag p">exploratory</span> logged, no rule. "Gate" names the test whose rule used it. Offline KPIs are per test row at +2 s unless stated.</p>
+<h4>Offline prediction</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>KPI</th><th>Definition</th><th>Unit</th><th>Better</th><th>Computed in</th><th>Serves</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Joint coverage, 5–95% box</td><td>Share of rows whose true position is inside the box on both axes at once; nominal 80–90%</td><td>%</td><td>inside 80–90%</td><td><code>tools/claim_a.py: score</code> (<code>joint90</code>); <code>tools/s0_gate.py</code>; <code>run_closed.py: inloop_stats</code> (<code>cov90</code>)</td><td>A, B, S0</td><td><span class="tag b">primary</span> (T3 rule; T5 b)</td></tr>
+    <tr><td>Box miss</td><td>1 − joint coverage</td><td>%</td><td>lower</td><td><code>claim_a.score</code> (<code>box_miss</code>); <code>claim_a_boot.py</code></td><td>A</td><td><span class="tag b">primary</span> (bootstrapped)</td></tr>
+    <tr><td>Interval score</td><td>Gneiting &amp; Raftery, α 0.2 (10–90%) and α 0.1 (5–95%), mean over axes</td><td>m</td><td>lower</td><td><code>claim_a.interval_score</code> (<code>is80</code>, <code>is90</code>); <code>inloop_stats</code> (<code>is90</code>); <code>live_variants_cp.py</code>; <code>intent_layer.py</code></td><td>A, B, intent</td><td><span class="tag b">primary</span> (WP-J2 rule, intent gate)</td></tr>
+    <tr><td>Pinball loss</td><td>Mean quantile loss over levels and axes; 3 levels (0.1, 0.5, 0.9) in <code>eval.metrics</code> by default, 5 (0.05–0.95) in <code>claim_a</code>, 11 in the f1 tables (RESULTS)</td><td>m</td><td>lower</td><td><code>foresight/core/eval.py: metrics</code>; <code>claim_a.score</code></td><td>A, data efficiency</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>Per-axis coverage, 10–90%</td><td>Share of axis values inside [q10, q90], averaged over axes; nominal 80% per axis, joint 60–80%</td><td>%</td><td>close to nominal</td><td><code>eval.metrics</code> (<code>coverage</code>); <code>claim_a.score</code> (<code>cov80</code>)</td><td>A</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>Width</td><td>Mean over axes of q90 − q10 (claim A, f1 tables) or q95 − q05 (<code>w90</code> in the loop)</td><td>m</td><td>narrower at equal coverage</td><td><code>claim_a.score</code> (<code>width80</code>); <code>eval.metrics</code>; <code>inloop_stats</code></td><td>A, B</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>Error of the median</td><td>‖median prediction − truth‖ at the horizon. Mean over rows in claim A and <code>eval</code> (there named <code>fde</code>, but it is one fixed horizon, not the 12-step FDE); median over rows in WP-J2 and in the loop (<code>err</code>)</td><td>m</td><td>lower</td><td><code>claim_a.score</code> (<code>err</code>); <code>eval.metrics</code> (<code>fde</code>); <code>inloop_stats</code> (<code>err</code>)</td><td>A (no gain claimed), B</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>p90 error</td><td>90th percentile of the error above</td><td>m</td><td>lower</td><td><code>eval.metrics</code> (<code>fde_p90</code>)</td><td>—</td><td><span class="tag p">exploratory</span></td></tr>
+    <tr><td>Point miss &gt; 0.5 m</td><td>Share of rows whose median is more than 0.5 m off</td><td>%</td><td>lower</td><td><code>claim_a.score</code> (<code>point_miss05</code>)</td><td>A</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>ADE</td><td>Not computed anywhere. Our error is one point at a fixed horizon; compare it with FDE, never ADE (REFERENCES #5)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>not tracked</td></tr>
+    <tr><td>Coverage with the offset; served-box coverage</td><td>Joint coverage of the 5–95% box widened by the offset in force (<code>cov90d</code>); of the planner's [q, 1 − q] box (<code>served_cov</code>)</td><td>%</td><td>close to target</td><td><code>inloop_stats</code></td><td>B, T4</td><td><span class="tag b">primary</span> for the T4 offset gate (<code>cov90d_post</code>); else <span class="tag a">secondary</span></td></tr>
+    <tr><td>S0 gain over CV</td><td>(CV error − learned error) / CV error at +2 s</td><td>%</td><td>≥ 15% passes</td><td><code>tools/s0_gate.py</code></td><td>S0</td><td><span class="tag b">primary</span> (gate)</td></tr>
+    <tr><td>CV FDE at +4.8 s</td><td>CV error at 4.8 s on gap-free tracks, 3.2 s warm-up</td><td>m</td><td>within 10% of Schöller</td><td><code>tools/tune_kalman.py</code></td><td>S1</td><td><span class="tag b">primary</span> (gate as run)</td></tr>
+    <tr><td>Occupancy Brier, ROC AUC</td><td>Predicted cell occupancy against true future occupancy</td><td>—</td><td>lower / higher</td><td><code>foresight/core/occupancy.py</code></td><td>S6</td><td>function and tests exist; metric not reported (PLAN §3 S6)</td></tr>
+  </tbody>
+</table></div>
+<h4>Intent classifier</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>KPI</th><th>Definition</th><th>Unit</th><th>Better</th><th>Computed in</th><th>Serves</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Turn-row and overall interval score difference</td><td>Chained − single per test row, averaged over context seeds, person bootstrap</td><td>m</td><td>below 0 on turns; not above 0 overall</td><td><code>tools/intent_layer.py</code></td><td>intent</td><td><span class="tag b">primary</span> (gate)</td></tr>
+    <tr><td>Balanced accuracy</td><td>Mean per-class recall over straight, stop, turn left, turn right; chance 0.25</td><td>—</td><td>higher</td><td><code>intent_layer.py</code></td><td>intent</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>Log loss</td><td>Mean −log probability of the true class</td><td>nats</td><td>lower</td><td><code>intent_layer.py</code></td><td>intent</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>Per-class recall, Brier, ECE (10 bins), accuracy</td><td>Standard classifier diagnostics</td><td>—</td><td>—</td><td><code>intent_layer.py</code> (<code>results/intent_layer.log</code>)</td><td>intent</td><td><span class="tag p">exploratory</span></td></tr>
+  </tbody>
+</table></div>
+<h4>Closed loop (one row per planner × dial × seed, <code>run_closed.py: run_episode</code>)</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>KPI</th><th>Definition</th><th>Unit</th><th>Better</th><th>Serves</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td><code>time_capped</code></td><td>Time to goal, or the 40 s episode length if the goal is not reached</td><td>s</td><td>lower</td><td>C</td><td><span class="tag b">primary</span> (curve time axis)</td></tr>
+    <tr><td><code>min_gap</code></td><td>Smallest edge-to-edge gap over the episode: centre distance minus both radii; negative = overlap</td><td>m</td><td>higher</td><td>C</td><td><span class="tag b">primary</span> (safety axis a)</td></tr>
+    <tr><td>Moving-collision rate</td><td>Share of seeds with ≥ 1 <code>moving_collision_steps</code>: steps where the simulator flags a collision while the robot moves at ≥ 0.05 m/s (D-23). Rate computed in <code>curve_compare.points</code>, <code>t2_pick.py</code></td><td>% of seeds</td><td>lower</td><td>C, T2 picker</td><td><span class="tag b">primary</span> (safety axis b; T2 rule)</td></tr>
+    <tr><td><code>intrusion_s</code></td><td>Seconds in which any person's gap is &lt; 0.5 m (count of 0.2 s steps × 0.2 s); the 0.5 m matches Francis et al.'s personal-space category, exact definition not checked (DEFENSE Q27)</td><td>s</td><td>lower</td><td>C, T1, T2, T4</td><td><span class="tag b">primary</span> in T1/T2/T4 gates; <span class="tag a">secondary</span> in T5</td></tr>
+    <tr><td><code>reached</code></td><td>Robot centre within 0.5 m of the goal before 40 s</td><td>bool, % of seeds</td><td>higher</td><td>C</td><td><span class="tag a">secondary</span> ("also reported")</td></tr>
+    <tr><td><code>time_to_goal</code></td><td>Time to goal; NaN if not reached</td><td>s</td><td>lower</td><td>C</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td><code>heading_change_per_m</code></td><td>Total |heading change| of the robot's motion (steps at ≥ 0.05 m/s) per metre travelled (<code>run_closed.zigzag</code>)</td><td>rad/m</td><td>lower</td><td>T4 smoothing</td><td><span class="tag b">primary</span> in the T4 gate; <span class="tag a">secondary</span> in T5</td></tr>
+    <tr><td><code>freeze_rate</code></td><td>Share of 0.2 s steps with robot speed &lt; 0.05 m/s</td><td>share</td><td>lower</td><td>T4 offset</td><td><span class="tag b">primary</span> in the T4 offset gate</td></tr>
+    <tr><td><code>seconds_stopped</code></td><td>The same steps × 0.2 s</td><td>s</td><td>lower</td><td>T4 offset</td><td><span class="tag b">primary</span> in the T4 offset gate</td></tr>
+    <tr><td><code>collision_steps</code>, <code>collided</code></td><td>All collision steps, robot moving or not (a person can walk into a stopped robot)</td><td>steps, bool</td><td>lower</td><td>—</td><td><span class="tag p">exploratory</span> (GATES §2 asks to report all collisions)</td></tr>
+    <tr><td><code>near_miss</code></td><td><code>min_gap</code> &lt; 0.2 m</td><td>bool</td><td>lower</td><td>—</td><td><span class="tag p">exploratory</span></td></tr>
+    <tr><td><code>path_efficiency</code></td><td>(straight start–goal distance − 0.5 m) / path length; reached runs only</td><td>ratio</td><td>higher</td><td>—</td><td><span class="tag p">exploratory</span></td></tr>
+    <tr><td><code>people_decel</code></td><td>Mean deceleration of people within a 2 m gap of the robot, per step, floored at 0</td><td>m/s²</td><td>lower</td><td>—</td><td><span class="tag p">exploratory</span></td></tr>
+    <tr><td><code>reversals_45</code></td><td>Turns of &gt; 45° followed by a turn of &gt; 45° the other way (docstring: within 2 s; the code allows 4 s across the three turning points)</td><td>count</td><td>lower</td><td>T4 report</td><td><span class="tag p">exploratory</span></td></tr>
+    <tr><td><code>fallback_rate</code></td><td>Share of plans in which no candidate passed the veto; <code>planner.choose</code> then stops or takes the largest worst-case gap. <code>choose_vo</code> never reports a fallback</td><td>share</td><td>lower</td><td>—</td><td><span class="tag p">exploratory</span> (GATES §2 asks for it)</td></tr>
+    <tr><td><code>pred_ms_per_plan</code></td><td>Wall-clock ms per replan for prediction plus planning (feature building excluded), on whatever machine ran it</td><td>ms</td><td>lower</td><td>D</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>In-loop <code>inloop_{cov90, w90, is90, err, cov90d, served_cov}_{pre, post}</code></td><td>Per episode at +2 s against <strong>true</strong> positions; pre = t &lt; switch (5 s), post = t ≥ switch</td><td>%, m</td><td>see offline rows</td><td>B in loop</td><td><span class="tag p">exploratory</span> (b), "the main closed-loop question" after part 5</td></tr>
+    <tr><td><code>offset_final</code>, <code>offset_mean</code>, <code>offset_miss</code>, <code>offset_miss_after_switch</code>, <code>offset_updates</code></td><td>The offset's trajectory and its scored miss rate (labels from observed positions)</td><td>m, share</td><td>miss near 0.2</td><td>T4</td><td>diagnostic</td></tr>
+  </tbody>
+</table></div>
+<h4>Deployment</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>KPI</th><th>Definition</th><th>Value (L4 / laptop CPU)</th><th>Computed in</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Split predict per replan</td><td>Bank model + scene model, averaged; 48 query rows (24 people × 2 horizons); median of 30 after a discarded warm-up</td><td>71 ms / 452 ms (3.5-Fast-1); 111 ms on the L4 with TabPFN-3.5-1</td><td><code>tools/latency_gpu.py</code>, run on each device → <code>results/latency_cuda_NVIDIA_L4.csv</code>, <code>results/latency_cpu.csv</code></td><td><span class="tag a">secondary</span> (claim D)</td></tr>
+    <tr><td>Scene-model rebuild, 250 rows</td><td>Every 2 s, can run off the control path</td><td>318 ms / 897 ms</td><td>same</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>Frozen-bank fit, 2,000 rows</td><td>Once per episode</td><td>490 ms / 4.7 s</td><td>same</td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>Full loop, ms per plan</td><td>T5 config on the pod, including in-loop rebuilds and CPU feature building; seeds 3013, 3001, 3002</td><td>225 ms</td><td><code>scripts/gpu/pod_run.sh</code> → <code>results/pod_run_L4.log</code></td><td><span class="tag a">secondary</span></td></tr>
+    <tr><td>GPU–CPU parity</td><td>Max and median |quantile difference| for the same context and query</td><td>0.021 m max, 0.001 m median</td><td><code>results/latency_parity_{cpu,cuda}.npz</code></td><td>check</td></tr>
+    <tr><td>API credits</td><td>Server-measured usage per call</td><td>logged per run</td><td><code>results/api_usage.csv</code> (D-29)</td><td>budget</td></tr>
+  </tbody>
+</table></div>
+<p class="small">Values in this table: <code>docs/DEPLOYMENT.md</code> §2, "Measured on a GPU".</p>
+
+<h3 id="val-fair">Fairness of the comparisons</h3>
+<div class="tbl dense"><table>
+  <thead><tr><th>Item</th><th>What we did</th><th>Source</th><th>Caveat</th></tr></thead>
+  <tbody>
+    <tr><td>Same seeds</td><td>Every planner on the same crowds; analysis on common seeds only</td><td>DEFENSE Q12; <code>curve_compare.load</code></td><td>—</td></tr>
+    <tr><td>Same features</td><td>f4 everywhere from amendment 1 on; <code>load()</code> filters <code>features_version == "f4"</code></td><td>amendment 1; <code>curve_compare.py</code></td><td>T1 ran on the untuned filter (DEFENSE attack 6)</td></tr>
+    <tr><td>Same top speed</td><td>1.0 m/s and the same speed set for every planner ("one top speed for every planner")</td><td>original pre-registration; <code>run_closed.run_episode</code></td><td>—</td></tr>
+    <tr><td>Same rows</td><td>LightGBM-same-rows and TabPFN read identical context rows; LightGBM reads the same frozen rows in the loop</td><td>DEFENSE Q6; D-31</td><td>—</td></tr>
+    <tr><td>LightGBM variants</td><td>Default (300 trees, 31 leaves, ≥ 10 rows per leaf, untuned); the regularised small-data setting m50:n100 (min 50 rows per leaf, 100 trees); all training rows (its best case)</td><td>RESULTS, "How LightGBM is trained" and claim A setup</td><td>m50:n100 is one setting, not a validation-split tuning. GATES §2's grid (num_leaves 7/15/31 × min_child_samples 20/50/100) was never run (D-15 pending)</td></tr>
+    <tr><td>Deployable rival</td><td><code>lgbm_all</code> plus the online offset; <code>lgbm_live</code> (retrains every 2 s) is an ablation only and was dropped from T5</td><td>D-16; D-30; RESULTS deployment notes</td><td>—</td></tr>
+    <tr><td>Baseline dials</td><td>cv and reactive at margin {0.2, 0.4, 0.6, 0.8}; vo at weight {0.5, 1, 2}; stop_go once; oracle at margin {0.2, 0.4, 0.6}. Learned planners: box_q is their dial, margin fixed at 0.2 m</td><td>amendments 1 and 2; D-7 (assumed)</td><td>Learned arms have 2 dial points after part 5, baselines 3–4</td></tr>
+    <tr><td>Safety check and action set</td><td>0.4 s check per planner: CV-based for cv, band, LightGBM, TabPFN; people frozen for reactive; true positions for the oracle; none for vo and stop_go</td><td>D-8 (corrected); DEFENSE Q13</td><td>vo searches 360° with 16 directions and a 0.1 m margin; <code>choose()</code> ±90° with 7 (DEFENSE Q13, attack 6)</td></tr>
+    <tr><td>The oracle</td><td>Open-loop: true futures under the current command, zero-width boxes, same planner and 0.4 s check</td><td>D-21; DEFENSE attack 7</td><td>Not an upper bound</td></tr>
+    <tr><td>Smoothing</td><td>OFF for every planner, by the T4 gate</td><td>parts 4 and 5</td><td>—</td></tr>
+    <tr><td>Latency</td><td>0 for every planner in the primary set: a command applies on the step it is computed. Disclosed</td><td>RESULTS deployment notes; part 4 analysis sets</td><td>No latency run exists (part 5)</td></tr>
+    <tr><td>Refresh delay</td><td>Never implemented: refits apply immediately in every run; only the command delay (<code>--latency</code>) exists</td><td>amendment 1, correction line</td><td>Favours the live (split) arm slightly</td></tr>
+    <tr><td>Offset</td><td>Every learned arm carries the batch offset; baselines have no box to widen</td><td>part 4</td><td>—</td></tr>
+    <tr><td>Labels in the loop</td><td>Live rows and the offset labelled from observed (filtered) positions; truth only for scoring</td><td>GATES B6; amendment 2 spec</td><td>Offline T3 used truth for the offset, a deliberate difference (amendment 2)</td></tr>
+    <tr><td>Held-out regime</td><td>Every bank episode with erratic before or after a switch excluded, so erratic is new to every model</td><td>amendment 2</td><td>—</td></tr>
+    <tr><td>Analysis set</td><td><code>curve_compare.load</code> keeps smoothing-OFF, latency-0, replan-0.4 rows, excludes <code>-sm</code>, <code>-r02</code>, <code>-lat</code> files and asserts no duplicated (arm, seed)</td><td><code>tools/curve_compare.py</code></td><td>Fixes the file-glob caveat noted under E15</td></tr>
+    <tr><td>Devices</td><td>Never mixed within one paired set</td><td>DEPLOYMENT §4 rule 4, §2</td><td>A 1 mm difference can change an episode (limits)</td></tr>
+    <tr><td>Showcase seed</td><td>Chosen by rule: every primary-test planner reached the goal and split q0.15's time (25.8 s) is closest to its median (26.40 s): seed 3013</td><td>RESULTS, T5</td><td>Illustration only</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="val-verdict">What validation found</h3>
+<div class="tbl dense"><table>
+  <thead><tr><th>Claim / test</th><th>Verdict</th><th>Numbers</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td>A, Hotel → ETH</td><td><span class="pill good">supported</span></td><td>Joint coverage TabPFN 74.8% (nominal 80–90%) vs lgbm_all 57.7%, m50:n100 58.6%. vs lgbm_all: interval score 5–95 −0.303 [−0.425, −0.184], box miss −17.0 pts [−21.0, −13.0]</td><td>RESULTS, claim A f4; <code>claim_a_boot_f4.csv</code></td></tr>
+    <tr><td>A, ETH → Hotel</td><td><span class="pill good">supported on calibration</span></td><td>86.4% vs 74.9% (lgbm_all). Interval score 5–95 +0.007 [−0.057, +0.065]: level; box miss −11.5 pts [−15.7, −7.5]. Better than m50:n100 on all three</td><td>same</td></tr>
+    <tr><td>A, point error</td><td><span class="pill na">no gain claimed</span></td><td>TabPFN 0.403 / 0.244 m; lgbm_all 0.405 / 0.253; tuned CV 0.428 / 0.254</td><td>same</td></tr>
+    <tr><td>Data efficiency</td><td><span class="pill good">supported (sim)</span></td><td>0.04–0.06 m better at equal rows; TabPFN-3.5 on 20k rows 0.593 m vs LightGBM on 73k 0.606 m</td><td>PLAN §2</td></tr>
+    <tr><td>B offline (T3, Setting B)</td><td><span class="pill good">supported (sim, selection stage)</span></td><td>After the switch: interval score −1.29 [−1.70, −0.94]; coverage +12.6 pts [+9.0, +16.3]; median error −0.057 m [−0.092, −0.021]. Best variant 68.4% after the switch, under 80%</td><td>amendment 2</td></tr>
+    <tr><td>B real (Setting A)</td><td><span class="pill bad">no gain</span></td><td>Split vs CV −0.015 m [−0.041, +0.010]; frozen −0.011 [−0.039, +0.016]</td><td>amendment 2</td></tr>
+    <tr><td>B real, final design</td><td><span class="pill warn">pending</span></td><td>No result file</td><td>PLAN §2 B</td></tr>
+    <tr><td>B in the loop (T5 b)</td><td><span class="pill good">supported (sim, exploratory)</span></td><td>After the switch, split vs frozen: coverage 59.3% vs 49.3% (+10.0 pts [+8.4, +11.6]); interval score 5.03 vs 6.34 (−1.31 [−1.55, −1.08]); median error −0.057 m [−0.094, −0.021]. vs lgbm_all +18.0 pts [+16.7, +19.3], −2.00 [−2.20, −1.80]. Before it, split is worse: interval score +0.18 [+0.10, +0.27]. No model reaches 80%; the offset adds ~1.5 pts</td><td>RESULTS, T5 (b); <code>inloop_claimb.csv</code></td></tr>
+    <tr><td>C, T1 (plaza)</td><td><span class="pill bad">failed</span></td><td>No learned config beats every baseline by 2 s or 1 s</td><td>D-19</td></tr>
+    <tr><td>C, oracle gate</td><td><span class="pill bad">failed</span></td><td>+1.59 s [0.86, 2.39] vs cv m0.2; time floor 17.74 s; vo w0.5 1.50 s above it</td><td>D-33; amendment 2</td></tr>
+    <tr><td>C, T5 primary</td><td><span class="pill bad">not supported</span></td><td>Beats no baseline; Holm p = 1.0 for all four. At cv m0.4's safety: 4.34 s slower (min_gap axis), 3.0 s (collision axis). cv m0.2 and vo w0.5 / w1 / w2 are 3.92–6.15 s faster while split is safer on both axes, so they are not beaten (reactive m0.2 likewise, 2.96 s). reactive m0.6: split 0.37 s faster, under the 2 s margin. cv m0.8 on the collision axis: split 2.69 s faster, but the resamples without a comparison count against it (p = 0.43). stop_go, cv m0.6, reactive m0.4 and m0.8: not comparable</td><td>RESULTS, T5; <code>t5_primary.csv</code>, <code>t5_primary_points.csv</code></td></tr>
+    <tr><td>C, T5 exploratory (a)</td><td><span class="pill na">oracle beats no baseline</span></td><td>Clearance gains per point (e.g. min_gap +0.20 m vs cv m0.2); collision gains mostly below 0.244 at 20 seeds; primary not tested</td><td>RESULTS, T5; <code>t5_oracle_matchedtime.csv</code></td></tr>
+    <tr><td>Intent, real (Hotel → ETH)</td><td><span class="pill good">adopted (offline)</span></td><td>Balanced accuracy 0.49; turn rows interval score −0.263 [−0.481, −0.075] (73 rows, 37 people); overall −0.022 [−0.057, +0.009]; coverage +5.0 pts (turns +16.9); error +0.007 m. Turn recall is 0: the gain is calibrated widening from the mixture, not a turn forecast</td><td>D-34; PLAN §2; <code>intent_layer.log</code></td></tr>
+    <tr><td>Intent, simulated</td><td><span class="pill bad">not adopted</span></td><td>Balanced accuracy 0.30; overall interval score +0.229 [+0.175, +0.287], worse</td><td>RESULTS, intent</td></tr>
+    <tr><td>D, latency</td><td><span class="pill good">fits the 0.4 s replan on an L4</span></td><td>71 ms split predict; 225 ms full loop per plan; no claim for an embedded (Jetson-class) GPU</td><td>DEPLOYMENT §2</td></tr>
+    <tr><td>Robustness</td><td><span class="pill good">pass</span></td><td>126 passed, 1 strict xfail (known split_offset bug)</td><td>test run for this page</td></tr>
+  </tbody>
+</table></div>
+<div class="verdict"><span class="lab">Reading</span><p>The validation kept what it could defend: calibrated ranges in a new place (A, real data), adaptation after an unseen regime (B, simulation, offline and in the loop) and an offline intent layer on real data. It dropped what it could not: the f1 error story (withdrawn after the CV fix), claim C (three failed gates: T1, the oracle, the T5 primary) and live context on real data (Setting A, no gain over CV). Why the TabPFN planner is slower: the planner uses only box width, so honest, wider boxes after the switch veto more moves (RESULTS, T5; DEFENSE Q37).</p></div>
+
+<h3 id="val-limits">Known limits of the validation itself</h3>
+<ul>
+  <li><strong>20 seeds for the learned arms.</strong> Detectable time difference ≈ 2.6 s (part 5), above the 2 s margin; exploratory (a) kept its 40-seed margins, so it has less power. Francis et al. recommend at least about 30 trials for real-robot runs (REFERENCES #21). The 40-seed extension is running and not analysed here.</li>
+  <li><strong>One simulator, one cell.</strong> Our own social-force crowd, with no validation against real trajectories (REFERENCES #14). The chosen cell qualifies by one seed (D-32). Erratic is a synthetic stress regime (DEFENSE Q18). The T2 bank's filter has r at the grid edge (amendment 2).</li>
+  <li><strong>Two real scenes.</strong> One transfer pair (ETH ↔ Hotel), capped test samples (900 rows per direction), no robot in the real data, no closed loop on real data (RESULTS, calibration limits). Claim B on real data with the final design is still pending.</li>
+  <li><strong>No human in the loop, no real robot.</strong> People react to the robot, but the boxes don't depend on the candidate move (GATES item 8 not built; DEFENSE Q31), so no conformal safety guarantee applies.</li>
+  <li><strong>Latency 0 in T5, and no latency run at all.</strong> The 0.4 s arm was dropped (part 5); the refresh delay was never implemented (amendment 1 correction); the replan and refit cadences (D-2, D-3) are untested.</li>
+  <li><strong>Timings.</strong> All CPU timings are x64 emulated on an ARM laptop, often under contention (part 3: ~1.9 s per plan from 8 processes; part 5: 16.2 s per plan under ~35). The rented L4 run is the only GPU measurement; no embedded GPU was measured (DEPLOYMENT §2).</li>
+  <li><strong>The closed loop is sensitive to 1 mm.</strong> Seed 3013 on the GPU: 25.4 s with a 0.47 m closest gap, against 25.8 s and 0.01 m on the laptop; "a 1 mm difference can flip which way the robot passes someone" (DEPLOYMENT §2). Single episodes don't reproduce across devices; only paired aggregates on one device mean anything.</li>
+  <li><strong>The oracle is open-loop</strong>, so the gate bounds what prediction under the current command could buy, not what perfect prediction could (DEFENSE attack 7).</li>
+  <li><strong>Selection on simulated data.</strong> The split design was chosen on T3's data (D-30), so T3 is selection-stage. T5 (b) on fresh seeds is the out-of-sample check, still simulated.</li>
+  <li><strong>Rule and result in one commit.</strong> For the WP-J2 rule (<code>306a2ab</code>) and the intent gate (<code>ed06094</code>) the script and its output arrived together, so git can't show that the rule came first; the scripts print the rule before the numbers.</li>
+  <li><strong>Multiplicity.</strong> Only the T5 primary is corrected. Claim A (2 directions × 2 comparators × 3 metrics), T3, T5 (b) and the intent test report uncorrected 95% intervals.</li>
+  <li><strong>LightGBM not validation-tuned</strong> (D-15); the smoothing test ran at margin 0.4, not 0.2 (part 2); the T1 intervals are marginal, not paired (DEFENSE Q12).</li>
+</ul>
+
+<h3 id="val-sources">Where the sources disagree (found while writing this section)</h3>
+<div class="note">
+<p>Listed, not fixed. The page above follows the result files.</p>
+<ul>
+  <li><strong>RESULTS T5, "dominated (slower and no safer)".</strong> It says this of vo w0.5, w1, w2 and cv m0.2. In <code>t5_primary_points.csv</code> split is <em>safer</em> than all four on both axes (e.g. split q0.15 0.158 m / 15% against vo w0.5 −0.038 m / 40%, cv m0.2 0.089 m / 25%). The CSV's <code>how = dominance</code> names the comparison branch (a split point at least as safe on both axes exists), and its negative difference means split is slower (3.92–6.15 s). The correct reading is "safer but slower, so not beaten", as PLAN §2 C and DEFENSE Q32 put it.</li>
+  <li><strong>Test count.</strong> The brief said 126 tests in <code>test_robustness_*.py</code>. Those three files collect 104; all of <code>tests/</code> collects 127, of which 126 pass and 1 is a strict xfail (<code>docs/MAC_SETUP.md</code>: "127 … 1 expected failure").</li>
+  <li><strong>"Tuned" LightGBM.</strong> RESULTS calls m50:n100 "tuned for small data"; it is one regularised setting, and the GATES §2 validation grid was never run (D-15).</li>
+  <li><strong>Oracle as upper bound.</strong> <code>run_closed.py</code> (comment at the oracle branch) says "upper bound on prediction"; D-21, amendment 1 and DEFENSE attack 7 say it is not one.</li>
+  <li><strong>D-21 axes.</strong> The gate text names "time-vs-intrusion" curves; amendment 1 and <code>curve_compare.py</code> ran it on min_gap and moving-collision rate.</li>
+  <li><strong>S1 gate.</strong> GATES §1 defines it as filtered velocity error plus parity test B8; it was run as "CV within 10% of the published CVM" (D-26), a comparison GATES §2 lists under "not allowed". PLAN §3 S1 says "within 3–14%", D-26 says "within 10%" (the difference is the window rule, DEFENSE attack 10).</li>
+  <li><strong>WP-J2 burden of proof.</strong> The rule printed by <code>live_variants_cp.py</code> is "primary = frozen2k+offset, UNLESS split2k+offset beats it"; D-30 and the T3 rule as quoted elsewhere say split is primary unless frozen+offset matches it. Same outcome here, since split won on both criteria.</li>
+  <li><strong>Intent seeds.</strong> RESULTS, PLAN and DEFENSE Q38 say 3 context seeds; <code>results/intent_layer.log</code> plans simulated seeds 0 and 1 only and real seeds 0, 1, 2.</li>
+  <li><strong>Stale lines.</strong> DEFENSE Q23 ("Multiple comparisons? Not corrected") predates amendment 1's Holm; Q30 (a 0 / 0.2 / 0.5 / 1.0 s latency sweep) was replaced by part 3, then dropped; Q33 and PLAN §2 D ("Mac and GPU timings pending") predate the L4 run; Q21 ("real-data tables are single-seed") predates the 5-seed claim A; GATES §2 "at least 100 paired seeds" was replaced by D-14; REFERENCES #24 ("single seed so far") predates the f4 rerun.</li>
+</ul>
+</div>
