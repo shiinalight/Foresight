@@ -1,8 +1,8 @@
 # Defence dossier: how Foresight can be attacked, and what we answer
 
-Written Sat 21 Nov, about 23:50 Berlin (adversarial review, read-only). It sequences events by git commit times and the corrected DECISIONS timestamps (commit `adc7dc1`), not by the older labels that ran about an hour ahead.
+Written Sat 21 Nov (commit d9d5751, 23:49 Berlin; adversarial review, read-only). It sequences events by git commit times and the corrected DECISIONS timestamps (commit `adc7dc1`), not by the older labels that ran about an hour ahead.
 
-**Update Sun 22 Nov, 02:20 Berlin:** T5 is done (`RESULTS.md`, "Closed loop T5 results"; 20 paired seeds, 3000–3019). The primary test failed against all four baselines, and claim B held in the loop. Q0, Q12, Q21, Q32, the claim C row of "Claims we must not make", and the new Q37 (TabPFN planner slower) and Q38 (intent chain) reflect this. The ten attacks are the Sat 23:50 review, kept as written.
+**Update Sun 22 Nov (commit 8e94fdb, 02:28 Berlin):** T5 is done (`RESULTS.md`, "Closed loop T5 results"; 20 paired seeds, 3000–3019). The primary test failed against all four baselines, and claim B held in the loop. Q0, Q12, Q21, Q32, the claim C row of "Claims we must not make", and the new Q37 (TabPFN planner slower) and Q38 (intent chain) reflect this. The ten attacks are the Sat 23:50 review, kept as written.
 
 **How to read the numbers.** Every number carries its feature version:
 - **f1:** the original features. The main real-data table, the calibration table, the tier grid, the adaptation pilot and T1 are all f1.

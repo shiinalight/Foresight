@@ -147,7 +147,7 @@ On real data the chain adds 5.0 points of joint coverage overall and 16.9 on tur
 
 ## How we validated
 
-- **Pre-registration with dated amendments.** The closed-loop analysis rule was written before the run (Sat ~20:30). Amendment 1 (commit `0d5d335`), amendment 2 (`889bc36`) and the T4 addendum (`bec10b7`, `6517981`, `722e1bd`, `3df14bf`) were committed before any learned planner ran on the seeds they govern. What was seen first is disclosed: the move to the crossing crowd after T1, baseline cells visible before the picker was written, and exploratory analyses added after the oracle gate (`RESULTS.md`, DEFENSE attack 3).
+- **Pre-registration with dated amendments.** The closed-loop analysis rule was written before the run (commit 188d046, 20:28 Berlin). Amendment 1 (commit `0d5d335`), amendment 2 (`889bc36`) and the T4 addendum (`bec10b7`, `6517981`, `722e1bd`, `3df14bf`) were committed before any learned planner ran on the seeds they govern. What was seen first is disclosed: the move to the crossing crowd after T1, baseline cells visible before the picker was written, and exploratory analyses added after the oracle gate (`RESULTS.md`, DEFENSE attack 3).
 - **Gates before big runs.** Each stage has a pass/fail check written first (`docs/GATES.md`, tests T1–T5 in `docs/DECISIONS.md`). Failed gates stopped work: T1 (the default plaza could not separate planners, D-19) and the oracle gate (claim C, D-33).
 - **Every value has a decision row** (`docs/DECISIONS.md`): backed, assumed or pending.
 - **Paired seeds and person bootstrap.** Every planner runs on the same fresh seeds (40 planned from a power calculation, D-14; the learned arms were cut to 20 before any result, addendum part 5, so T5 is analysed on seeds 3000–3019); intervals are paired-seed bootstrap, Holm–Bonferroni across the four baselines. Offline intervals resample whole people.
@@ -223,7 +223,7 @@ Key references; the full list (36 entries, with how far each was checked) is in 
 
 Generic utilities only: a Kalman filter, a constant-velocity baseline and timing code (`tools/check_tabpfn.py`). Everything else was written at the event. [confirm: the filter and baseline now live in `foresight/core/features.py` and `foresight/core/models.py`; confirm they descend from the pre-event `traj_kit.py` named in `TEAM-PLAN.md`, which is no longer in the repo.]
 
-The reference note `docs/tabpfn-hackathon-strategies.md` was in the first commit (Sat 21 Nov, 16:36). [confirm: whether it was written before the event started.]
+The reference note `docs/tabpfn-hackathon-strategies.md` was in the first commit (`58f96f8`, Sat 21 Nov 16:35 Berlin). [confirm: whether it was written before the event started.]
 
 [confirm: one line on how AI coding assistants were used.]
 

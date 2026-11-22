@@ -1,4 +1,6 @@
-# Exploratory: same core, another embodiment — highway cars (written before any TabPFN run, Sun 22 Nov 2026)
+# Exploratory: same core, another embodiment — highway cars (plan and pass rules: commit 34f1954, 03:38 Berlin)
+
+**Order.** The first TabPFN output, `results/highway_h1.csv`, has file time 03:39:23 Berlin, 42 s after this commit. The run's start is not logged. Its 6 hosted calls at about 4 s each (the other 64 calls took about 4 min after it, to 03:43:35) fit inside 42 s, so the plan-before-run order is consistent with the files but not provable from the repo. The rows file (`data/highway`, 03:36) comes from the sanity step, which runs no model.
 
 **Status:** exploratory, offline only (no closed loop). The pedestrian results stay the main evidence.
 
@@ -124,7 +126,7 @@ This mirrors live_variants Setting B and realdata_claimb.
 - `results/highway.log`.
 - `media/fig_highway.png`: one H2 moment, with cars, the last 2 s of each track, split's 5–95% boxes at +2 s, and where each car really was. It is drawn after the run from the stored quantiles, with no extra calls.
 
-## Results (hosted TabPFN, default model; run Sun 22 Nov 2026; `results/highway.log`)
+## Results (hosted TabPFN, default model; commit 06d8d93, 03:45 Berlin; `results/highway.log`)
 
 **Verdicts by the rules above:** **H1: core transfers to cars. H2: adapts on cars.**
 

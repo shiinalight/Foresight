@@ -1,4 +1,6 @@
-# Exploratory: TabPFN picks the move (written before any run, Sun 22 Nov ~05:45 Berlin)
+# Exploratory: TabPFN picks the move (written before any run; commit de81e0a, 03:32 Berlin)
+
+**Times.** Section times are the commit that added the section (git, +0100 = Berlin). Run ids from the L4 pod are UTC (Berlin = UTC+1); laptop run ids are Berlin time. All policy runs are on the pod: teacher `20261122-023825-pol-*` = 03:38:25 Berlin (6 min after this commit), pilot `-024302-` = 03:43:02, test `-024701-` = 03:47:01.
 
 **Question.** Can a second TabPFN, chained after the range model, choose the robot's move about as well as the hand-written planner it learned from? This is a chain of TabPFN steps (ranges, then scene adaptation, then the move), in the spirit of duckpfn (TabPFN-3.5 hackathon, 2nd place), where TabPFN was the controller. **No "beats" claim.** Claim C stays failed whichever way this comes out.
 

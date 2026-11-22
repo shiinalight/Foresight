@@ -1,4 +1,6 @@
-# Exploratory: caution-dial sweep on fresh seeds (written before any run, Sun 22 Nov 03:00 Berlin)
+# Exploratory: caution-dial sweep on fresh seeds (written before any run; commit e6bc556, 02:37 Berlin)
+
+**Times.** Section times are the commit that added the section (git, +0100 = Berlin). Run ids from the L4 pod are UTC (Berlin = UTC+1); laptop run ids are Berlin time. The first pod run, `20261122-013935-dx-split-q035`, is 02:39:35 Berlin, 2 min after the plan commit.
 
 **Status: exploratory.** T5 (seeds 3000–3019, RESULTS.md "Closed loop T5 results") stays the confirmatory result. Nothing here changes its verdict.
 
@@ -36,12 +38,14 @@
 - Also reported: the paired split − lgbm_all and split − frozen differences at each shared dial (time, min gap, collision rate; paired-seed bootstrap 95%).
 - Wording rule: a "beats" result here is labelled exploratory, from 20 fresh seeds and a dial range chosen after T5.
 
-## Amendment (Sun 22 Nov ~03:45 Berlin, before any LightGBM, split q 0.25 or split q 0.50 result existed)
+## Amendment (commit 038f5a2, 02:53 Berlin; before any LightGBM, split q 0.25 or split q 0.50 result existed)
+
+Order: the split q 0.25 / 0.50 restart (`20261122-015355-dx-*`, pod) is 02:53:55 Berlin and the laptop lgbm_all arms (`20261122-025411-dx-lgbmall-*`) start 02:54:11 Berlin, both after this commit.
 
 **What went wrong on the pod.**
 - The pod reports 48 cores, but its cgroup CPU quota is 5.1 cores (`cpu.cfs_quota_us` 510000).
 - With 31 processes on 5 cores:
-  - the LightGBM arms finished no episode in 35 minutes (LightGBM's threads thrash);
+  - the LightGBM arms finished no episode before this amendment (LightGBM's threads thrash), at most about 15 minutes after launch (plan commit 02:37, amendment commit 02:53; an earlier draft said 35 minutes, which the clocks do not support);
   - three split arms (q 0.10, 0.25, 0.50) crashed with CUDA out of memory at start-up, with 11 TabPFN processes on one 24 GB GPU.
 
 **Changes:**
@@ -53,7 +57,7 @@
 - **Frozen tabpfn q 0.15 / 0.50 are dropped** from this sweep to free the GPU and CPU. T5 already compares split and frozen at q 0.15. Two to six of their episodes had printed when they were stopped; none are used.
 - **Analysis unchanged:** tabpfn_split's curve is now four dials (0.15, 0.25, 0.35, 0.50).
 
-## Results (Sun 22 Nov ~04:10 Berlin; `results/dx_split.csv`, `results/dx_lgbm.csv`, `tools/curve_compare.py --glob "*dx-*" --seeds 3100-3119 --holm`)
+## Results (commit c912241, 03:02 Berlin; `results/dx_split.csv`, `results/dx_lgbm.csv`, `tools/curve_compare.py --glob "*dx-*" --seeds 3100-3119 --holm`)
 
 **Points** (20 paired fresh seeds; mean time_capped s / min gap m / moving-collision rate):
 

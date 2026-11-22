@@ -1,4 +1,6 @@
-# Exploratory: do the closed-loop findings hold in other crowds? (written before any run, Sun 22 Nov ~04:20 Berlin)
+# Exploratory: do the closed-loop findings hold in other crowds? (written before any run; commit df0b8d2, 03:04 Berlin)
+
+**Times.** Section times are the commit that added the section (git, +0100 = Berlin). Run ids from the L4 pod are UTC (Berlin = UTC+1); laptop run ids are Berlin time. The first pod runs, `20261122-020456-g1-*`, are 03:04:56 Berlin, 37 s after the plan commit; the laptop lgbm_all arms (`20261122-030502-*`) start 03:05:02 Berlin.
 
 **Status:** exploratory. T5 (seeds 3000–3019, chosen cell) stays the confirmatory result.
 
@@ -31,10 +33,10 @@ TabPFN arms and baselines run on the L4 pod. Batch offset on the learned arms, s
 
 **Reporting rule:** report every scenario and arm. A finding counts as "holds across crowds" only if it has the same direction in T5, G1 and G2.
 
-## Amendment (~04:45 Berlin, before any result was read; only episode counts seen)
-The pod's 5-core CPU quota made the TabPFN arms crawl (0–1 of 20 episodes after 12 min). The G2 baselines (stop_go excepted, done) and G2 oracle move to the laptop (numpy only, no TabPFN), restarted from scratch there. G1 baselines stay on the pod. Tables disclose the device per arm.
+## Amendment (commit 75abf33, 03:07 Berlin; before any result was read; only episode counts seen)
+The pod's 5-core CPU quota made the TabPFN arms crawl (0–1 of 20 episodes when this was written, about 2 minutes after launch: first pod run id 03:04:56 Berlin, amendment commit 03:07; an earlier draft said 12 min, which the clocks do not support). The G2 baselines (stop_go excepted, done) and G2 oracle move to the laptop (numpy only, no TabPFN), restarted from scratch there (`20261122-030735-g2-*` to `-030738-`, laptop, 03:07:35–03:07:38 Berlin, after this commit). G1 baselines stay on the pod. Tables disclose the device per arm.
 
-## Results (Sun 22 Nov ~05:20 Berlin; `results/g{1,2}_{tabpfn_split,lgbm_all}.csv`, `results/inloop_claimb_g{1,2}.csv`)
+## Results (commit d869817, 03:21 Berlin; `results/g{1,2}_{tabpfn_split,lgbm_all}.csv`, `results/inloop_claimb_g{1,2}.csv`)
 
 Devices: TabPFN arms and G1 baselines ran on the L4 pod; lgbm_all (both crowds) and the G2 baselines and oracle ran on the laptop (amendment). Every arm has 20 seeds (3200–3219).
 

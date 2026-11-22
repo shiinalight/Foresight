@@ -1,4 +1,4 @@
-# Exploratory: claim A on five real scenes, leave one scene out (written before any run, Sun 22 Nov ~05:00 Berlin)
+# Exploratory: claim A on five real scenes, leave one scene out (written before any run; commit fa0b5de, 03:12 Berlin)
 
 **Why.** Claim A ("TabPFN's ranges stay honest in a place it never saw") rests on two real scenes, Hotel → ETH and ETH → Hotel. This test adds the three UCY scenes, so the claim is checked on five scenes, each held out once. That is the standard ETH/UCY leave-one-scene-out design (REFERENCES row 4).
 
@@ -35,7 +35,7 @@ Paired person bootstrap (2,000 draws), TabPFN minus each rival, per held-out sce
 
 **Script:** `tools/loso5.py`. **Outputs:** `results/loso5.csv` (per scene and pooled), `results/loso5_rows.csv`.
 
-## Results (Sun 22 Nov ~05:40 Berlin; `results/loso5.csv`, `results/loso5_rows.csv`, `results/loso5.log`; 30 hosted calls)
+## Results (commit 58c2d6b, 03:32 Berlin; output files dated 03:29–03:30, after the plan commit; `results/loso5.csv`, `results/loso5_rows.csv`, `results/loso5.log`; 30 hosted calls)
 
 **90% interval score at +2 s** (lower is better; mean over 3 context seeds):
 

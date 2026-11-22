@@ -2,7 +2,7 @@
 
 **Read this first.** This page is the single source of truth for strategy, roadmap and framework. It is updated whenever a decision changes, by either Claude session or by any of us, and mirrored to `main` straight away, so everyone reads the same plan. Detail lives in the linked documents; this page holds only the current state.
 
-Last updated: Sun 22 Nov, 02:20 (Berlin). Code freeze Sun 12:30; submission Sun 16:30.
+Status block: commit 8e94fdb (02:28 Berlin); later edits in `git log -- PLAN.md`. Code freeze Sun 12:30; submission Sun 16:30.
 
 ## 0. Orchestration (live; the CTO session owns this section)
 
@@ -113,6 +113,6 @@ Rule: small tests with gates written in advance come first; the big run comes af
 | `docs/DEPLOYMENT.md` | Refits, compute, model tiers, licence, Mac |
 | `docs/VISUALS.md` | Trace format and what gets drawn |
 | `RESULTS.md` | Numbers and figures (current only, per `media/MANIFEST.csv`) |
-| `docs/CTO-REVIEW.md` | The first review (Sat 18:30). Partly superseded by the pages above |
+| `docs/CTO-REVIEW.md` | The first review (commit 708c573, 18:47 Berlin). Partly superseded by the pages above |
 | `SCENARIOS.md`, `INTERFACE.md` | Scene catalogue; data format |
 | `TEAM-PLAN.md` | The original Saturday plan, kept for history |

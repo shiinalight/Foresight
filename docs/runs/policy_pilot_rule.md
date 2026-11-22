@@ -1,4 +1,4 @@
-# TabPFN policy: how the pilot and DAgger are judged (written before the pilot, Sun 22 Nov ~03:40 Berlin)
+# TabPFN policy: how the pilot and DAgger are judged (written before the pilot; commit 6b9ffd4, 03:38 Berlin)
 
 These are the operational details of `docs/TABPFN_POLICY.md`, fixed before any policy episode ran on the pod.
 

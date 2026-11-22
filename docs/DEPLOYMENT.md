@@ -1,6 +1,6 @@
 # Deployment realism: refits, compute, model sizes, Mac
 
-Written Sat 21 Nov, about 21:45. Each point is marked **[checked]** (verified in the code, the installed package or the Prior Labs docs, with the source named) or **[judgment]**.
+Written Sat 21 Nov (commit 2ed969a, 22:06 Berlin). Each point is marked **[checked]** (verified in the code, the installed package or the Prior Labs docs, with the source named) or **[judgment]**.
 
 ## 1. What "live" means, and whether it is realistic
 
@@ -50,7 +50,7 @@ They are not deployment evidence. Target-class hardware is a CUDA GPU or an Appl
 
 **Against industry [judgment].** Robots and cars run their prediction networks on embedded GPUs at about 10 Hz. A model of 80–220 M parameters with a cached context of about 1,000 rows plausibly fits that envelope on a GPU. We will not quote industry figures until we measure ours on a GPU or MPS.
 
-**Measured on a GPU (Sun 22 Nov, 02:50) [checked: `results/latency_cuda_NVIDIA_L4.csv`, `results/pod_run_L4.log`; `tools/latency_gpu.py`, `scripts/gpu/pod_run.sh`].** Rented NVIDIA L4 (24 GB, a 72 W inference card), torch 2.8 + CUDA 12.9, tabpfn 9.2.0, the laptop's own weight files. Median of 30 repeats after a discarded warm-up; one call covers both axes and the 5 planner quantiles.
+**Measured on a GPU (commit 81545dc, 02:28 Berlin) [checked: `results/latency_cuda_NVIDIA_L4.csv`, `results/pod_run_L4.log`; `tools/latency_gpu.py`, `scripts/gpu/pod_run.sh`].** Rented NVIDIA L4 (24 GB, a 72 W inference card), torch 2.8 + CUDA 12.9, tabpfn 9.2.0, the laptop's own weight files. Median of 30 repeats after a discarded warm-up; one call covers both axes and the 5 planner quantiles.
 
 | Step (shipped design: 3.5-Fast, 1 estimator) | L4 GPU | Laptop CPU (emulated x64) |
 |---|---|---|
