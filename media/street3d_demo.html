@@ -76,6 +76,49 @@
   #panel .verdict.no { background: #ece7de; }
   #panel .verdict b { display: block; font-size: 14px; margin-bottom: 2px; }
   #panel ul { margin: 6px 0 0; padding-left: 18px; font-size: 14.5px; line-height: 1.55; }
+  /* ---------- video mode (?video): the final hackathon video ----------
+     one type scale at 1080p: 22 / 28 / 36 / 48 px; everything inside 5% safe margins (96 x 54 px) */
+  body.video { background: linear-gradient(180deg, #f2eee7 0%, #e4ddd2 55%, #d4ccbf 100%); }
+  body.video #help, body.video #bar { display: none !important; }
+  body.video #info { top: auto; bottom: 54px; left: 96px; padding: 18px 24px; min-width: 0; max-width: 560px; }
+  body.video .pill, body.video .card { transition: none !important; }   /* frame-by-frame rendering: no real-time transitions */
+  body.video #info h1 { font-size: 36px; }
+  body.video #info .sub { font-size: 22px; }
+  body.video #clock { font-size: 48px; }
+  body.video .phase { font-size: 22px; padding: 6px 14px; }
+  body.video #stat { font-size: 22px !important; line-height: 1.5; }
+  body.video #caption { bottom: 54px; width: min(1320px, 88%); padding: 22px 32px; }
+  body.video #caption .step { font-size: 22px; }
+  body.video #caption h2 { font-size: 36px; margin: 2px 0 8px; }
+  body.video #caption p { font-size: 28px; line-height: 1.35; }
+  body.video .pill { font-size: 22px; padding: 6px 13px; }
+  body.video .pill.tag { font-size: 22px; padding: 5px 12px; }
+  body.video .pill.event { font-size: 28px; }
+  body.video .pill.robot { font-size: 28px; padding: 7px 16px; }
+  body.video .pill.card { font-size: 22px; width: 400px; padding: 14px 18px; }
+  body.video .pill.sign { background: rgba(250,248,244,.95); color: var(--ink); font-size: 22px; font-weight: 650; border: 2px solid #6b5847; }
+  body.video #banner { top: 54px; font-size: 28px; padding: 10px 20px; }
+  body.video #rows { top: 54px; padding: 14px 20px; }
+  body.video #rows th, body.video #rows td { font-size: 22px; padding: 6px 16px; }
+  body.video #tab { right: 96px; width: 380px; padding: 24px; }
+  body.video #tab .name { font-size: 48px; } body.video #tab .sub { font-size: 22px; } body.video #tab .count { font-size: 36px; }
+  body.video #meter { right: 96px; width: 440px; padding: 24px; }
+  body.video #meter .big { font-size: 48px; } body.video #meter .lbl { font-size: 22px; }
+  body.video #meter .barbox { height: 16px; }
+  body.video #panel { right: 96px; top: 54px; transform: none; width: 840px; padding: 24px 30px; }
+  body.video #panel h3 { font-size: 28px; } body.video #panel .sub { font-size: 22px; margin-bottom: 12px; }
+  body.video #panel .verdict { font-size: 22px; padding: 14px 18px; } body.video #panel .verdict b { font-size: 28px; margin-bottom: 4px; }
+  body.video #panel ul { font-size: 28px; line-height: 1.45; }
+  body.video .chip { font-size: 22px; padding: 4px 10px; }
+  body.video .pill.event { background: rgba(30,34,39,0.95); color: #F7F2EA; border-left: 8px solid #E0603C; border-radius: 12px;
+    padding: 10px 18px; font-size: 28px; font-weight: 650; max-width: 520px; white-space: normal; line-height: 1.25; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+  body.video .pill.event .why { display: block; font-size: 22px; font-weight: 400; color: #E2DBCF; margin-top: 4px; }
+  body.video #banner { max-width: 760px; }
+  #pcard { right: 96px; top: 50%; transform: translateY(-50%); width: 520px; padding: 30px; display: none; }
+  #pcard .big { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 48px; font-weight: 700; margin: 0 0 8px; }
+  #pcard .lbl { font-size: 28px; line-height: 1.35; margin: 0; color: #46433e; }
+  #speedbadge { position: fixed; top: 54px; right: 96px; display: none; font-size: 22px; }
+  #fade { position: fixed; inset: 0; background: linear-gradient(180deg, #f2eee7 0%, #e4ddd2 55%, #d4ccbf 100%); opacity: 0; pointer-events: none; z-index: 50; }
   @media (max-width: 700px) { #help { display: none; } #bar { grid-template-columns: auto 1fr; } .views { grid-column: 1 / -1; justify-content: center; } }
 </style>
 <script type="importmap">
@@ -98,6 +141,9 @@
 <div id="caption" class="card"><div class="step" id="cap-step"></div><h2 id="cap-title"></h2><p id="cap-text"></p></div>
 <div id="rows" class="card"></div>
 <div id="panel" class="card"></div>
+<div id="pcard" class="card"></div>
+<div id="speedbadge" class="pill tag">▶▶ 2× speed</div>
+<div id="fade"></div>
 <div id="tab" class="card"><div class="name">TabPFN</div><div class="sub">pretrained on tables, no training here</div><div class="count" id="tab-count">0 rows</div><div class="sub">example rows with known answers</div></div>
 <div id="meter" class="card"><div class="lbl">Validation episodes: real positions inside the patch</div><div class="big" id="meter-val">80%</div><div class="barbox"><div class="fillbar" id="meter-bar"></div><div class="target"></div></div><div class="lbl" style="margin-top:8px">patch size <b id="meter-f">×1.00</b> · target 80%</div></div>
 <div id="bar" class="card">
@@ -119,6 +165,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
 const D = JSON.parse(document.getElementById('data').textContent);
 const QP = new URLSearchParams(location.search);
+const VIDEO = QP.has('video');                        // the final video: presentation only, same data and numbers
+if (VIDEO) document.body.classList.add('video');
 const SCENE = D.scene || 'street';                    // 'street' (last-metre delivery) or 'doorway' (bottleneck)
 const M = D.map, ACT = D.acts;
 const W = D.bounds[2], H = D.bounds[3];             // half sizes (street 20 x 12.5, doorway 8 x 8)
@@ -134,6 +182,7 @@ document.querySelector('#info h1').textContent = TXT.title;
 document.getElementById('phase').textContent = TXT.calm;
 document.querySelector('[data-view="street"]').textContent = TXT.eye;
 document.getElementById('sub').textContent = `${TXT.sub} · episode ${D.episode} · ${D.agents.length} agents`;
+const VIDEO_SUB = 'A street episode the model never saw';
 
 // ---------- renderer, scene, camera ----------
 const stage = document.getElementById('stage');
@@ -189,6 +238,7 @@ function floorText(text, x, y, z, size, color = '#3a3733', { sub = '', dot = nul
   m.rotation.x = -Math.PI / 2; m.rotation.z = rot; m.position.set(x, z + 0.006, -y); m.receiveShadow = true; scene.add(m); return m;
 }
 
+const BLABELS = [];                                   // building names: {m, name, x, y, z}
 // ---------- shared pieces: trees, walls ----------
 const trunk = mat('#7a5c45'), leaf = mat('#8fb07a'), leaf2 = mat('#7ea36a'), metal = mat('#3d3f43', { roughness: 0.5, metalness: 0.4 });
 function tree(x, y, z0, s = 1) {
@@ -290,7 +340,8 @@ for (const [tx, ty] of [[cafe.x0 + 2.2, cafe.front + 1.6], [cafe.x0 + 5.2, cafe.
 tree(cafe.x1 - 0.8, cafe.back - 0.8, SIDE_H, 0.8);
 const cafeDoor = M.buildings.find(b => b.name.startsWith('Caf')).door[0];
 for (let i = 0; i < 4; i++) box(1.0, 0.35, 0.05, ['#e0603c', '#f4f1ea'][i % 2], cafeDoor + 1.6 + i, cafe.front - 0.3, SIDE_H + 2.2, { side: THREE.DoubleSide });   // awning, clear of the door
-floorText('Café', cafe.x0 + 0.6, cafe.back - 1.7, SIDE_H + 0.04, 1.0, '#3a3733', { sub: 'Robot pickup point', dot: '#e0603c' });
+BLABELS.push({ m: floorText('Café', cafe.x0 + 0.6, cafe.back - 1.7, SIDE_H + 0.04, 1.0, '#3a3733', { sub: 'Robot pickup point', dot: '#e0603c' }),
+               name: 'Café · robot pickup', x: (cafe.x0 + cafe.x1) / 2, y: (cafe.y0 + cafe.y1) / 2, z: SIDE_H + 2.6 });
 // station furniture
 for (let i = 0; i < 5; i++) {                                                                // ticket gates
   const gx = station.x0 + 3.5 + i * 1.3;
@@ -303,14 +354,16 @@ const boardTex = canvasTex(512, 144, (g, w, h) => { g.fillStyle = '#1d2326'; g.f
   g.fillText('Departures', 18, 44); g.font = '500 28px ui-monospace, monospace'; g.fillText('U2  Central   2 min', 18, 88); g.fillText('S5  Airport   6 min', 18, 126); });
 const board = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 0.85), new THREE.MeshBasicMaterial({ map: boardTex }));
 board.position.set(station.x0 + 9.5, SIDE_H + 1.75, -(station.back + 0.36)); scene.add(board);
-floorText('Station', station.x0 + 0.7, station.front - 0.6, SIDE_H + 0.04, 1.0, '#3a3733', { sub: 'Robot drop-off', dot: '#e0603c' });
+BLABELS.push({ m: floorText('Station', station.x0 + 0.7, station.front - 0.6, SIDE_H + 0.04, 1.0, '#3a3733', { sub: 'Robot drop-off', dot: '#e0603c' }),
+               name: 'Station · robot drop-off', x: (station.x0 + station.x1) / 2, y: (station.y0 + station.y1) / 2, z: SIDE_H + 2.6 });
 // the other plots along the street: low shop blocks with flat roofs
 const roofM = mat('#d6cfc3'), roofLip = mat('#bfb6a7');
 function block(x0, x1, s, label) {
   const y0 = s * WALL, y1 = s * H, h = 0.9;                // low, so they never hide the street
   box(x1 - x0 - 0.3, Math.abs(y1 - y0) - 0.2, h, roofM, (x0 + x1) / 2, (y0 + y1) / 2 + s * 0.05, SIDE_H);
   box(x1 - x0 - 0.3, 0.15, 0.25, roofLip, (x0 + x1) / 2, y0 + s * 0.12, SIDE_H + h);
-  if (label) floorText(label, x0 + 0.6, (y0 + y1) / 2 + s * 0.7, SIDE_H + h, 0.6, '#5b5750');
+  if (label) BLABELS.push({ m: floorText(label, x0 + 0.6, (y0 + y1) / 2 + s * 0.7, SIDE_H + h, 0.6, '#5b5750'),
+                            name: label, x: (x0 + x1) / 2, y: (y0 + y1) / 2, z: SIDE_H + h + 1.2 });
 }
 block(-20, cafe.x0, 1); block(cafe.x1, 2, 1, 'Bookshop'); block(2, 12, 1, 'Pharmacy'); block(12, 20, 1, 'Flats');
 block(-20, -9, -1, 'Bakery'); block(-9, station.x0, -1, 'Offices'); block(station.x1, 20, -1);
@@ -468,6 +521,24 @@ const agents = D.agents.map(a => {
 const byId = new Map(agents.map(v => [v.data.id, v]));
 
 // ---------- predictions (optional): the model's 80% range at +h s under each agent ----------
+// video mode: colour by agent type, soft rounded shape inscribed in the same box, white truth dots
+const RANGE_STYLE = { car: { fill: '#4f9bff', edge: '#cfe3ff', op: 0.34 }, cyclist: { fill: '#9b6fd6', edge: '#7d4fc0', op: 0.24 },
+                      pedestrian: { fill: '#f08a5d', edge: '#d9622f', op: 0.22 } };
+const SOFT_N = 32;
+function softPoints(c) {                                 // a squircle inside the box with corners c (two edges from c[0])
+  const cx = (c[0][0] + c[2][0]) / 2, cy = (c[0][1] + c[2][1]) / 2;
+  const ux = (c[1][0] - c[0][0]) / 2, uy = (c[1][1] - c[0][1]) / 2, vx = (c[3][0] - c[0][0]) / 2, vy = (c[3][1] - c[0][1]) / 2;
+  return Array.from({ length: SOFT_N }, (_, k) => { const th = 2 * Math.PI * k / SOFT_N, co = Math.cos(th), si = Math.sin(th);
+    const a = Math.sign(co) * Math.sqrt(Math.abs(co)), b = Math.sign(si) * Math.sqrt(Math.abs(si));
+    return [cx + ux * a + vx * b, cy + uy * a + vy * b]; }).concat([[cx, cy]]);
+}
+function truthDot() {                                    // "where it really was": a small white dot, dark outline
+  const g = new THREE.Group();
+  const dot = new THREE.Mesh(new THREE.CircleGeometry(0.13, 24), new THREE.MeshBasicMaterial({ color: '#ffffff', depthWrite: false }));
+  const rim = new THREE.Mesh(new THREE.RingGeometry(0.13, 0.18, 24), new THREE.MeshBasicMaterial({ color: '#26262a', depthWrite: false }));
+  dot.rotation.x = rim.rotation.x = -Math.PI / 2; dot.renderOrder = rim.renderOrder = 4; g.add(dot, rim); return g;
+}
+let videoFocusId = null;                                 // the agent a video close-up is about (its range never fades)
 // rows: [agent_id, frame, x0, y0, x1, y1, x2, y2, x3, y3, true_x, true_y, inside]
 const PRED = D.pred || null;
 if (PRED) {
@@ -478,6 +549,18 @@ if (PRED) {
   const trueM = new THREE.MeshBasicMaterial({ color: '#26262a' });
   for (const [aid, rows] of per) {
     const v = byId.get(aid); if (!v) continue;
+    if (VIDEO) {
+      const st = RANGE_STYLE[v.data.type] || RANGE_STYLE.pedestrian;
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array((SOFT_N + 1) * 3), 3));
+      g.setIndex(Array.from({ length: SOFT_N }, (_, k) => [SOFT_N, k, (k + 1) % SOFT_N]).flat());
+      const fill = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: st.fill, transparent: true, opacity: st.op, depthWrite: false, side: THREE.DoubleSide }));
+      const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SOFT_N * 3), 3));
+      const edge = new THREE.LineLoop(eg, new THREE.LineBasicMaterial({ color: st.edge, transparent: true, opacity: 0.75 }));
+      const mark = truthDot();
+      fill.renderOrder = 2; scene.add(fill, edge, mark); fill.visible = edge.visible = mark.visible = false;
+      v.pred = { fill, edge, mark, rows, st };
+      continue;
+    }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(12), 3)); g.setIndex([0, 1, 2, 0, 2, 3]);
     const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(15), 3));
     const fill = new THREE.Mesh(g, fillM), edge = new THREE.Line(eg, edgeM);
@@ -485,7 +568,7 @@ if (PRED) {
     fill.renderOrder = 2; scene.add(fill, edge, mark); fill.visible = edge.visible = mark.visible = false;
     v.pred = { fill, edge, mark, rows };
   }
-  document.getElementById('sub').textContent += ' · held-out episode (never trained on)';
+  document.getElementById('sub').textContent = VIDEO ? VIDEO_SUB : document.getElementById('sub').textContent + ' · held-out episode (never trained on)';
 }
 function drawPred(v, f) {
   const p = v.pred; let r = null;
@@ -493,6 +576,18 @@ function drawPred(v, f) {
   const show = predShow === 'all' && !!r && f - r[1] < PRED.every + 0.01 && v.g.visible;
   p.fill.visible = p.edge.visible = p.mark.visible = show;
   if (!show) return;
+  if (VIDEO) {                                           // soft shape; in crowds only ranges near the robot at full strength
+    const z = y => groundZ(v.data.type, y) + 0.05, pts = softPoints([[r[2], r[3]], [r[4], r[5]], [r[6], r[7]], [r[8], r[9]]]);
+    const pos = p.fill.geometry.attributes.position.array, e = p.edge.geometry.attributes.position.array;
+    pts.forEach(([x, y], i) => { pos.set([x, z(y), -y], 3 * i); if (i < SOFT_N) e.set([x, z(y) + 0.01, -y], 3 * i); });
+    p.fill.geometry.attributes.position.needsUpdate = true; p.fill.geometry.computeBoundingSphere();
+    p.edge.geometry.attributes.position.needsUpdate = true; p.edge.geometry.computeBoundingSphere();
+    const rp = robotV.g.position, d = Math.hypot(v.g.position.x - rp.x, v.g.position.z - rp.z);
+    const k = v.data.type === 'car' || v.data.id === videoFocusId ? 1 : d <= 6 ? 1 : Math.max(0.15, 1 - (d - 6) / 3);
+    p.fill.material.opacity = p.st.op * k; p.edge.material.opacity = 0.75 * k;
+    p.mark.position.set(r[10], z(r[11]) + 0.03, -r[11]); p.mark.visible = k > 0.5;
+    return;
+  }
   const z = (y) => groundZ(v.data.type, y) + 0.05, pos = p.fill.geometry.attributes.position.array, e = p.edge.geometry.attributes.position.array;
   for (let i = 0; i < 5; i++) {
     const j = i % 4, x = r[2 + 2 * j], y = r[3 + 2 * j];
@@ -509,10 +604,44 @@ function cumulative(a) {             // distance travelled so far, for leg swing
   return out;
 }
 const robotV = agents.find(v => v.data.type === 'robot');
-const trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: '#e0603c', dashSize: 0.35, gapSize: 0.25 }));
+const trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: '#e0603c', dashSize: 0.35, gapSize: 0.25,
+  transparent: VIDEO, opacity: VIDEO ? 0.35 : 1 }));
 scene.add(trail);
+// video mode: the robot as the main character: a soft glow under it and its route ahead as a bright dashed line
+const routeDashes = [];
+if (VIDEO) {
+  const glowTex = canvasTex(256, 256, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    gr.addColorStop(0, 'rgba(255,122,46,0.55)'); gr.addColorStop(0.45, 'rgba(255,122,46,0.25)'); gr.addColorStop(1, 'rgba(255,122,46,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.015; glow.renderOrder = 1; robotV.g.add(glow);
+  const dashM = new THREE.MeshBasicMaterial({ color: '#ff6a1a' });
+  for (let i = 0; i < 70; i++) { const o = new THREE.Group(), d = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.13), dashM);
+    d.rotation.x = -Math.PI / 2; o.add(d); o.visible = false; scene.add(o); routeDashes.push(o); }
+}
+function drawRoute(f) {                                  // the robot's route over the next 12 s, a dash every 0.6 m
+  const r = robotV.data, k0 = Math.max(0, Math.floor(f) - r.k0), pts = [];
+  for (let k = k0; k < Math.min(r.x.length, k0 + 60); k++) if (r.x[k] != null) pts.push([r.x[k], r.y[k]]);
+  let i = 0, carry = 0.9;                                 // start a little ahead of the robot's body
+  for (let j = 1; j < pts.length && i < routeDashes.length; j++) {
+    const [ax, ay] = pts[j - 1], [bx, by] = pts[j], L = Math.hypot(bx - ax, by - ay);
+    let s_ = carry;
+    while (s_ < L && i < routeDashes.length) { const u = s_ / L, x = ax + (bx - ax) * u, y = ay + (by - ay) * u, o = routeDashes[i++];
+      o.position.set(x, groundZ('robot', y) + 0.04, -y); o.rotation.y = Math.atan2(by - ay, bx - ax); o.visible = true; s_ += 0.6; }
+    carry = s_ - L;
+  }
+  for (; i < routeDashes.length; i++) routeDashes[i].visible = false;
+}
 
 // ---------- scripted events: labels over the agents involved, ticks on the timeline ----------
+// video mode: one line on why each event matters for prediction
+const EVENT_WHY = { sudden_stop: 'A “keep walking” guess would run straight past them.',
+  steps_onto_crosswalk: 'Someone enters the road: the robot’s crossing is no longer clear.',
+  car_brake_crosswalk: 'Its speed changes fast; its range has to change with it.',
+  jaywalk: 'Off every expected path: where a range beats a single guess.',
+  rush_hour: 'The crowd changes behaviour; the model has to keep up.',
+  robot_waits_door: 'The robot gives way at a tight door, then goes.',
+  robot_door_clear: 'The doorway is free: the robot moves on.' };
+const eventHTML = n => VIDEO ? `<b>${EVENT_TEXT[n] || n}</b><span class="why">${EVENT_WHY[n] || ''}</span>` : (EVENT_TEXT[n] || n);
 const EVENT_TEXT = { sudden_stop: 'Stops suddenly', steps_onto_crosswalk: 'Steps onto the zebra', car_brake_crosswalk: 'Brakes hard',
                      jaywalk: 'Jaywalking', rush_hour: 'Rush hour: more people, more cars',
                      rush: 'The meeting ends: 24 people head for one 1.5 m door',
@@ -578,8 +707,8 @@ function update() {
     const ev = D.events.find(e => e.agent_id === a.id && t >= e.t && t < e.t + SHOW_S);
     const el = v.eventLabel.element;
     if (introOn || outroOn) el.style.opacity = 0;      // the intro and outro have their own labels
-    else if (ev) { el.textContent = EVENT_TEXT[ev.name] || ev.name; el.style.opacity = 1; }
-    else if (a.type === 'robot' && act === 'wait_door') { el.textContent = EVENT_TEXT.robot_waits_door; el.style.opacity = 1; }   // the whole wait
+    else if (ev) { el.innerHTML = eventHTML(ev.name); el.style.opacity = 1; }
+    else if (a.type === 'robot' && act === 'wait_door') { el.innerHTML = eventHTML('robot_waits_door'); el.style.opacity = 1; }   // the whole wait
     else el.style.opacity = 0;
   }
   // robot path so far
@@ -592,7 +721,12 @@ function update() {
   ph.textContent = rush ? TXT.rush : TXT.calm; ph.classList.toggle('rush', rush);
   if (PRED) {                                          // live score: truths whose time has come
     const due = PRED.rows.filter(r => r[1] + PRED.h / D.dt <= f + 1e-6), hit = due.filter(r => r[12]).length;
-    document.getElementById('stat').innerHTML =
+    const sw = (c, e) => `<span style="display:inline-block;width:22px;height:16px;border-radius:8px;background:${c};border:2px solid ${e};vertical-align:middle;margin-right:4px"></span>`;
+    if (VIDEO) document.getElementById('stat').innerHTML =
+      `Where each will be in ${PRED.h} s (80% range):<br>${sw('rgba(79,155,255,.5)', '#2a78d6')}cars ${sw('rgba(155,111,214,.45)', '#7d4fc0')}cyclists ${sw('rgba(240,138,93,.45)', '#d9622f')}people<br>`
+      + `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#fff;border:4px solid #26262a;vertical-align:middle;margin-right:6px"></span>where it really was`
+      + `<br><b style="color:var(--ink)">Inside its range so far: ${due.length ? Math.round(100 * hit / due.length) : '–'}%</b>`;
+    else document.getElementById('stat').innerHTML =
       `<span style="display:inline-block;width:12px;height:9px;background:rgba(235,104,52,.45);border:1.5px solid #c4471c;vertical-align:middle"></span> `
       + `${PRED.model}: where each agent will be in ${PRED.h} s (80% range)<br>`
       + `<span style="display:inline-block;width:9px;height:9px;border:2.5px solid #26262a;border-radius:50%;vertical-align:middle"></span> where it really was`
@@ -601,7 +735,7 @@ function update() {
   if (SCENE === 'doorway') document.getElementById('stat').innerHTML =
     `${nPeople} people · <span style="color:#c98a10;font-weight:650">◯ ${nWait} waiting or queueing</span> for the door`;
   const scen = D.events.find(e => e.agent_id < 0 && t >= e.t && t < e.t + SHOW_S);
-  banner.textContent = scen ? EVENT_TEXT[scen.name] : ''; banner.style.opacity = scen ? 1 : 0;
+  banner.innerHTML = scen ? eventHTML(scen.name) : ''; banner.style.opacity = scen ? 1 : 0;
   slider.value = t / T_END;
 }
 function seek(s) { t = Math.min(Math.max(s, 0), T_END); update(); }
@@ -615,7 +749,7 @@ const VIEWS = SCENE === 'doorway' ? {
   overview: { pos: P(9, -24, 23), target: P(0.8, -0.5, 0) },
   street:   { pos: P(8.5, -9.5, 6.0), target: P(0.6, 0.6, 0.6) },
 } : {
-  overview: { pos: P(-19, -41, 38), target: P(-1.5, -0.5, 0) },
+  overview: VIDEO ? { pos: P(-13.5, -29, 24), target: P(-1, 0.3, 0) } : { pos: P(-19, -41, 38), target: P(-1.5, -0.5, 0) },
   street:   { pos: P(5, -11, 3.4), target: P(-2.5, 2, 0.6) },
 };
 const followOffset = new THREE.Vector3(-7, 8.5, 9);
@@ -636,7 +770,7 @@ setView(VIEWS[params.get('view')] || params.get('view') === 'follow' ? params.ge
 // Every number shown is real: the sensor dots are the person's true track + 0.1 m noise, the smooth
 // line is the core's Kalman filter over them, the card is the person's actual table row, the three
 // points are TabPFN's answer, and the meter is coverage on the validation episodes.
-const IN = PRED && PRED.intro && QP.has('intro') ? PRED.intro : null;
+const IN = PRED && PRED.intro && (QP.has('intro') || VIDEO) ? PRED.intro : null;
 let introOn = !!IN, introT = QP.has('it') ? +QP.get('it') : 0, introPaused = !!IN && QP.has('pause');
 let predShow = IN ? 'none' : 'all';
 const TL = [0, 3, 11, 20, 28, 37, 45, 50];
@@ -721,8 +855,9 @@ if (IN) {
       if (i < 4) a.set([x, z, -y], 3 * i); e.set([x, z + 0.01, -y], 3 * i); }
     pg.attributes.position.needsUpdate = true; pg.computeBoundingSphere(); eg.attributes.position.needsUpdate = true; eg.computeBoundingSphere(); };
   setPatch(1);
-  const truthRing = mesh(new THREE.TorusGeometry(0.17, 0.05, 8, 24), new THREE.MeshBasicMaterial({ color: '#26262a' }), { x: IN.truth[0], y: IN.truth[1], z: zg(IN.truth[1]) + 0.08 });
-  truthRing.rotation.x = -Math.PI / 2; scene.add(truthRing); truthRing.visible = false;
+  const truthRing = VIDEO ? truthDot() : mesh(new THREE.TorusGeometry(0.17, 0.05, 8, 24), new THREE.MeshBasicMaterial({ color: '#26262a' }), { x: IN.truth[0], y: IN.truth[1], z: zg(IN.truth[1]) + 0.08 });
+  if (VIDEO) truthRing.position.copy(W(IN.truth[0], IN.truth[1], 0.09)); else truthRing.rotation.x = -Math.PI / 2;
+  scene.add(truthRing); truthRing.visible = false;
   const truthTag = tag('where they really were', 'tag', W(IN.truth[0], IN.truth[1], 0.55));
   const patchTag = tag('80% range in 2 s', 'tag', W(c2[0], c2[1], 0.9));
   const tabEl = document.getElementById('tab'), tabCount = document.getElementById('tab-count');
@@ -799,7 +934,7 @@ if (IN) {
 // Numbers come from results/evidence.json (D.evidence) and, for Test 1's close-up, from each model's
 // +2 s box for the intro's pedestrian, sized on validation exactly as in the evidence run (PRED.compare).
 const EVD = D.evidence, FD = PRED && PRED.intro, CMP = PRED && PRED.compare;
-const OUTRO = !!(EVD && FD && CMP && QP.has('outro') && !IN);
+const OUTRO = !!(EVD && FD && CMP && (VIDEO || (QP.has('outro') && !IN)));
 let outroOn = OUTRO, outT = QP.has('ot') ? +QP.get('ot') : 0, outPaused = OUTRO && QP.has('pause');
 const OL = [0, 4, 14, 22, 30, 37, 44, 48];
 let outroUpdate = () => {}, outroSceneT = () => 0;
@@ -808,32 +943,33 @@ if (OUTRO) {
   const f2 = (x, d = 2) => Number(x).toFixed(d), pc = x => `${Math.round(100 * x)}%`;
   const T1 = EVD.t1, T3 = EVD.t3, REAL = EVD.real;
   const best = s => ['lgbm_all', 'lgbm_same'].reduce((a, m) => REAL[s][m]['2'][0] < REAL[s][a]['2'][0] ? m : a, 'lgbm_all');
+  const FS1 = VIDEO ? 13.5 : 11, FS2 = VIDEO ? 14.5 : 13, CW = VIDEO ? 470 : 430;   // video: >= 22 px at 1080p
   const svgBars = (items, max, unit) => {
-    const W_ = 430, rowH = 38, H_ = items.length * rowH + 10, x0 = 150, w = W_ - x0 - 64;
+    const W_ = CW, rowH = VIDEO ? 46 : 38, H_ = items.length * rowH + 10, x0 = 150, w = W_ - x0 - 64;
     return `<svg viewBox="0 0 ${W_} ${H_}">` + items.map((it, i) => { const y = 6 + i * rowH, bw = Math.max(2, w * it.v / max);
-      return `<text x="${x0 - 10}" y="${y + 16}" text-anchor="end" font-size="13" fill="#2b2a28">${it.label}</text>`
-        + (it.sub ? `<text x="${x0 - 10}" y="${y + 30}" text-anchor="end" font-size="11" fill="#6d6a64">${it.sub}</text>` : '')
+      return `<text x="${x0 - 10}" y="${y + 16}" text-anchor="end" font-size="${FS2}" fill="#2b2a28">${it.label}</text>`
+        + (it.sub ? `<text x="${x0 - 10}" y="${y + 30}" text-anchor="end" font-size="${FS1}" fill="#6d6a64">${it.sub}</text>` : '')
         + `<rect x="${x0}" y="${y + 4}" width="${bw}" height="20" rx="4" fill="${it.c}"/>`
-        + `<text x="${x0 + bw + 8}" y="${y + 19}" font-size="13" font-weight="650" fill="#2b2a28">${f2(it.v, it.d ?? 1)} ${unit}</text>`; }).join('') + '</svg>';
+        + `<text x="${x0 + bw + 8}" y="${y + 19}" font-size="${FS2}" font-weight="650" fill="#2b2a28">${f2(it.v, it.d ?? 1)} ${unit}</text>`; }).join('') + '</svg>';
   };
   const svgLines = (series, o) => {
-    const W_ = 430, H_ = 230, L = 46, R = 132, T = 14, B = 34, xs = series.flatMap(s => s.pts.map(p => p[0])), ys = series.flatMap(s => s.pts.flatMap(p => [p[1] - (p[2] || 0), p[1] + (p[2] || 0)]));
+    const W_ = CW, H_ = 230, L = VIDEO ? 54 : 46, R = VIDEO ? 158 : 132, T = 14, B = 34, xs = series.flatMap(s => s.pts.map(p => p[0])), ys = series.flatMap(s => s.pts.flatMap(p => [p[1] - (p[2] || 0), p[1] + (p[2] || 0)]));
     const tx = o.log ? Math.log10 : (v => v), x0 = tx(Math.min(...xs)), x1 = tx(Math.max(...xs));
     const y0 = o.ymin ?? Math.min(...ys) * 0.95, y1 = Math.max(...ys) * 1.03;
     const X = v => L + (tx(v) - x0) / (x1 - x0) * (W_ - L - R), Y = v => T + (1 - (v - y0) / (y1 - y0)) * (H_ - T - B);
     let g = '';
-    for (const yv of o.yticks) g += `<line x1="${L}" x2="${W_ - R}" y1="${Y(yv)}" y2="${Y(yv)}" stroke="#e6e1d8"/><text x="${L - 6}" y="${Y(yv) + 4}" text-anchor="end" font-size="11" fill="#6d6a64">${f2(yv, 1)}</text>`;
-    for (const xv of o.xticks) g += `<text x="${X(xv)}" y="${H_ - B + 16}" text-anchor="middle" font-size="11" fill="#6d6a64">${o.xfmt ? o.xfmt(xv) : xv}</text>`;
-    if (o.vline != null) g += `<line x1="${X(o.vline)}" x2="${X(o.vline)}" y1="${T}" y2="${H_ - B}" stroke="#2b2a28" stroke-dasharray="4 4"/><text x="${X(o.vline) + 5}" y="${T + 11}" font-size="11" fill="#2b2a28">${o.vlabel}</text>`;
-    g += `<text x="${(L + W_ - R) / 2}" y="${H_ - 2}" text-anchor="middle" font-size="11.5" fill="#6d6a64">${o.xlabel}</text>`;
-    g += `<text x="12" y="${T + (H_ - T - B) / 2}" transform="rotate(-90 12 ${T + (H_ - T - B) / 2})" text-anchor="middle" font-size="11.5" fill="#6d6a64">${o.ylabel}</text>`;
+    for (const yv of o.yticks) g += `<line x1="${L}" x2="${W_ - R}" y1="${Y(yv)}" y2="${Y(yv)}" stroke="#e6e1d8"/><text x="${L - 6}" y="${Y(yv) + 4}" text-anchor="end" font-size="${FS1}" fill="#6d6a64">${f2(yv, 1)}</text>`;
+    for (const xv of o.xticks) g += `<text x="${X(xv)}" y="${H_ - B + 16}" text-anchor="middle" font-size="${FS1}" fill="#6d6a64">${o.xfmt ? o.xfmt(xv) : xv}</text>`;
+    if (o.vline != null) g += `<line x1="${X(o.vline)}" x2="${X(o.vline)}" y1="${T}" y2="${H_ - B}" stroke="#2b2a28" stroke-dasharray="4 4"/><text x="${X(o.vline) + 5}" y="${T + 11}" font-size="${FS1}" fill="#2b2a28">${o.vlabel}</text>`;
+    g += `<text x="${(L + W_ - R) / 2}" y="${H_ - 2}" text-anchor="middle" font-size="${FS1}" fill="#6d6a64">${o.xlabel}</text>`;
+    g += `<text x="12" y="${T + (H_ - T - B) / 2}" transform="rotate(-90 12 ${T + (H_ - T - B) / 2})" text-anchor="middle" font-size="${FS1}" fill="#6d6a64">${o.ylabel}</text>`;
     const used = [];
     for (const s of series) {
       for (const p of s.pts) if (p[2]) g += `<line x1="${X(p[0])}" x2="${X(p[0])}" y1="${Y(p[1] - p[2])}" y2="${Y(p[1] + p[2])}" stroke="${s.c}" stroke-width="1.5"/>`;
       g += `<polyline fill="none" stroke="${s.c}" stroke-width="2.4" points="${s.pts.map(p => `${X(p[0])},${Y(p[1])}`).join(' ')}"/>`;
       g += s.pts.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3.2" fill="${s.c}"/>`).join('');
-      const last = s.pts.at(-1); let ly = Y(last[1]) + 4; while (used.some(u => Math.abs(u - ly) < 14)) ly += 14; used.push(ly);
-      g += `<text x="${X(last[0]) + 8}" y="${ly}" font-size="11.5" font-weight="650" fill="${s.c}">${s.name}</text>`;
+      const last = s.pts.at(-1); let ly = Y(last[1]) + 4; while (used.some(u => Math.abs(u - ly) < FS1 + 3)) ly += FS1 + 3; used.push(ly);
+      g += `<text x="${X(last[0]) + 8}" y="${ly}" font-size="${FS1}" font-weight="650" fill="${s.c}">${s.name}</text>`;
     }
     return `<svg viewBox="0 0 ${W_} ${H_}">${g}</svg>`;
   };
@@ -845,22 +981,23 @@ if (OUTRO) {
     `<h3>Average patch at +2 s, held-out street</h3><div class="sub">each sized to 80% on validation · held-out coverage ${pc(Math.min(...covs))}–${pc(Math.max(...covs))} for all four</div>`
       + svgBars([{ label: 'Constant velocity', sub: '+ fixed box', v: T1.cv_box.area_m2, c: C_CV }, { label: 'LightGBM', sub: 'all rows, tuned', v: T1.lgbm_all.area_m2, c: C_LGB },
                  { label: 'LightGBM', sub: '5,000 rows, tuned', v: T1.lgbm_same.area_m2, c: C_LG2 }, { label: 'TabPFN', sub: '5,000 rows', v: T1.tabpfn.area_m2, c: C_TAB }], T1.cv_box.area_m2, 'm²')
-      + verdict(false, 'Smallest patches, but formally no advantage', `TabPFN's patches are the smallest and grow most in crowds (×${f2(T1.tabpfn.crowded_over_open)} vs ×${f2(T1.lgbm_all.crowded_over_open)}). But every model landed at 77–78%, under the 78% floor we fixed, so by our rule this test does not count.`),
+      + verdict(false, 'Tightest ranges, but no clear win', `TabPFN draws the smallest ranges: ${f2(T1.tabpfn.area_m2, 1)} m² on average, against ${f2(T1.lgbm_all.area_m2, 1)} m² for the best LightGBM and ${f2(T1.cv_box.area_m2, 1)} m² for the simple box. All four held the truth ${pc(Math.min(...covs))}–${pc(Math.max(...covs))} of the time, just under the 80% target, so we do not count it as a win.`),
     `<h3>Error at +2 s around the rush-hour switch</h3><div class="sub">${EVD.t2_episodes} held-out episodes · refit every 1 s on the same rows</div>`
       + svgLines([{ name: 'TabPFN', c: C_TAB, pts: t2b.map(b => [b + 0.5, EVD.t2.tabpfn_refit[b]]) }, { name: 'LightGBM retrained', c: C_LGB, pts: t2b.map(b => [b + 0.5, EVD.t2.lgbm_retrained[b]]) },
                   { name: 'LightGBM frozen', c: C_LG2, pts: t2b.map(b => [b + 0.5, EVD.t2.lgbm_frozen[b]]) }],
                  { xticks: [-5, 0, 5, 10, 15], xlabel: 'seconds since rush hour began', ylabel: 'error (m)', yticks: [0.6, 0.8, 1.0, 1.2], ymin: 0.55, vline: 0, vlabel: 'rush hour' })
-      + verdict(false, 'No advantage', 'The street’s rush hour is mild: all three recover within about 1 s, so this test cannot tell them apart. TabPFN is lowest throughout, but not faster to adapt.'),
+      + verdict(false, 'No faster adaptation here', 'On this street the switch is mild: all models recover within 1 s. TabPFN stays lowest throughout.'),
     `<h3>Error at +2 s against amount of data</h3><div class="sub">held-out street · mean ± sd over 3 draws · LightGBM tuned for each size</div>`
       + svgLines([{ name: 'LightGBM', c: C_LGB, pts: t3n.map(n => [n, ...T3[n].lgbm]) }, { name: 'TabPFN', c: C_TAB, pts: t3n.map(n => [n, ...T3[n].tabpfn]) }],
                  { log: true, xticks: t3n, xfmt: v => v >= 1000 ? `${v / 1000}k` : v, xlabel: 'example rows', ylabel: 'error (m)', yticks: [0.8, 1.0, 1.2] })
-      + verdict(true, 'TabPFN justified', `Lower error at every size: ${f2(T3[100].tabpfn[0])} vs ${f2(T3[100].lgbm[0])} m at 100 rows, ${f2(T3[5000].tabpfn[0])} vs ${f2(T3[5000].lgbm[0])} m at 5,000.`),
-    `<h3>Error at +2 s on real people</h3><div class="sub">ETH and Hotel (Zurich) · held-out minutes · best LightGBM shown</div>`
-      + svgBars(['eth', 'hotel'].filter(s => REAL[s]).flatMap(s => [{ label: s === 'eth' ? 'ETH' : 'Hotel', sub: 'LightGBM', v: REAL[s][best(s)]['2'][0], c: C_LGB, d: 2 },
-                                                                    { label: '', sub: 'TabPFN', v: REAL[s].tabpfn['2'][0], c: C_TAB, d: 2 }]), 0.7, 'm')
-      + verdict(true, 'More accurate on both', `Both gaps hold in a 95% bootstrap. On Hotel TabPFN's patches are also smaller (${f2(REAL.hotel.tabpfn['2'][2], 1)} vs ${f2(REAL.hotel[best('hotel')]['2'][2], 1)} m²); on ETH every model's patch covered too little (${pc(REAL.eth.tabpfn['2'][1])}–${pc(REAL.eth.lgbm_all['2'][1])}).`),
-    `<h3>Honest limits</h3><ul><li>It is a simulation; real streets are messier.</li><li>In the episode you saw, coverage slips to about 76% after rush hour.</li>`
-      + `<li>TabPFN did not adapt faster here, and its ranges sit at 77%, not 80%.</li><li>The robot follows a scripted route; planning around the patches is the next step.</li></ul>`
+      + verdict(true, 'A clear win with little data', `With 100 example rows TabPFN is off by ${f2(T3[100].tabpfn[0])} m, LightGBM by ${f2(T3[100].lgbm[0])} m. With 5,000 rows: ${f2(T3[5000].tabpfn[0])} m against ${f2(T3[5000].lgbm[0])} m.`),
+    // the team's result on the final feature version (PLAN.md; results/context_size.csv), not recomputed here
+    `<h3>Error at +2 s, crossing crowd</h3><div class="sub">final feature version, after both leaks were fixed · results/context_size.csv</div>`
+      + svgBars([{ label: 'LightGBM', sub: '20,000 rows', v: 0.634, c: C_LGB, d: 3 }, { label: 'TabPFN', sub: '2,000 rows', v: 0.646, c: C_TAB, d: 3 },
+                 { label: 'LightGBM', sub: 'all 73,000 rows', v: 0.606, c: C_LG2, d: 3 }], 0.7, 'm')
+      + verdict(true, 'The same accuracy from 10× fewer rows', 'TabPFN on 2,000 rows matches LightGBM on 20,000. With all 73,000 rows LightGBM is best: TabPFN’s edge is small data, which is what a robot has in a new place.'),
+    `<h3>Honest limits</h3><ul><li>It is a simulation; real streets are messier.</li><li>Honest ranges for real people in a new place: being re-checked after we fixed a leak.</li>`
+      + `<li>TabPFN did not adapt faster here, and its ranges sit at 77%, not 80%.</li><li>Planning around the ranges: no clear gain yet; the final pre-registered test is running.</li></ul>`
       + `<div class="verdict no"><b>Rules fixed before the run</b>Same rows, same features, held-out episodes, the baseline tuned too.</div>`,
     null];
   const OCAPS = [
@@ -868,9 +1005,9 @@ if (OUTRO) {
     ['Test 1', 'Ranges you can trust', 'Each model’s patch is sized to 80% on validation. At the same coverage, a smaller patch leaves the robot more room.'],
     ['Test 2', 'Adapting to a switch', 'At rush hour TabPFN is re-fed the latest rows every second, and LightGBM is retrained every second on exactly the same rows.'],
     ['Test 3', 'Learning from little data', 'How accurate is each model with 50 to 5,000 example rows?'],
-    ['Real pedestrians', 'Recorded people, not simulation', 'ETH and Hotel, two scenes from Zurich, on minutes the models never saw.'],
-    ['', 'What this does not show', 'We state where TabPFN does not win.'],
-    ['', 'Foresight', 'Calibrated ranges for every agent around a robot, from a few thousand example rows.'],
+    ['Confirmed', 'On the final feature version', 'After we found and fixed two leaks, every result was rerun. This one holds.'],
+    ['', 'What this does not show', 'We state where TabPFN does not win, and what is still being tested.'],
+    ['', 'Foresight', 'A new use of TabPFN · it works where data is scarce · every number can be checked. Darshak Panseriya · Nooshin Pourkamali'],
   ];
   // Test 1 close-up: the three models' boxes under the intro's pedestrian
   const zg = y => groundZ('pedestrian', y), Wv = (x, y, z = 0) => new THREE.Vector3(x, zg(y) + z, -y);
@@ -885,8 +1022,9 @@ if (OUTRO) {
   const P3 = [['cv_box', '#6f6a62', 0.2, 0.04, 'Constant velocity + box'], ['lgbm', C_LGB, 0.22, 0.05, 'LightGBM'], ['tabpfn', C_TAB, 0.34, 0.06, 'TabPFN']]
     .map(([k, c, op, lift, name]) => { const b = CMP[k], [x, y] = [...b.corners].sort(side[k])[0];
       return { parts: patch(b, c, op, lift), tag: otag(`${name} · this person: ${f2(b.area, 1)} m² · ${b.inside ? 'truth inside' : 'truth outside'}`, Wv(x, y, 0.45)) }; });
-  const ring = mesh(new THREE.TorusGeometry(0.17, 0.05, 8, 24), new THREE.MeshBasicMaterial({ color: '#26262a' }), { x: FD.truth[0], y: FD.truth[1], z: zg(FD.truth[1]) + 0.09 });
-  ring.rotation.x = -Math.PI / 2; scene.add(ring); ring.visible = false;
+  const ring = VIDEO ? truthDot() : mesh(new THREE.TorusGeometry(0.17, 0.05, 8, 24), new THREE.MeshBasicMaterial({ color: '#26262a' }), { x: FD.truth[0], y: FD.truth[1], z: zg(FD.truth[1]) + 0.09 });
+  if (VIDEO) ring.position.copy(Wv(FD.truth[0], FD.truth[1], 0.1)); else ring.rotation.x = -Math.PI / 2;
+  scene.add(ring); ring.visible = false;
   const ringTag = otag('where they really were', Wv(FD.truth[0], FD.truth[1], 0.6));
   // cameras: an orbiting overview (panel on the right) and the Test 1 close-up
   const ov = VIEWS.overview, base = ov.pos.clone().sub(ov.target), shift = new THREE.Vector3(5.5, 0, 0);
@@ -947,6 +1085,132 @@ window.__outroFrame = ot => {
   update(); outroUpdate(ot); controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
 };
 
+// ---------- video mode: one timeline, intro -> scenario -> outro (presentation only) ----------
+// Scenario: an establishing shot, then follow the robot; a close-up held ~3 s at each scripted event;
+// the stretches between run at 2x (badge on screen). The intro and outro play slightly faster than live.
+const SI = 1.1, SO = 1.06;
+const EVT = n => D.events.find(e => e.name === n);
+const SEG = [   // [scene t0, t1, speed, shot, event]
+  [0, 4, 1, 'establish'], [4, 10.5, 1, 'follow'],
+  [10.5, 15, 1, 'event', 'sudden_stop'], [15, 20.5, 2, 'follow'],
+  [20.5, 25.5, 1, 'event', 'car_brake_crosswalk'], [25.5, 30.5, 2, 'follow'],
+  [30.5, 35.5, 1, 'event', 'jaywalk'], [35.5, 39, 2, 'follow'],
+  [39, 44, 1, 'event', 'rush_hour'], [44, Math.min(56, T_END), 2, 'overview']];
+const LP = VIDEO && IN ? 15 : 0;                       // the challenge, before the solution
+const LI = VIDEO && IN ? TL.at(-1) / SI : 0, LS = SEG.reduce((a, g) => a + (g[1] - g[0]) / g[2], 0), LO = VIDEO && OUTRO ? OL.at(-1) / SO : 0;
+const VLEN = LP + LI + LS + LO;
+// same tagline and framing as docs/PRESENTATION.md and the pitch deck
+const PCAPS = [
+  ['The challenge', 'Where will everyone be in two seconds, and how sure are we?', 'A delivery robot shares the street with people, cars and bikes. To move safely, it has to plan around all of them.'],
+  ['The challenge', 'The usual guess is not good enough', 'Assume everyone keeps walking straight, and after two seconds the guess is off by almost a metre in a crowd.'],
+  ['The challenge', 'A guess alone is not enough', 'Too narrow a margin and the robot collides; too wide and it freezes. It needs a range it can trust.']];
+const PCARD = [null,
+  '<p class="big">0.93 m</p><p class="lbl">how far “keep walking straight” is off after 2 s in a crowd; 0.25–0.37 m on real Zurich pedestrians</p>',
+  '<p class="big" style="color:#C94D26;">A range for every agent</p><p class="lbl">with a promise of how often the truth lands inside. That is Foresight.</p>'];
+let pIdx = -1;
+function problemUpdate(T) {
+  const s = T < 5 ? 0 : T < 10 ? 1 : 2;
+  if (s !== pIdx) { pIdx = s; document.getElementById('cap-step').textContent = PCAPS[s][0]; document.getElementById('cap-title').textContent = PCAPS[s][1];
+    document.getElementById('cap-text').textContent = PCAPS[s][2]; const pc = document.getElementById('pcard'); pc.innerHTML = PCARD[s] || ''; pc.style.display = PCARD[s] ? 'block' : 'none'; }
+  const ov = VIEWS.overview, base = ov.pos.clone().sub(ov.target), a = 0.18 - 0.016 * T, c = Math.cos(a), sn = Math.sin(a);
+  controls.target.copy(ov.target); camera.position.copy(ov.target).add(new THREE.Vector3(base.x * c - base.z * sn, base.y, base.x * sn + base.z * c));
+  predShow = T > 11 ? 'all' : 'none';                    // the ranges appear as the solution begins
+}
+let videoT = QP.has('T') ? +QP.get('T') : 0, videoPaused = VIDEO && QP.has('pause'), lastVT = null, camSm = null;
+const fadeOp = new Map(), signs = [];
+if (VIDEO) {
+  for (const b of BLABELS) { b.m.visible = false; const el = document.createElement('div'); el.className = 'pill sign'; el.textContent = b.name;
+    const o = new CSS2DObject(el); o.position.copy(P(b.x, b.y, b.z)); scene.add(o); signs.push(o); }
+}
+function sceneAt(ts) {                                   // video seconds into the scenario -> scene time and shot
+  let acc = 0;
+  for (const g of SEG) { const d = (g[1] - g[0]) / g[2];
+    if (ts < acc + d || g === SEG.at(-1)) { const e = g[4] ? EVT(g[4]) : null;
+      return { t: Math.min(g[1], g[0] + (ts - acc) * g[2]), speed: g[2], shot: g[3], local: ts - acc, ev: e }; }
+    acc += d; }
+}
+function sceneCam(sp, T, dt) {
+  let tg, pos;
+  if (sp.shot === 'establish') {                         // a slow push-in over the whole street
+    const u = ease(sp.local / 4);
+    tg = new THREE.Vector3().lerpVectors(P(-1, 0.5, 0), P(-6, 2.5, 0), u);
+    pos = new THREE.Vector3().lerpVectors(P(-20, -40, 33), P(-17, -24, 20), u);
+  } else if (sp.shot === 'follow') {
+    tg = robotV.g.position.clone().add(new THREE.Vector3(0, 1.0, 0)); pos = tg.clone().add(new THREE.Vector3(-5.5, 6.4, 8.2));
+  } else if (sp.shot === 'event' && sp.ev) {
+    const v = sp.ev.agent_id >= 0 ? byId.get(sp.ev.agent_id) : null;
+    if (v && v.g.visible && v.data.type === 'car') {      // a car: frame it together with the zebra it brakes for
+      tg = v.g.position.clone().lerp(P(0, -v.g.position.z, 0), 0.5).add(new THREE.Vector3(0, 0.5, 0)); pos = tg.clone().add(new THREE.Vector3(-3.5, 10.5, 14));
+    } else if (v && v.g.visible) { tg = v.g.position.clone().add(new THREE.Vector3(0, 1.0, 0)); pos = tg.clone().add(new THREE.Vector3(-5, 5.6, 8.2)); }
+    else { tg = P(STATION_DOOR[0], STATION_DOOR[1] + 2.5, 0.5); pos = tg.clone().add(new THREE.Vector3(-7, 7, 9.5)); }
+  } else { const o = VIEWS.overview; tg = o.target.clone(); pos = o.pos.clone(); }
+  if (!camSm || dt <= 0 || dt > 0.25) camSm = { pos: pos.clone(), tg: tg.clone() };
+  else { const a = 1 - Math.exp(-dt / 0.7); camSm.pos.lerp(pos, a); camSm.tg.lerp(tg, a); }   // smooth, never a jump
+  camera.position.copy(camSm.pos); controls.target.copy(camSm.tg);
+}
+const STATION_DOOR = (M.buildings || []).find(b => b.name === 'Station')?.door || [12.5, -7.5];
+function safeArea() {                                    // labels inside 5% margins and not under a card, else hidden
+  const W = innerWidth, H = innerHeight, cards = ['info', 'caption', 'panel', 'rows', 'tab', 'meter', 'speedbadge', 'pcard', 'banner']
+    .map(id => document.getElementById(id)).filter(el => el && el.style.display !== 'none' && getComputedStyle(el).display !== 'none')
+    .map(el => el.getBoundingClientRect());
+  // never overlapping: events first, then the robot, other tags, building signs last
+  const rank = el => el.classList.contains('event') ? 0 : el.classList.contains('robot') ? 1 : el.classList.contains('sign') ? 3 : 2;
+  const els = [...labels.domElement.children].filter(el => el.style.display !== 'none' && (el.style.opacity === '' || +el.style.opacity > 0.05))
+    .sort((a, b) => rank(a) - rank(b));
+  for (const el of labels.domElement.children) if (!els.includes(el)) el.style.visibility = 'hidden';
+  const placed = [], hit = (r, c, m = 6) => r.left < c.right + m && r.right > c.left - m && r.top < c.bottom + m && r.bottom > c.top - m;
+  for (const el of els) {
+    const r = el.getBoundingClientRect(); if (!r.width) { el.style.visibility = 'hidden'; continue; }
+    const inside = r.left >= 0.05 * W && r.right <= 0.95 * W && r.top >= 0.05 * H && r.bottom <= 0.95 * H;
+    const ok = inside && !cards.some(c => hit(r, c, 0)) && !placed.some(c => hit(r, c));
+    el.style.visibility = ok ? 'visible' : 'hidden'; if (ok) placed.push(r);
+  }
+}
+function videoPost(part, T, dt, sp) {
+  const show = (id, on) => { document.getElementById(id).style.display = on ? 'block' : 'none'; };
+  show('caption', part !== 'scene'); show('info', part === 'scene');
+  if (part !== 'scene') { banner.style.opacity = 0; }                    // scene banners only in the scenario
+  document.getElementById('speedbadge').style.display = part === 'scene' && sp && sp.speed > 1 ? 'block' : 'none';
+  let dim = 0;                                           // panels fade in and out; the scene dims and blurs behind them
+  const own = { panel: 'outro', rows: 'intro', tab: 'intro', meter: 'intro', pcard: 'problem' };   // each panel only in its own part
+  for (const id of ['panel', 'rows', 'tab', 'meter', 'pcard']) {
+    const el = document.getElementById(id), want = part === own[id] && el.style.display !== 'none' ? 1 : 0;
+    let o = fadeOp.get(id) ?? 0; o = dt > 0 && dt < 0.25 ? o + (want - o) * (1 - Math.exp(-dt / 0.2)) : want; fadeOp.set(id, o);
+    el.style.display = o > 0.01 ? 'block' : 'none'; el.style.opacity = o; if (id !== 'pcard') dim = Math.max(dim, o);   // a small card needs no blur
+  }
+  renderer.domElement.style.filter = dim > 0.01 ? `brightness(${1 - 0.25 * dim}) blur(${(3 * dim).toFixed(2)}px)` : '';
+  labels.domElement.style.opacity = 1 - 0.4 * dim;
+  const edges = [LP, LP + LI, LP + LI + LS].filter(b => b > 0 && b < VLEN);    // a soft fade between the parts
+  document.getElementById('fade').style.opacity = Math.max(0, ...edges.map(b => 1 - Math.abs(T - b) / 0.45));
+}
+function videoFrame(T) {
+  const dt = lastVT == null ? 0 : T - lastVT;
+  let part, sp = null;
+  const U = T - LP;                                      // time after the challenge
+  if (T < LP) {
+    part = 'problem'; introOn = true; outroOn = false; t = 16 + T * 0.9; videoFocusId = null;
+    problemUpdate(T); update();
+  } else if (U < LI) {
+    part = 'intro'; introOn = true; outroOn = false; introPaused = true; introT = U * SI; t = introSceneT(introT);
+    videoFocusId = null; update(); introUpdate(introT);
+  } else if (U < LI + LS) {
+    part = 'scene'; if (introOn) introEnd(); introOn = false; outroOn = false; playing = false;
+    sp = sceneAt(U - LI); t = sp.t; videoFocusId = sp.ev && sp.ev.agent_id >= 0 ? sp.ev.agent_id : null;
+    update(); sceneCam(sp, T, dt);
+  } else {
+    part = 'outro'; if (introOn) introEnd(); introOn = false; outroOn = true; outPaused = true;
+    outT = Math.min((U - LI - LS) * SO, OL.at(-1) - 1e-3); t = outroSceneT(outT); videoFocusId = null; update(); outroUpdate(outT);
+  }
+  drawRoute(t / D.dt);
+  videoPost(part, T, dt, sp);
+  controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
+  safeArea();
+  lastVT = T;
+}
+window.__videoLength = VLEN;
+window.__videoFrame = T => { videoT = T; videoFrame(T); };
+window.__videoWarm = (T, fps) => { lastVT = null; camSm = null; fadeOp.clear(); for (let s = Math.max(0, T - 5); s < T; s += 1 / fps) videoFrame(s); videoT = T; videoFrame(T); };
+
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight); labels.setSize(innerWidth, innerHeight);
@@ -955,6 +1219,11 @@ let last = performance.now();
 const lastRobot = new THREE.Vector3();
 renderer.setAnimationLoop(now => {
   const dtReal = Math.min((now - last) / 1000, 0.1); last = now;
+  if (VIDEO) {                                           // the whole video plays from one clock
+    if (!videoPaused) videoT = Math.min(videoT + dtReal * speed, VLEN - 0.001);
+    if (videoT !== lastVT) videoFrame(videoT);           // paused on a frame (recording): leave it as drawn
+    return;
+  }
   if (outroOn) {
     if (!outPaused) outT = Math.min(outT + dtReal * speed, OL.at(-1) - 0.001);
     t = outroSceneT(outT);

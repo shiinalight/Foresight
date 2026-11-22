@@ -4,6 +4,8 @@
     python tools/record_clip.py --outro                       # results/clip_outro.mp4 (the evidence)
     python tools/record_clip.py --scene --view auto           # results/clip_scene.mp4 (the street with predictions)
     python tools/record_clip.py --stitch                      # results/demo_full.mp4 = intro + scene + outro
+    python tools/record_clip.py --video --stills 20 60 70 120 # video mode: still frames first, to check
+    python tools/record_clip.py --video --fps 30              # results/demo_video.mp4, the final video (one timeline)
 
 Uses Playwright driving the installed Google Chrome. Every frame is set explicitly through the page's
 __introFrame / __sceneFrame hooks, then screenshotted, so the clip is smooth however slow the render.
@@ -29,6 +31,8 @@ def record(page_url, out, frame_js, seconds, fps, size):
         page.goto(page_url)
         page.wait_for_function("typeof window.__introFrame === 'function'", timeout=60000)
         page.wait_for_timeout(1500)                                  # textures and fonts
+        if seconds is None:
+            seconds = page.evaluate("window.__videoLength")
         n = int(round(seconds * fps))
         t0 = time.time()
         for i in range(n):
@@ -43,6 +47,22 @@ def record(page_url, out, frame_js, seconds, fps, size):
     print(f"wrote {out} ({n} frames, {seconds:.0f} s, {w}x{h})")
 
 
+def stills(page_url, times, fps, size):
+    """One frame per time, with the 5 s before it simulated so camera easing matches the video."""
+    w, h = size
+    with sync_playwright() as p:
+        browser = p.chromium.launch(channel="chrome", headless=True, args=["--hide-scrollbars", "--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
+        page = browser.new_page(viewport={"width": w, "height": h})
+        page.goto(page_url)
+        page.wait_for_function("typeof window.__videoWarm === 'function'", timeout=60000)
+        page.wait_for_timeout(1500)
+        print(f"video length {page.evaluate('window.__videoLength'):.1f} s")
+        for T in times:
+            page.evaluate(f"window.__videoWarm({T}, {fps})")
+            out = Path(f"results/video_still_{T:g}.png"); page.screenshot(path=str(out)); print(f"wrote {out}")
+        browser.close()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--page", default="results/street3d_pred_ep0.html")
@@ -51,11 +71,17 @@ def main():
     ap.add_argument("--scene", action="store_true")
     ap.add_argument("--view", default="auto", help="scene camera: auto (scripted), overview, follow, street")
     ap.add_argument("--stitch", action="store_true", help="join clip_intro + clip_scene + clip_outro")
+    ap.add_argument("--video", action="store_true", help="video mode: intro + scenario + outro in one timeline")
+    ap.add_argument("--stills", type=float, nargs="*", help="with --video: only these still frames (seconds)")
     ap.add_argument("--seconds", type=float, default=None)
     ap.add_argument("--fps", type=int, default=25)
     ap.add_argument("--size", type=int, nargs=2, default=[1920, 1080])
     a = ap.parse_args()
     url = Path(a.page).resolve().as_uri()
+    if a.video and a.stills:
+        stills(url + "?video&pause", a.stills, a.fps, a.size)
+    elif a.video:
+        record(url + "?video&pause", Path("results/demo_video.mp4"), "window.__videoFrame", a.seconds, a.fps, a.size)
     if a.intro:
         record(url + "?intro&pause", Path("results/clip_intro.mp4"), "window.__introFrame", a.seconds or 50.0, a.fps, a.size)
     if a.outro:
