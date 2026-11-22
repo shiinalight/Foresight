@@ -132,11 +132,12 @@ def build():
     image(s, "fig_f4_context_size.png")
 
     s = slide(prs, "TabPFN at two chained layers", kicker="Result · intent",
-              notes="A TabPFN classifier predicts the manoeuvre (straight, stop, turn left or right); per-manoeuvre TabPFN "
-                    "range models give the range, mixed by the class probabilities. Real Hotel → ETH: on turning people "
-                    "the interval score improves by −0.263 [−0.481, −0.075] (73 rows, 37 people), coverage on turns "
-                    "+16.9 points, overall level. In the simulator intent is random by construction and the chain is "
-                    "not adopted (D-34). Offline only.")
+              notes="A TabPFN classifier gives manoeuvre probabilities (straight, stop, turn left or right); per-manoeuvre "
+                    "TabPFN range models give ranges, mixed by those probabilities. Real Hotel → ETH: on people who turn, "
+                    "the interval score improves by −0.263 [−0.481, −0.075] (73 rows, 37 people) and coverage rises from "
+                    "45.7% to 62.6%; overall level. It does NOT forecast turns: turn recall is 0. The gain is calibrated "
+                    "widening from the mixture. Say 'better-calibrated ranges for people who turn'. In the simulator "
+                    "intent is random by construction and the chain is not adopted (D-34). Offline only.")
     image(s, "fig_intent_layer.png")
 
     s = slide(prs, "Adapts in the loop when behaviour changes", kicker="Result · claim B",
@@ -174,8 +175,14 @@ def build():
 
     s = slide(prs, "On a robot", kicker="Deployment",
               notes="A small cached context in the loop, constant velocity as the safety floor, the cloud never in the "
-                    "loop. TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are non-commercial: this is "
-                    "a research prototype; a product needs the commercial licence or the Apache v2 weights.")
+                    "loop. Measured on a rented NVIDIA L4 GPU (docs/DEPLOYMENT.md): the TabPFN part of a replan takes "
+                    "71 ms (split design, 48 query rows; 452 ms on the laptop CPU); the scene model is rebuilt in 318 ms "
+                    "every 2 s, off the control path; the frozen fit is 490 ms once; the real loop is 225 ms per plan on "
+                    "3 T5 seeds; GPU and CPU quantiles agree within 0.021 m. So it fits a 10 Hz loop on an L4-class GPU; "
+                    "no Jetson was measured. TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are "
+                    "non-commercial: research prototype; a product needs the commercial licence or the Apache v2 weights.")
+    _text(s, "TabPFN step 71 ms per replan on an NVIDIA L4 · fits a 10 Hz loop", Inches(0.6), Inches(6.8), Inches(12.1),
+          Inches(0.5), 14, color=MUTED)
     image(s, "diagrams/12_deployment.png")
 
     OUT.parent.mkdir(exist_ok=True); prs.save(OUT)

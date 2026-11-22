@@ -201,8 +201,9 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
 | Real (Hotel → ETH) | 0.49 | **−0.263 [−0.481, −0.075]** (73 rows, 37 people) | −0.022 [−0.057, +0.009] | +5.0 pts (turns +16.9) | +0.007 m | **adopted** |
 
 - **Classifier quality:** TabPFN's log loss beats LightGBM's in both settings: 0.81 against 1.53 simulated, 0.24 against 0.71 real. Balanced accuracy is level.
+- **Caveat: the chain does not forecast turns.** On real data, turn recall is 0 for both classifiers. Balanced accuracy 0.49 comes from straight (0.99) and stop (0.97). The gain on turn rows is calibrated widening from the mixture: the classifier puts some probability on turning, which widens the box where people do turn (turn-row coverage 45.7% → 62.6%). Say "better-calibrated ranges for people who turn", never "it predicts turns".
 - **What this says:**
-  - On real pedestrians, intent is partly predictable. Feeding it into per-manoeuvre range models gives better-calibrated boxes on turns, the rows where the single model's box holds the truth only 46% of the time; the chain raises that to 63%. Overall it is level or slightly better.
+  - On real pedestrians, the class probabilities are informative about straight and stop, not turns (see the caveat). Feeding them into per-manoeuvre range models gives better-calibrated boxes on turns, the rows where the single model's box holds the truth only 46% of the time; the chain raises that to 63%. Overall it is level or slightly better.
   - In the simulator, intent is random by construction (balanced accuracy 0.30), and the chain makes the overall score worse.
 - **Limits:** a small turn sample (73 rows, 37 people), offline only, one direction, not in the closed loop (D-34).
 
@@ -536,12 +537,15 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 **Primary test (claim C, already a stress test after the oracle gate): tabpfn_split beats no baseline.**
 - All four fail Holm–Bonferroni (p = 1.0).
 - The split planner is more cautious and slower at comparable safety. At cv m0.4's safety it is 4.3 s slower on the min_gap axis and 3.0 s slower on the collision axis.
-- Against vo w0.5, w1 and w2, and cv m0.2, it is dominated (slower and no safer).
+- **Against cv m0.2 and vo w0.5, w1 and w2, it is safer but slower.** It has a larger closest gap (0.158 m against −0.038 to 0.089 m) and fewer moving collisions (15% against 20–40%), but it is 3.9–6.2 s slower. The primary rule compares time at matched safety, so safer and slower does not count as beating. ("dominance" in `results/t5_primary.csv` names the comparison method, not a finding.)
+  - Against the exploratory matched-time margins (0.158 m and 0.244), its safety edge stays below both against cv m0.2 (+0.069 m, −10 points), vo w1 (+0.094 m, −5 points) and vo w2 (+0.105 m, −15 points). It exceeds both only against vo w0.5 (+0.196 m, −25 points), which is 6.2 s faster.
+  - The exploratory matched-time test of the primary was not run: by its pre-set rule it applies only to baselines the oracle beats, and the oracle beat none.
 - Claim C is not supported in this crowd.
 
-**Exploratory (a), safety at matched time:** the open-loop oracle beats no baseline on every point and both axes, so the primary was not tested there (rule written before the result).
+**Exploratory (a), safety at matched time:** by the per-baseline rule (a baseline is beaten only when every one of its dial points is beaten on both axes), the open-loop oracle beats no baseline, so the primary was not tested there (rule written before the result).
+- Per point, it does beat cv m0.2, reactive m0.2 and vo w2 on both axes, with collision-rate gains of 0.25–0.50 (`results/t5_oracle_matchedtime.csv`). Each of those baselines has other dial points it does not beat.
 - Per point, perfect prediction buys clear clearance (min_gap) at matched time against cv m0.2/m0.4, every reactive dial, vo w1/w2 and stop_go.
-- Collision-rate gains mostly stay below the 0.244 margin at 20 seeds.
+- Collision-rate gains exceed the 0.244 margin at 3 of 11 comparable baseline points (cv m0.2, reactive m0.2, vo w2) and stay below it at the other 8, at 20 seeds.
 - vo w0.5 is faster than every oracle point, so not comparable.
 
 **Exploratory (b), in-loop claim B** (q 0.15; +2 s against true positions; split minus other, 95% paired-seed intervals):
