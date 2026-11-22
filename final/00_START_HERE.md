@@ -36,17 +36,22 @@ Pages 01 to 06 are copies. Their sources are in `docs/`; after editing a source,
 
 | File | Shows | Used in |
 |---|---|---|
-| `media/demo_full.mp4` on branch `nooshin/dev` | 3D explainer (five steps) and the street scene | Video 0:11–1:39, deck slides 4–5 |
-| `media/demo/calibration_seed3013.gif` | The robot loop: people inside (green) or outside (red) their box, two models | Proof 1 |
-| `media/fig_t5.png`, right panel | Coverage before and after the crowd changes | Proof 1 |
-| `media/fig_t5.png`, left panel | Time against closest gap for every planner | "Where it stops" only |
+| `media/demo_full.mp4` on branch `nooshin/dev` | 3D explainer (five steps) and the street scene | Video 0:11–1:39 |
+| `media/deck/street_clip.mp4` | The street part of the 3D video, 33 s, silent | Deck slide 5 |
+| `media/deck/3d_*.jpg` | Frames of the 2:46 3D video (problem card, the four steps, the sudden stop) | Deck slides 2–5 |
+| `media/demo/calibration_seed3013.gif` | The robot loop: people inside (green) or outside (red) their box, two models | Proof 1 (video and deck slide 6) |
+| `media/fig_t5.png`, right panel | Coverage before and after the crowd changes | Proof 1 in the video; the deck draws its own bars |
+| `media/fig_t5.png`, left panel (`media/deck/fig_t5_left.png`) | Time against closest gap for every planner | Deck backup B7 only |
 | `media/demo/highway.gif` | The same road twice: frozen bank against bank plus scene rows; boxes turn green or red after 2 s | Proof 2 |
 | `media/fig_highway.png` | One moment of the same test, as a still | Proof 2, alternative |
 | `media/demo/scenes5.gif` | The five real scenes side by side, people and TabPFN's boxes | Proof 3 |
-| `media/fig_loso5.png` | Interval score per scene, four models | Proof 3 |
-| `media/demo/seed3013.gif` | Four planners in the same crowd | Optional, deck slide 6 |
-| `media/demo/policy_seed3403.gif` | The TabPFN policy driving | Optional, deck slide 9b |
-| `deck/Foresight_finalist.pptx` | Skeleton deck to finish by hand | Finalist talk |
+| `media/fig_loso5.png` | Interval score per scene, four models | Proof 3 in the video; deck backup B10 |
+| `media/demo/seed3013.gif` | Four planners in the same crowd | Not in the deck (it shows the planner comparison) |
+| `media/demo/policy_seed3403.gif` | The TabPFN policy driving | Deck backup B11 |
+| `deck/Foresight_finalist.pptx` | The finished finalist deck: 10 talk slides, a closing slide, 11 backups; clips play in the slide show; spoken text in the notes | Finalist talk |
+| `deck/Foresight_finalist_static.pptx`, `deck/Foresight_finalist.pdf` | The same deck with each clip replaced by its last frame | Upload, or a machine that cannot play the clips |
+
+The deck is built by `python tools/build_outline_deck.py` (add `--static` for the second file); the PDF is exported from the static file in PowerPoint.
 
 The two new clips each have a `_stats.json` next to them that says what is drawn and how the episode or window was picked (by a rule, not by eye). Rebuild them with `python tools/render_highway.py` and `python tools/render_scenes5.py`.
 

@@ -1,185 +1,457 @@
-"""Skeleton finalist deck from docs/DECK_OUTLINE.md: one slide per outline slide, headline as title,
-the outline's pictures placed per its layout line, the spoken text in the speaker notes.
-Plain on purpose: the team finishes the deck by hand in PowerPoint.
+"""Finalist deck from docs/DECK_OUTLINE.md: ten talk slides, a closing slide and the backup slides,
+in the 3D video's look (warm page, white cards, one orange accent). The spoken text, the time and
+the speaker are in the speaker notes. Numbers are the ones in docs/STORY.md.
 
-    python tools/build_outline_deck.py          # writes deck/Foresight_finalist.pptx
+    python tools/build_outline_deck.py            # deck/Foresight_finalist.pptx (clips play in the slide show)
+    python tools/build_outline_deck.py --static   # deck/Foresight_finalist_static.pptx: each clip replaced by
+                                                  # its last frame, for a PDF export or a machine that cannot play them
+
+Pictures made for the deck are in media/deck/ (frames of the 2:46 3D video, the two panels of
+fig_t5.png, the last frame of each clip, the 33 s street clip).
 """
+import sys
 from pathlib import Path
 
 from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "deck/Foresight_finalist.pptx"
-W, H = 13.333, 7.5
-M = 0.5
-INK, MUTED, ACCENT = RGBColor(0x1C, 0x22, 0x26), RGBColor(0x5A, 0x60, 0x66), RGBColor(0xC2, 0x4E, 0x1C)
-FONT = "Calibri"
+W, H, M = 13.333, 7.5, 0.6
+CW = W - 2 * M                                    # content width
 
-S = "media/stills/"
-D = "media/diagrams/"
+
+def rgb(h):
+    return RGBColor.from_string(h)
+
+
+BG, CARD, INK, MUTED, RULE = rgb("F5F1EA"), rgb("FFFFFF"), rgb("1C2226"), rgb("666C72"), rgb("E2DBD0")
+ACCENT, BLUE, GREEN, GREY = rgb("C24E1C"), rgb("2F6FDB"), rgb("1F9D6B"), rgb("A3A8AD")
+OK_BG, OK_INK, NO_BG, NO_INK, SOFT = rgb("DCEFE3"), rgb("17603F"), rgb("F7E1D8"), rgb("8A3511"), rgb("FBEFE8")
+FONT = "Arial"
+DK = "media/deck/"
 G = "media/demo/"
-
-# Each slide: tag (shown small, top left), title, rows of pictures (one row: list of paths),
-# a bold line under the pictures, a to-do line, and the speaker notes.
-SLIDES = [
-    dict(tag="1 · Title · 15 s · Darshak", title="Foresight", cover=S + "3d_range_every_agent.jpg",
-         sub="Where will everyone be in two seconds, and how sure are we?\nNooshin Pourkamali · Darshak Panseriya · Prior Labs track",
-         notes="Say: A delivery robot shares the street with people, cars and bikes. Foresight tells it where they'll be next, and how much to trust that."),
-    dict(tag="2 · The problem · 30 s · Darshak", title="Robots guess with a straight line and a fixed margin",
-         pics=[S + "3d_problem_093m.jpg", D + "01_problem.png"],
-         line="Walking straight is off by 0.93 m after 2 s in a crowd; 0.25–0.43 m on real Zurich pedestrians",
-         notes="Say: today's options are to assume everyone walks straight, add one margin, or stop when someone is close. Stock ROS 2 Nav2 plans around where people are now. Learned forecasters do better, but once trained they are frozen. Too narrow a margin and the robot hits someone; too wide and it freezes."),
-    dict(tag="3 · The idea · 30 s · Darshak", title="The robot's knowledge is a table",
-         pics=[D + "03_row.png", D + "05_live_context.png"], weights=[1, 1.7],
-         line="No training step. Adapting = swapping rows.",
-         notes="Say: each person, at each moment, is one row: their motion, neighbours, the robot, obstacles. TabPFN reads a few thousand example rows and answers in one pass, with no training. To adapt to a new place, a new behaviour or a new body, change the rows.\nDetail: frozen bank of 2,000 rows plus up to 250 rows of the current scene, refit every 2 s; 5–95% range per person at +1 and +2 s; weights never change on the robot."),
-    dict(tag="4 · How it reads one person · 30 s · Nooshin", title="From sensor dots to a range, in four steps",
-         pics=[S + "3d_step1_watching.jpg", S + "3d_step2_row.jpg", S + "3d_step4_tabpfn.jpg", S + "3d_step5_sizing.jpg"],
-         labels=["1 Watch", "2 Row", "3 TabPFN", "4 Size"],
-         todo="Option: play this part of the 3D video (about 40 s) instead of the stills",
-         notes="Say: a filter smooths the noisy track; the moment becomes a row; TabPFN predicts the correction to walking straight as a 5–95% range; the range is sized so the truth lands inside as often as promised."),
-    dict(tag="5 · Watch it on a street · 35 s · Nooshin", title="A street run the model has never seen",
-         pics=[S + "3d_street_sudden_stop.jpg", S + "3d_street_zebra_brake.jpg", S + "3d_street_rush_hour.jpg"],
-         labels=["Stops suddenly", "Car brakes for the zebra", "Rush hour"],
-         todo="Insert the 3D street clip here: media/demo_full.mp4 on nooshin/dev, about 1:03–1:43 (no sound). Caption: simulated street; scripted robot route; ranges from TabPFN",
-         notes="Say: someone stops dead, a car brakes for the zebra, a jaywalker leaves every path, rush hour changes the crowd. Every agent gets a range.\nThe street's ranges come from a fixed example set: don't say it adapts live here. Slide 6 shows adaptation."),
-    dict(tag="6 · Proof 1 · 35 s · Darshak", title="When the crowd changed, reading the scene kept more people inside their ranges",
-         pics=[G + "seed3013.gif", "media/fig_t5.png"],
-         line="59% vs 41% inside the 2 s range (+18 pts) · +10 from the scene alone · ahead in 3 of 3 crowds",
-         notes="Say: in our robot loop the crowd turns erratic five seconds in. The TabPFN that reads the last seconds kept 59% of people inside their 2 s range; LightGBM kept 41%. Ten of those points come from reading the scene alone. Ahead in all three crowds (+6.6, +18.0, +19.7 pts).\nTarget is 81%: closer, not there. Use the right panel of fig_t5 (or media/demo/calibration_seed3013_strip.png). If asked whether LightGBM had the scene rows: backup B1."),
-    dict(tag="7 · Proof 2 · 30 s · Darshak", title="The same core predicts highway traffic",
-         pics=["media/demo/highway.gif"],
-         line="1,500 rows match LightGBM on 100,440 · 86% vs 69–82% inside · +14 pts after the switch",
-         notes="Say: same features and models, a small adapter for cars. 1,500 example rows match LightGBM trained on 67 times more, with more honest ranges. When drivers turn aggressive, reading the scene adds 14 points.\nSimulated traffic (highway-env), offline. Say 'matches', never 'beats'. Each body needs its own example bank."),
-    dict(tag="8 · Proof 3 · 30 s · Darshak", title="On five real scenes, TabPFN gets more from each example",
-         pics=["media/demo/scenes5.gif", "media/fig_loso5.png"], weights=[1, 1.4],
-         line="Beats the fixed margin in all 5 scenes · beats LightGBM on equal rows in 4 of 5 · tie at ~15× the rows",
-         notes="Say: ETH, Hotel, Zara 1 and 2, Univ: train on four, test on the fifth. TabPFN beats the fixed-margin guess from slide 2 in all five scenes. On the same rows it beats LightGBM in four scenes and ties on Hotel. LightGBM needs about 15 times the data to catch up.\nAgainst constant velocity plus a fixed band: −0.365 [−0.405, −0.328] pooled (forecast quality only). Interval score −0.130 pooled at equal rows; −0.008 (tie) at 15x. Zara1 and Zara2 share one camera."),
-    dict(tag="9b · Optional · 20 s", title="A second TabPFN can pick the robot's move",
-         pics=[G + "policy_seed3403.gif", D + "02_pipeline.png"],
-         todo="Circle the three TabPFN stages on the pipeline diagram. Cut this slide first if the talk runs long",
-         notes="Say: ranges, scene adaptation and the move are all TabPFN calls. On 20 new crowds the TabPFN policy drove like the planner it learned from on average.\nTracker, calibration offset and the hard safety check stay classical. Collision interval is wide at 20 crowds: don't say 'as safe'."),
-    dict(tag="9 · Where it stops · 30 s · Darshak", title="Better forecasts, a simple planner",
-         pics=["media/fig_t5.png"], half=True,
-         bullets=["Simple yes/no planner: same safety, 3–4 s slower", "Next: a planner that weighs how likely each spot is",
-                  "Scope: robot loop and cars simulated · five real pedestrian scenes"],
-         notes="Say: the forecasts are better, but our planner is simple on purpose: it only asks yes or no. At the same safety it arrives three to four seconds after standard planners. Next, it weighs how likely each spot is. The robot loop and the cars are simulated; the five pedestrian scenes are real.\nThe five-scene tie is proof 3 (data efficiency), and per-body banks are slide 10: neither is a limit.\nUse the left panel of fig_t5 (time against closest gap). If asked how the forecast beats a fixed margin while the constant-velocity planner beat the robot: the ranges are better in every real scene, but this planner turns each range into a yes/no box, so its caution setting sets the pace. Backup B7 for 'why slower'."),
-    dict(tag="10 · What it's for · 35 s · Darshak", title="A forecasting layer you re-target by swapping rows",
-         pics=[D + "12_deployment.png"],
-         line="Few examples or a sudden change: TabPFN · plenty of familiar data: LightGBM · 71 ms on an L4",
-         todo="Update the diagram: '2,000-row bank + 250 scene rows, every 0.4 s' and 'safety check: 0.4 s straight-line veto' (the takeover is not built)",
-         notes="Say: Foresight sits under whatever planner a team already runs. New site, new crowd behaviour, new vehicle: add rows, no training run. Next: a planner that uses the full range, a closed loop for cars, real robot logs.\nClose: every number in this talk comes from a script in the repo."),
-    dict(tag="Backup", title="Backup slides", divider=True, notes="For questions only."),
-    dict(tag="B1 · Is proof 1 fair?", title="LightGBM never saw the scene. Is proof 1 fair?", pics=["media/fig_live_variants_cp.png"],
-         line="Scene rows add 10 pts; LightGBM refit on the same scene still covers ~12 pts less (offline)",
-         notes="Offline, simulated, after the switch: +12.3 pts 80% coverage [+7.7, +17.0], pinball −0.015, error level (results/live_variants.csv, post-hoc)."),
-    dict(tag="B2 · Tuned until it worked?", title="Did you tune until it worked?",
-         bullets=["Every pass rule was committed before its run (pre-registration with amendments)", "Paired crowds, bootstrap intervals, Holm correction",
-                  "Claim C failed and claim A narrowed under those rules", "Failures stay in the README"],
-         notes="Commit hashes for each rule are in RESULTS.md and docs/DECISIONS.md."),
-    dict(tag="B3 · Data", title="What data?", pics=["media/fig_f4_data_cards.png"],
-         line="Five real scenes (ETH, Hotel, Zara 1–2, Univ) · three simulated crowds · highway-env traffic",
-         notes="Real data: Pellegrini 2009 (ETH, Hotel), Lerner 2007 (UCY), read through OpenTraj. Annotated every 0.4 s, the step we replan on."),
-    dict(tag="B4 · How much data", title="How much data does TabPFN need?", pics=["media/fig_f4_context_size.png"],
-         line="2,000 rows tie LightGBM on 20,000", notes="Crossing crowd, +2 s, f4 features, 3 seeds (results/context_size.csv)."),
-    dict(tag="B5 · New place", title="Ranges in a new place?", pics=["media/fig_f4_claim_a.png"],
-         line="Better than LightGBM on two scenes; a tie on five when LightGBM gets all rows", notes="Two scenes: 75% vs 58% box coverage (Hotel to ETH). Five scenes: −0.008, a tie."),
-    dict(tag="B6 · Turns", title="Can it predict turns?", pics=["media/fig_intent_layer.png"],
-         line="Wider ranges for people who turn (46% → 63% inside, real data); it does not call turns",
-         notes="Intent chain: TabPFN classifier, then per-manoeuvre ranges. Offline only; turn recall is 0."),
-    dict(tag="B7 · Why slower", title="Why was the robot slower?", pics=["media/fig_f4_oracle_gate.png"],
-         line="Same caution setting, same speed for every forecaster; even true futures gain under 2 s",
-         notes="Split − frozen TabPFN −0.12 s [−1.35, +1.25] at q 0.15. The box veto throws away the range's shape."),
-    dict(tag="B8 · Speed, features, references", title="Fast enough? Feature engineering? Why these choices?",
-         bullets=["Speed: 71 ms per replan on an NVIDIA L4, 318 ms scene rebuild; Apple M3 Pro 287–321 ms; fits the 0.4 s replan",
-                  "Feature engineering: 21 hand-made properties (time to closest approach, threat, companion): no gain",
-                  "Constant velocity baseline: Schöller et al. 2020 · TabPFN: Hollmann et al. 2025 (Nature)",
-                  "Data: Pellegrini 2009, Lerner 2007 · calibration: Gibbs & Candès 2021 · full list: docs/VIDEO_BRIEF.md section 4"],
-         notes="10 Hz is not claimed: it needs a background scene rebuild that is designed, not built."),
-    dict(tag="B9 · One decision", title="One decision in detail", pics=["docs/walkthrough/s5_person_box.png", "docs/walkthrough/s8_planner.png"],
-         line="One real moment, every stage, with the actual values (docs/walkthrough.html)", notes="Seed 6001, t = 7.2 s, person 11."),
-]
+STATIC = "--static" in sys.argv
+REPO = "github.com/shiinalight/Robodetect"
 
 
-def text(slide, x, y, w, h, s, size, bold=False, color=INK, align=None):
+# ---------------------------------------------------------------- drawing helpers
+def text(slide, x, y, w, h, s, size, bold=False, color=INK, align=None, anchor=None, spc=None, gap=0):
     tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     tf = tb.text_frame
     tf.word_wrap = True
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    if anchor:
+        tf.vertical_anchor = anchor
     for i, part in enumerate(s.split("\n")):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        if align:
+            p.alignment = align
+        if gap:
+            p.space_after = Pt(gap)
         r = p.add_run()
         r.text = part
         r.font.size, r.font.bold, r.font.name = Pt(size), bold, FONT
         r.font.color.rgb = color
+        if spc:
+            r._r.get_or_add_rPr().set("spc", str(spc))
     return tb
 
 
-def picture(slide, rel, x, y, w, h, label=None):
+def box(slide, x, y, w, h, fill=CARD, line=RULE, radius=0.05, kind=MSO_SHAPE.ROUNDED_RECTANGLE, lw=0.75):
+    s = slide.shapes.add_shape(kind, Inches(x), Inches(y), Inches(w), Inches(h))
+    s.shadow.inherit = False
+    if fill is None:
+        s.fill.background()
+    else:
+        s.fill.solid()
+        s.fill.fore_color.rgb = fill
+    if line is None:
+        s.line.fill.background()
+    else:
+        s.line.color.rgb = line
+        s.line.width = Pt(lw)
+    if kind == MSO_SHAPE.ROUNDED_RECTANGLE and radius is not None:
+        s.adjustments[0] = min(0.5, radius / min(w, h))
+    return s
+
+
+def label_box(slide, x, y, w, h, title, sub=None, fill=CARD, line=RULE, ink=INK, sub_ink=MUTED, size=17, sub_size=12):
+    box(slide, x, y, w, h, fill=fill, line=line, radius=0.08)
+    if sub:
+        text(slide, x + 0.15, y + 0.14, w - 0.3, 0.4, title, size, bold=True, color=ink, align=PP_ALIGN.CENTER)
+        text(slide, x + 0.15, y + 0.14 + size / 72 * 1.45, w - 0.3, h - 0.6, sub, sub_size, color=sub_ink, align=PP_ALIGN.CENTER)
+    else:
+        text(slide, x + 0.15, y, w - 0.3, h, title, size, bold=True, color=ink, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+
+
+def pic(slide, rel, x, y, w, h, cover=False):
+    """Place a picture inside the box (fit, centred) or filling it (cover, cropped evenly)."""
     path = ROOT / rel
     iw, ih = Image.open(path).size
+    if cover:
+        p = slide.shapes.add_picture(str(path), Inches(x), Inches(y), Inches(w), Inches(h))
+        if iw / ih > w / h:
+            c = (1 - (w / h) / (iw / ih)) / 2
+            p.crop_left = p.crop_right = c
+        else:
+            c = (1 - (iw / ih) / (w / h)) / 2
+            p.crop_top = p.crop_bottom = c
+        return p
     s = min(w / iw, h / ih)
     pw, ph = iw * s, ih * s
-    slide.shapes.add_picture(str(path), Inches(x + (w - pw) / 2), Inches(y + (h - ph) / 2), Inches(pw), Inches(ph))
-    text(slide, x, y + h + 0.02, w, 0.3, label or rel, 10, color=MUTED)
+    return slide.shapes.add_picture(str(path), Inches(x + (w - pw) / 2), Inches(y + (h - ph) / 2), Inches(pw), Inches(ph))
+
+
+def clip(slide, name, x, y, w, h, pad=0.12):
+    """A clip from media/demo on a white card; in the static deck, its last frame."""
+    box(slide, x, y, w, h)
+    rel = DK + name + "_last.png" if STATIC else G + name + ".gif"
+    pic(slide, rel, x + pad, y + pad, w - 2 * pad, h - 2 * pad)
+
+
+def bars(slide, x, y, w, rows, vmax, label_w=1.75, pitch=0.66, bar_h=0.3):
+    """Horizontal bars. rows: (label, small label, value, value text, colour)."""
+    bw = w - label_w - 0.85
+    for i, (lab, sub, v, vt, col) in enumerate(rows):
+        yy = y + i * pitch
+        text(slide, x, yy - 0.05, label_w - 0.12, 0.26, lab, 12, bold=True, align=PP_ALIGN.RIGHT)
+        if sub:
+            text(slide, x, yy + 0.17, label_w - 0.12, 0.22, sub, 9.5, color=MUTED, align=PP_ALIGN.RIGHT)
+        box(slide, x + label_w, yy, max(0.05, bw * v / vmax), bar_h, fill=col, line=None, radius=0.04)
+        text(slide, x + label_w + bw * v / vmax + 0.1, yy, 0.8, bar_h, vt, 14, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    return y + len(rows) * pitch
+
+
+def pill(slide, x, y, w, s, good=True, h=0.46, size=14):
+    box(slide, x, y, w, h, fill=OK_BG if good else NO_BG, line=None, radius=0.1)
+    text(slide, x + 0.16, y, w - 0.32, h, ("✓  " if good else "✗  ") + s, size, bold=True, color=OK_INK if good else NO_INK,
+         anchor=MSO_ANCHOR.MIDDLE)
+
+
+def chevron(slide, x, y, size=0.3, down=False):
+    s = box(slide, x, y, size, size, fill=GREY, line=None, kind=MSO_SHAPE.CHEVRON)
+    if down:
+        s.rotation = 90
+    return s
+
+
+class Deck:
+    def __init__(self):
+        self.prs = Presentation()
+        self.prs.slide_width, self.prs.slide_height = Inches(W), Inches(H)
+        self.n = 0
+
+    def slide(self, kicker=None, title=None, notes="", meta=None, footer=True, title_size=28):
+        s = self.prs.slides.add_slide(self.prs.slide_layouts[6])
+        self.n += 1
+        bg = s.background.fill
+        bg.solid()
+        bg.fore_color.rgb = BG
+        s.notes_slide.notes_text_frame.text = (meta + "\n\n" if meta else "") + notes
+        if kicker:
+            text(s, M, 0.42, CW, 0.26, kicker.upper(), 11, bold=True, color=ACCENT, spc=90)
+        if title:
+            text(s, M, 0.7, CW, 1.0, title, title_size, bold=True)
+        if footer:
+            text(s, M, 7.05, 6, 0.25, "Foresight  ·  Prior Labs track", 10, color=MUTED)
+            text(s, W - M - 1, 7.05, 1, 0.25, str(self.n), 10, color=MUTED, align=PP_ALIGN.RIGHT)
+        return s
+
+
+# ---------------------------------------------------------------- the talk
+def talk(d):
+    # 1 title
+    s = d.slide(footer=False, meta="Slide 1 · Title · 15 s · Darshak",
+                notes="Say: A delivery robot shares the street with people, cars and bikes. Foresight tells it where they'll be next, and how much to trust that.")
+    pic(s, "media/stills/3d_range_every_agent.jpg", 0, 0, W, H, cover=True)
+    box(s, 0, 4.46, W, H - 4.46, fill=BG, line=None, kind=MSO_SHAPE.RECTANGLE)
+    box(s, M, 4.98, 0.9, 0.07, fill=ACCENT, line=None, kind=MSO_SHAPE.RECTANGLE)
+    text(s, M, 5.1, CW, 0.95, "Foresight", 56, bold=True)
+    text(s, M, 6.05, CW, 0.45, "Where will everyone be in two seconds, and how sure are we?", 24)
+    text(s, M, 6.72, 8, 0.3, "Nooshin Pourkamali  ·  Darshak Panseriya", 15, color=MUTED)
+    text(s, W - M - 4, 6.72, 4, 0.3, "Prior Labs track", 15, bold=True, color=ACCENT, align=PP_ALIGN.RIGHT)
+
+    # 2 problem
+    s = d.slide("The problem", "Robots guess with a straight line and a fixed margin", meta="Slide 2 · The problem · 30 s · Darshak",
+                notes="Say: today's options are to assume everyone walks straight, add one margin, or stop when someone is close. Stock ROS 2 Nav2 plans around where people are now. Learned forecasters do better, but once trained they are frozen. Too narrow a margin and the robot hits someone; too wide and it freezes.")
+    pic(s, DK + "3d_problem.jpg", M, 1.75, 7.55, 4.25, cover=True)
+    x = 8.5
+    text(s, x, 1.7, 4.3, 1.1, "0.93 m", 66, bold=True, color=ACCENT)
+    text(s, x, 2.85, 4.2, 0.9, "how far \"keep walking straight\" is off after 2 s in our simulated crowd", 15)
+    text(s, x, 3.62, 4.2, 0.4, "0.25–0.43 m on real Zurich pedestrians", 13, color=MUTED)
+    for i, (a, b) in enumerate([("Margin too narrow", "the robot hits someone"), ("Margin too wide", "the robot freezes")]):
+        yy = 4.25 + i * 0.92
+        box(s, x, yy, 4.23, 0.78, radius=0.08)
+        text(s, x + 0.2, yy + 0.11, 3.9, 0.3, a, 14, bold=True)
+        text(s, x + 0.2, yy + 0.41, 3.9, 0.3, b, 13, color=MUTED)
+    text(s, M, 6.3, CW, 0.4, "Learned forecasters do better, but once trained they are frozen.", 18, bold=True)
+
+    # 3 idea
+    s = d.slide("The idea", "The robot's knowledge is a table", meta="Slide 3 · The idea · 30 s · Darshak",
+                notes="Say: each person, at each moment, is one row: their motion, neighbours, the robot, obstacles. TabPFN reads a few thousand example rows and answers in one pass, with no training. To adapt to a new place, a new behaviour or a new body, change the rows.\nDetail: frozen bank of 2,000 rows plus up to 250 rows of the current scene, refit every 2 s; 5–95% range per person at +1 and +2 s; weights never change on the robot.")
+    pic(s, DK + "3d_step2_row.jpg", M, 1.75, 5.9, 4.1, cover=True)
+    text(s, M, 5.92, 5.9, 0.3, "One agent, one moment: one row of numbers", 12, color=MUTED)
+    x, w = 7.0, W - M - 7.0
+    half = (w - 0.25) / 2
+    label_box(s, x, 1.75, half, 1.12, "Example bank", "2,000 rows · frozen")
+    label_box(s, x + half + 0.25, 1.75, half, 1.12, "This scene", "up to 250 newest rows · swapped every 2 s", fill=SOFT, line=ACCENT)
+    chevron(s, x + w / 2 - 0.15, 3.0, down=True)
+    label_box(s, x, 3.43, w, 1.05, "TabPFN", "reads the rows and answers in one pass · weights never change", fill=ACCENT, line=None,
+              ink=CARD, sub_ink=rgb("FBE3D8"))
+    chevron(s, x + w / 2 - 0.15, 4.61, down=True)
+    label_box(s, x, 5.04, w, 0.81, "A range for every agent", "5–95%, 1 s and 2 s ahead", size=15, sub_size=11.5)
+    text(s, M, 6.3, CW, 0.45, "No training step. Adapting = swapping rows.", 22, bold=True, color=ACCENT)
+
+    # 4 four steps
+    s = d.slide("How it reads one person", "From sensor dots to a range, in four steps", meta="Slide 4 · How it reads one person · 15 s · Nooshin",
+                notes="Say: a filter smooths the noisy track; the moment becomes a row; TabPFN predicts the correction to walking straight as a 5–95% range; the range is sized so the truth lands inside as often as promised.\nKeep it to 15 s: the video already showed these steps.")
+    steps = [("3d_step1_watch.jpg", "Watch", "A filter turns noisy sensor dots into a smooth track."),
+             ("3d_step2_row.jpg", "Row", "Every 0.4 s, each agent's situation becomes one row of numbers."),
+             ("3d_step3_tabpfn.jpg", "TabPFN", "Reads example rows and predicts the correction to walking straight, as a 5–95% range."),
+             ("3d_step4_size.jpg", "Size", "The range is stretched or shrunk until the truth lands inside as often as promised.")]
+    gap = 0.2
+    cw = (CW - 3 * gap) / 4
+    for i, (f, t, body) in enumerate(steps):
+        x = M + i * (cw + gap)
+        box(s, x, 1.75, cw, 4.05, radius=0.08)
+        pic(s, DK + f, x + 0.1, 1.85, cw - 0.2, (cw - 0.2) / 1.44, cover=True)
+        yy = 1.85 + (cw - 0.2) / 1.44 + 0.2
+        box(s, x + 0.18, yy, 0.42, 0.42, fill=ACCENT, line=None, kind=MSO_SHAPE.OVAL)
+        text(s, x + 0.18, yy, 0.42, 0.42, str(i + 1), 15, bold=True, color=CARD, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+        text(s, x + 0.72, yy, cw - 0.9, 0.42, t, 19, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+        text(s, x + 0.18, yy + 0.6, cw - 0.36, 1.6, body, 13, color=MUTED)
+    text(s, M, 6.15, CW, 0.4, "Every 0.4 s, for every person and vehicle the robot can see.", 18, bold=True)
+
+    # 5 street
+    s = d.slide("Watch it on a street", "A street run the model has never seen", meta="Slide 5 · Watch it on a street · 35 s · Nooshin",
+                notes="Say: someone stops dead, a car brakes for the crossing, someone crosses away from the crossing, rush hour changes the crowd. Every agent gets a range.\nThe clip is 33 s, silent; click it to play. It is the street part of the 3D video (1:05 to 1:38).\nThe street's ranges come from a fixed example set: don't say it adapts live here. Slide 6 shows adaptation.")
+    vx, vy, vw = M, 1.75, 8.35
+    vh = vw * 9 / 16
+    if STATIC:
+        pic(s, DK + "3d_street_stop.jpg", vx, vy, vw, vh, cover=True)
+    else:
+        s.shapes.add_movie(str(ROOT / DK / "street_clip.mp4"), Inches(vx), Inches(vy), Inches(vw), Inches(vh),
+                           poster_frame_image=str(ROOT / DK / "3d_street_stop.jpg"), mime_type="video/mp4")
+    text(s, vx, vy + vh + 0.1, vw, 0.3, "Simulated street  ·  robot route scripted  ·  ranges from TabPFN, fixed example set", 11, color=MUTED)
+    x = vx + vw + 0.4
+    w = W - M - x
+    text(s, x, 1.75, w, 0.3, "FOUR EVENTS", 11, bold=True, color=ACCENT, spc=90)
+    events = [("A person stops suddenly", "the range has to stay with them"), ("A car brakes hard at the crossing", "where it will be in 2 s changes fast"),
+              ("Someone crosses mid-street", "no usual path predicts this"), ("Rush hour", "more people, more cars, a new pace")]
+    for i, (a, b) in enumerate(events):
+        yy = 2.15 + i * 1.0
+        box(s, x, yy, w, 0.86, radius=0.08)
+        text(s, x + 0.18, yy + 0.1, w - 0.36, 0.3, a, 13.5, bold=True)
+        text(s, x + 0.18, yy + 0.5, w - 0.36, 0.3, b, 11.5, color=MUTED)
+    text(s, x, 6.2, w, 0.35, "Every agent gets a range.", 16, bold=True)
+
+    # 6 proof 1
+    s = d.slide("Proof 1 · Adapts to dynamic environments", "When the crowd changed, reading the scene kept more people inside their ranges",
+                meta="Slide 6 · Proof 1 · 35 s · Darshak",
+                notes="Say: in our robot loop the crowd turns erratic five seconds in. The TabPFN that reads the last seconds kept 59% of people inside their 2 s range; LightGBM kept 41%. Ten of those points come from reading the scene alone. Ahead in all three crowds (+6.6, +18.0, +19.7 pts).\nThe clip is one crowd (seed 3013): its counters end near 60% and 45%; the bars are all 20 crowds. Target is 81%: closer, not there. If asked whether LightGBM had the scene rows: backup B1.")
+    y0, ch = 1.95, 4.6
+    clip(s, "calibration_seed3013", M, y0, 7.5, ch)
+    text(s, M, y0 + ch + 0.08, 7.5, 0.3, "One crowd of the 20: about 60% vs 45% inside  ·  green dot = inside its range, red = outside", 11, color=MUTED)
+    x, w = 8.4, W - M - 8.4
+    box(s, x, y0, w, ch)
+    text(s, x + 0.25, y0 + 0.2, w - 0.5, 0.5, "People inside their 2 s range after the crowd changed", 13, bold=True)
+    yb = bars(s, x + 0.2, y0 + 0.95, w - 0.4, [("TabPFN", "bank + this scene", 59.3, "59%", ACCENT), ("TabPFN", "bank only", 49.3, "49%", rgb("E7A37F")),
+                                               ("LightGBM", "all rows", 41.3, "41%", BLUE)], 100, label_w=1.45)
+    pill(s, x + 0.25, yb + 0.02, w - 0.5, "+18 points, no retraining")
+    text(s, x + 0.25, yb + 0.62, w - 0.5, 0.6, "+10 points from reading the scene alone\nAhead in 3 of 3 crowds", 12.5, gap=3)
+    text(s, x + 0.25, y0 + ch - 0.36, w - 0.5, 0.25, "Simulated robot loop · 20 paired crowds · target 81%", 9.5, color=MUTED)
+
+    # 7 proof 2
+    s = d.slide("Proof 2 · Works across modalities", "The same core predicts highway traffic", meta="Slide 7 · Proof 2 · 30 s · Darshak",
+                notes="Say: same features and models, a small adapter for cars. 1,500 example rows match LightGBM trained on 67 times more, and our ranges held the truth 86% of the time against 69–82%. When drivers turn aggressive, reading the scene adds 14 points.\nThe clip is one road of the five (77 against 67 of 100 forecasts held); all five roads: 77% against 63%.\nSimulated traffic (highway-env), offline. Say 'matches', never 'beats'. Each body needs its own example bank.")
+    y0, ch = 1.75, 4.5
+    clip(s, "highway", M, y0, 7.5, ch)
+    text(s, M, y0 + ch + 0.08, 7.5, 0.3, "This road: 77 vs 67 of 100 forecasts held  ·  all five roads: 77% vs 63%", 11, color=MUTED)
+    box(s, x, y0, w, ch)
+    text(s, x + 0.25, y0 + 0.2, w - 0.5, 0.5, "Cars instead of people\nInterval score, lower is better", 13, bold=True)
+    yb = bars(s, x + 0.2, y0 + 1.05, w - 0.4, [("TabPFN", "1,500 examples", 3.57, "3.57", ACCENT), ("LightGBM", "100,440 examples", 3.74, "3.74", BLUE)],
+              4.4, label_w=1.45)
+    pill(s, x + 0.25, yb + 0.02, w - 0.5, "Same result, 67× less data")
+    text(s, x + 0.25, yb + 0.62, w - 0.5, 0.9, "Ranges held the truth 86% of the time, against 69–82%\n+14 points when drivers turn aggressive", 12.5, gap=3)
+    text(s, x + 0.25, y0 + ch - 0.36, w - 0.5, 0.25, "Simulated highway (highway-env) · offline", 9.5, color=MUTED)
+
+    # 8 proof 3
+    s = d.slide("Proof 3 · Works with very little data", "On five real scenes, TabPFN gets more from each example", meta="Slide 8 · Proof 3 · 30 s · Darshak",
+                notes="Say: ETH, Hotel, Zara 1 and 2, Univ: train on four, test on the fifth. TabPFN beats the fixed-margin guess from slide 2 in all five scenes. On the same rows it beats LightGBM in four scenes and ties on Hotel. LightGBM needs about 15 times the data to catch up.\nThe clip is one 16 s window per scene, an illustration; the numbers below are the test (interval score, mean of the five scenes).\nAgainst constant velocity plus a fixed band: −0.365 [−0.405, −0.328] pooled (forecast quality only). Interval score −0.130 pooled at equal rows; −0.008 (tie) at 15x. Zara1 and Zara2 share one camera. Scene by scene: backup B10.")
+    gh = 3.3
+    clip(s, "scenes5", M, 1.6, CW, gh, pad=0.1)
+    text(s, M, 1.6 + gh + 0.06, CW, 0.25, "One 16 s window per scene  ·  1,500 example rows from the other four scenes  ·  interval score below: lower is better", 10.5, color=MUTED)
+    stats = [("5 of 5 scenes", "better than the fixed-margin guess", "interval score 1.36 against 1.72"),
+             ("1.36 vs 1.49", "ahead of LightGBM on the same rows", "ahead in 4 scenes, level on Hotel"),
+             ("1.36 vs 1.37", "level with LightGBM on 15× more rows", "1,500 examples against about 22,000")]
+    gap = 0.2
+    cw = (CW - 2 * gap) / 3
+    for i, (big, body, small) in enumerate(stats):
+        xx, yy = M + i * (cw + gap), 5.32
+        box(s, xx, yy, cw, 1.5, radius=0.08)
+        text(s, xx + 0.22, yy + 0.12, cw - 0.44, 0.5, big, 26, bold=True, color=ACCENT)
+        text(s, xx + 0.22, yy + 0.68, cw - 0.44, 0.3, body, 13, bold=True)
+        text(s, xx + 0.22, yy + 1.08, cw - 0.44, 0.3, small, 11, color=MUTED)
+
+    # 9 where it stops
+    s = d.slide("Where it stops", "Better forecasts, a simple planner", meta="Slide 9 · Where it stops · 30 s · Darshak",
+                notes="Say: the forecasts are better, but our planner is simple on purpose: it only asks yes or no. At the same safety it arrives three to four seconds after standard planners. Next, it weighs how likely each spot is. The robot loop and the cars are simulated; the five pedestrian scenes are real.\nThe five-scene tie is proof 3 (data efficiency), and per-body banks are slide 10: neither is a limit.\nIf asked how the forecast beats a fixed margin while the constant-velocity planner beat the robot: the ranges are better in every real scene, but this planner turns each range into a yes/no box, so its caution setting sets the pace. Backup B7 for 'why slower' (every planner, time against closest gap).")
+    y0, ch = 1.75, 4.3
+    cw = (CW - 0.25) / 2
+    box(s, M, y0, cw, ch)
+    text(s, M + 0.3, y0 + 0.25, cw - 0.6, 0.25, "THE LIMIT", 11, bold=True, color=ACCENT, spc=90)
+    text(s, M + 0.3, y0 + 0.55, cw - 0.6, 0.4, "A simple planner", 22, bold=True)
+    text(s, M + 0.3, y0 + 1.1, cw - 0.6, 0.6, "It only asks yes or no: is this move inside a range? The shape of the range is thrown away.", 13.5)
+    text(s, M + 0.3, y0 + 1.95, cw - 0.6, 0.3, "Seconds behind the \"keep going straight\" planner, at the same safety", 11, color=MUTED)
+    yb = bars(s, M + 0.2, y0 + 2.4, cw - 0.5, [("Same closest gap", None, 4.3, "+4.3 s", ACCENT), ("Same collision rate", None, 3.0, "+3.0 s", ACCENT)], 5.2,
+              label_w=1.95, pitch=0.5)
+    pill(s, M + 0.3, y0 + ch - 0.75, cw - 0.6, "Same safety, 3–4 s slower", good=False)
+    x2 = M + cw + 0.25
+    box(s, x2, y0, cw, ch)
+    text(s, x2 + 0.3, y0 + 0.25, cw - 0.6, 0.25, "NEXT STEP", 11, bold=True, color=ACCENT, spc=90)
+    text(s, x2 + 0.3, y0 + 0.55, cw - 0.6, 0.4, "Use the whole range", 22, bold=True)
+    text(s, x2 + 0.3, y0 + 1.1, cw - 0.6, 0.6, "A planner that weighs how likely each spot is, not just yes or no.", 13.5)
+    ix, iy = x2 + 0.55, y0 + 2.0                                   # today: one flat box
+    box(s, ix, iy, 1.9, 1.05, fill=SOFT, line=ACCENT, radius=0.03, lw=1.5)
+    text(s, ix, iy + 1.12, 1.9, 0.25, "today: inside or outside", 11, color=MUTED, align=PP_ALIGN.CENTER)
+    chevron(s, ix + 2.2, iy + 0.38)
+    jx = ix + 2.8                                                  # next: likelihood falls off from the centre
+    for k, (pad, col) in enumerate([(0.0, "FBEFE8"), (0.17, "F3C9B2"), (0.33, "E58F62"), (0.46, "C24E1C")]):
+        box(s, jx + pad * 1.6, iy + pad * 0.95, 1.9 - 2 * pad * 1.6, 1.05 - 2 * pad * 0.95, fill=rgb(col), line=None, kind=MSO_SHAPE.OVAL)
+    text(s, jx, iy + 1.12, 1.9, 0.25, "next: how likely each spot is", 11, color=MUTED, align=PP_ALIGN.CENTER)
+    box(s, x2 + 0.3, y0 + ch - 0.75, cw - 0.6, 0.46, fill=rgb("EFEBE4"), line=None, radius=0.1)
+    text(s, x2 + 0.46, y0 + ch - 0.75, cw - 0.9, 0.46, "A plan, not a result: nothing measured yet", 14, bold=True, color=MUTED, anchor=MSO_ANCHOR.MIDDLE)
+    text(s, M, 6.3, CW, 0.3, "Scope: robot loop and cars simulated  ·  five real pedestrian scenes  ·  TabPFN-3.5 weights are non-commercial", 12, color=MUTED)
+
+    # 10 what it's for
+    s = d.slide("What it's for", "A forecasting layer you re-target by swapping rows", meta="Slide 10 · What it's for · 35 s · Darshak",
+                notes="Say: Foresight sits under whatever planner a team already runs. New site, new crowd behaviour, new vehicle: add rows, no training run. One example bank per body. Few examples or a sudden change: use TabPFN. Plenty of familiar data: a well-fitted LightGBM does as well. 71 ms per replan on an NVIDIA L4. Next: a planner that uses the full range, a closed loop for cars, real robot logs.\nClose: every number in this talk comes from a script in the repo.\n'Your robot, your site' is the offer, not a result: we tested pedestrians (real and simulated) and simulated cars.")
+    bw, bg_ = 2.62, 0.55
+    names = [("Sensors", "tracks of people and vehicles"), ("Foresight", "a range for every agent"), ("Your planner", "whatever you already run"),
+             ("Safety check", "0.4 s straight-line veto")]
+    for i, (a, b) in enumerate(names):
+        xx = M + i * (bw + bg_)
+        hot = i == 1
+        label_box(s, xx, 1.8, bw, 1.15, a, b, fill=ACCENT if hot else CARD, line=None if hot else RULE, ink=CARD if hot else INK,
+                  sub_ink=rgb("FBE3D8") if hot else MUTED)
+        if i < 3:
+            chevron(s, xx + bw + (bg_ - 0.3) / 2, 2.22)
+    fx = M + bw + bg_                                              # the bank row hangs under the Foresight box
+    chevron(s, fx + bw / 2 - 0.15, 3.07, down=True).rotation = 270
+    box(s, M, 3.5, CW, 1.2, fill=SOFT, line=ACCENT, radius=0.08)
+    text(s, M + 0.3, 3.5, 3.6, 1.2, "Example bank\nSwap it, don't retrain", 15, bold=True, anchor=MSO_ANCHOR.MIDDLE, gap=2)
+    chips = ["Pedestrians", "Cars", "Your robot, your site"]
+    cx = M + 4.0
+    cwid = (CW - 4.0 - 0.3 - 2 * 0.2) / 3
+    for i, c in enumerate(chips):
+        box(s, cx + i * (cwid + 0.2), 3.78, cwid, 0.64, radius=0.1, line=ACCENT if i < 2 else GREY)
+        text(s, cx + i * (cwid + 0.2), 3.78, cwid, 0.64, c, 14, bold=True, color=INK if i < 2 else MUTED, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+    gw = (CW - 0.25) / 2
+    for i, (a, b) in enumerate([("Few examples, or behaviour just changed", "Use TabPFN"), ("Plenty of familiar data", "A well-fitted LightGBM is as good")]):
+        xx = M + i * (gw + 0.25)
+        box(s, xx, 4.95, gw, 1.0, radius=0.08)
+        text(s, xx + 0.25, 5.07, gw - 0.5, 0.3, a, 12.5, color=MUTED)
+        text(s, xx + 0.25, 5.4, gw - 0.5, 0.4, b, 19, bold=True, color=ACCENT if i == 0 else INK)
+    text(s, M, 6.25, CW, 0.3, "71 ms per replan on an NVIDIA L4  ·  one example bank per body  ·  every number in this talk comes from a script in the repo",
+         12.5, color=MUTED)
+
+    # 11 close
+    s = d.slide(footer=False, meta="Closing slide · stays up during questions", notes="Leave this up for questions. Backup slides follow.")
+    x, w = 7.35, W - M - 7.35
+    cards = [("Adapts to dynamic environments", "+18 points after the crowd changed, no retraining", True),
+             ("Works across modalities", "Cars: same result as LightGBM with 67× less data", True),
+             ("Works with very little data", "Five real scenes: same result with 15× less data", True),
+             ("Where it stops", "Yes/no planner: same safety, 3–4 s slower", False)]
+    for i, (a, b, good) in enumerate(cards):
+        yy = 0.95 + i * 1.42
+        box(s, x, yy, w, 1.22, radius=0.08)
+        box(s, x + 0.25, yy + 0.3, 0.62, 0.62, fill=OK_BG if good else NO_BG, line=None, kind=MSO_SHAPE.OVAL)
+        text(s, x + 0.25, yy + 0.3, 0.62, 0.62, "✓" if good else "✗", 18, bold=True, color=OK_INK if good else NO_INK, align=PP_ALIGN.CENTER,
+             anchor=MSO_ANCHOR.MIDDLE)
+        text(s, x + 1.1, yy + 0.24, w - 1.3, 0.35, a, 17, bold=True)
+        text(s, x + 1.1, yy + 0.68, w - 1.3, 0.35, b, 13, color=MUTED)
+    box(s, M, 1.55, 0.9, 0.07, fill=ACCENT, line=None, kind=MSO_SHAPE.RECTANGLE)
+    text(s, M, 1.7, 6, 0.95, "Foresight", 52, bold=True)
+    text(s, M, 2.85, 5.9, 1.6, "The robot's knowledge is a table of examples. It adapts to new behaviour, and to a new body, by swapping rows, with no training step.", 19)
+    text(s, M, 4.7, 5.9, 0.4, REPO, 18, bold=True, color=ACCENT)
+    text(s, M, 5.15, 5.9, 0.3, "Every number comes from a script in the repo.", 13, color=MUTED)
+    text(s, M, 6.3, 5.9, 0.6, "Nooshin Pourkamali  ·  Darshak Panseriya\nThank you, Prior Labs", 14, gap=3)
+
+
+# ---------------------------------------------------------------- backup slides
+BACKUPS = [
+    dict(q="LightGBM never saw the scene. Is proof 1 fair?", pics=["media/fig_live_variants_cp.png"],
+         a="Scene rows add 10 points; a LightGBM refit on rows from the same scene still covers about 12 points less (offline)",
+         notes="Offline, simulated, after the switch: +12.3 pts 80% coverage [+7.7, +17.0], pinball −0.015, error level (results/live_variants.csv, post-hoc)."),
+    dict(q="Did you tune until it worked?",
+         bullets=["Every pass rule was committed before its run (pre-registration with amendments)", "Paired crowds, bootstrap intervals, Holm correction",
+                  "Claim C failed and claim A narrowed under those rules", "Failures stay in the README"],
+         notes="Commit hashes for each rule are in RESULTS.md and docs/DECISIONS.md."),
+    dict(q="What data?", pics=["media/fig_f4_data_cards.png"],
+         a="Five real scenes (ETH, Hotel, Zara 1–2, Univ) · three simulated crowds · highway-env traffic",
+         notes="Real data: Pellegrini 2009 (ETH, Hotel), Lerner 2007 (UCY), read through OpenTraj. Annotated every 0.4 s, the step we replan on."),
+    dict(q="How much data does TabPFN need?", pics=["media/fig_f4_context_size.png"], a="2,000 rows tie LightGBM on 20,000",
+         notes="Crossing crowd, +2 s, f4 features, 3 seeds (results/context_size.csv)."),
+    dict(q="Ranges in a new place?", pics=["media/fig_f4_claim_a.png"],
+         a="Better than LightGBM on two scenes; a tie on five when LightGBM gets all the rows",
+         notes="Two scenes: 75% vs 58% box coverage (Hotel to ETH). Five scenes: −0.008, a tie."),
+    dict(q="Can it predict turns?", pics=["media/fig_intent_layer.png"],
+         a="Wider ranges for people who turn (46% → 63% inside, real data); it does not call turns",
+         notes="Intent chain: TabPFN classifier, then per-manoeuvre ranges. Offline only; turn recall is 0."),
+    dict(q="Why was the robot slower?", pics=[DK + "fig_t5_left.png", "media/fig_f4_oracle_gate.png"],
+         a="At the same caution setting every learned forecaster drives the same; even true future positions gain under 2 s",
+         notes="Left: every planner, time to goal against closest gap, 20 paired crowds (T5). Right: the oracle gate. Split − frozen TabPFN −0.12 s [−1.35, +1.25] at q 0.15. The box veto throws away the range's shape."),
+    dict(q="Fast enough? Feature engineering? Why these choices?",
+         bullets=["Speed: 71 ms per replan on an NVIDIA L4, 318 ms scene rebuild; Apple M3 Pro 287–321 ms; fits the 0.4 s replan",
+                  "Feature engineering: 21 hand-made properties (time to closest approach, threat, companion): no gain",
+                  "Constant velocity baseline: Schöller et al. 2020 · TabPFN: Hollmann et al. 2025 (Nature)",
+                  "Data: Pellegrini 2009, Lerner 2007 · calibration: Gibbs & Candès 2021"],
+         notes="10 Hz is not claimed: it needs a background scene rebuild that is designed, not built. Full reference list: docs/VIDEO_BRIEF.md section 4."),
+    dict(q="One decision in detail", pics=["docs/walkthrough/s5_person_box.png", "docs/walkthrough/s8_planner.png"],
+         a="One real moment, every stage, with the actual values", notes="Seed 6001, t = 7.2 s, person 11. Full page: docs/walkthrough.html."),
+    dict(q="Five real scenes, scene by scene", pics=["media/fig_loso5.png"],
+         a="TabPFN on 1,500 rows: ahead of LightGBM on the same rows in 4 scenes, level on Hotel; level with LightGBM on about 22,000",
+         notes="Interval score at +2 s, mean over 3 context seeds. TabPFN 1.50 / 1.06 / 1.72 / 1.28 / 1.23 (ETH, Hotel, Univ, Zara1, Zara2); constant velocity plus band 1.69 / 1.34 / 2.33 / 1.54 / 1.72. Zara1 and Zara2 share one camera."),
+    dict(q="Is TabPFN only the forecaster?", clip="policy_seed3403", pics=["media/diagrams/02_pipeline.png"],
+         a="A second TabPFN can pick the robot's move: on 20 new crowds it drove like the planner it learned from, on average",
+         notes="Ranges, scene adaptation and the move are all TabPFN calls. Tracker, calibration offset and the hard safety check stay classical. Collision interval is wide at 20 crowds: don't say 'as safe'."),
+]
+
+
+def backups(d):
+    for i, b in enumerate(BACKUPS, 1):
+        s = d.slide(f"Backup · B{i}", b["q"], notes=b.get("notes", ""), meta=f"Backup B{i}")
+        top, bottom = 1.65, 6.05
+        if b.get("bullets"):
+            box(s, M, top, CW, bottom - top + 0.6)
+            for k, t in enumerate(b["bullets"]):
+                yy = top + 0.45 + k * 1.05
+                box(s, M + 0.4, yy + 0.1, 0.14, 0.14, fill=ACCENT, line=None, kind=MSO_SHAPE.OVAL)
+                text(s, M + 0.8, yy - 0.08, CW - 1.3, 0.9, t, 18)
+            continue
+        box(s, M, top, CW, bottom - top)
+        items = ([("clip", b["clip"])] if b.get("clip") else []) + [("pic", p) for p in b.get("pics", [])]
+        gap, pad = 0.3, 0.15
+        iw = (CW - 2 * pad - gap * (len(items) - 1)) / len(items)
+        for k, (kind, p) in enumerate(items):
+            xx = M + pad + k * (iw + gap)
+            rel = (DK + p + "_last.png" if STATIC else G + p + ".gif") if kind == "clip" else p
+            pic(s, rel, xx, top + pad, iw, bottom - top - 2 * pad)
+        text(s, M, 6.25, CW, 0.6, b["a"], 16, bold=True)
 
 
 def build():
-    prs = Presentation()
-    prs.slide_width, prs.slide_height = Inches(W), Inches(H)
-    blank = prs.slide_layouts[6]
-    for sp in SLIDES:
-        s = prs.slides.add_slide(blank)
-        s.notes_slide.notes_text_frame.text = sp.get("notes", "")
-        if sp.get("cover"):
-            s.shapes.add_picture(str(ROOT / sp["cover"]), 0, 0, Inches(W), Inches(H))
-            band = s.shapes.add_shape(1, 0, Inches(4.45), Inches(W), Inches(H - 4.45))   # 1 = rectangle
-            band.fill.solid()
-            band.fill.fore_color.rgb = RGBColor(0xFA, 0xFA, 0xF8)
-            band.line.fill.background()
-            text(s, M, 4.6, W - 2 * M, 0.35, sp["tag"], 14, bold=True, color=ACCENT)
-            text(s, M, 5.0, W - 2 * M, 0.9, sp["title"], 54, bold=True)
-            text(s, M, 5.9, W - 2 * M, 0.9, sp["sub"], 20, color=INK)
-            continue
-        text(s, M, 0.3, W - 2 * M, 0.3, sp["tag"], 12, bold=True, color=ACCENT)
-        if sp.get("divider"):
-            text(s, M, 3.0, W - 2 * M, 1.0, sp["title"], 44, bold=True)
-            continue
-        text(s, M, 0.6, W - 2 * M, 1.0, sp["title"], 30, bold=True)
-        top, bottom = 1.75, 6.15
-        if sp.get("line"):
-            text(s, M, 6.45, W - 2 * M, 0.5, sp["line"], 16, bold=True)
-        if sp.get("todo"):
-            text(s, M, 6.98, W - 2 * M, 0.45, "TO DO: " + sp["todo"], 10, color=ACCENT)
-        pics = sp.get("pics", [])
-        bullets = sp.get("bullets")
-        area_w = (W - 2 * M) / 2 - 0.2 if (bullets and pics) else W - 2 * M
-        if pics:
-            n, gap = len(pics), 0.3
-            wts = sp.get("weights", [1] * n)
-            x = M
-            for i, rel in enumerate(pics):
-                pw = (area_w - gap * (n - 1)) * wts[i] / sum(wts)
-                lab = sp["labels"][i] + "  ·  " + rel if sp.get("labels") else rel
-                picture(s, rel, x, top, pw, bottom - top, label=lab)
-                x += pw + gap
-        if bullets:
-            bx = M + area_w + 0.4 if pics else M
-            bw = W - M - bx
-            tb = text(s, bx, top + 0.3, bw, bottom - top - 0.3, "", 20)
-            tf = tb.text_frame
-            for i, b in enumerate(bullets):
-                p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-                r = p.runs[0] if (i == 0 and p.runs) else p.add_run()
-                r.text = "–  " + b
-                r.font.size, r.font.name = Pt(20), FONT
-                r.font.color.rgb = INK
-                p.space_after = Pt(12)
-    OUT.parent.mkdir(exist_ok=True)
-    prs.save(OUT)
-    print(f"wrote {OUT} ({len(prs.slides)} slides)")
+    d = Deck()
+    talk(d)
+    backups(d)
+    out = ROOT / ("deck/Foresight_finalist_static.pptx" if STATIC else "deck/Foresight_finalist.pptx")
+    out.parent.mkdir(exist_ok=True)
+    d.prs.save(out)
+    print(f"wrote {out} ({len(d.prs.slides)} slides)")
 
 
 if __name__ == "__main__":

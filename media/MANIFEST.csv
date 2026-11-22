@@ -24,3 +24,7 @@ demo/highway.gif,tools/render_highway.py,results/highway_h2_q.npz + data/highway
 demo/scenes5.gif,tools/render_scenes5.py,data/eth hotel zara1 zara2 univ (local TabPFN),ab3740b,current,illustration of the LOSO5 setup; not a result; stats in demo/scenes5_stats.json
 fig_context_size.png,tools/context_size.py,results/context_size.csv,,removed,superseded by fig_f4_context_size.png (tools/plot_results.py)
 fig_live_variants.png,tools/live_variants.py,results/live_variants.csv,,removed,superseded by fig_live_variants_cp.png
+deck/3d_*.jpg,(frames),media/demo_full.mp4 on nooshin/dev (2:46 cut),fe06fe9,current,frames at 19.0 33.0 39.5 50.85 61.0 74.8 s; step frames cropped to 1152x800; used by tools/build_outline_deck.py
+deck/street_clip.mp4,(cut),media/demo_full.mp4 on nooshin/dev (2:46 cut),fe06fe9,current,1:05.0-1:38.5 of the video; 1280x720 H.264; silent; deck slide 5
+deck/fig_t5_left.png + fig_t5_right.png,(crop),media/fig_t5.png,,current,the two panels of fig_t5.png; left = backup B7
+deck/*_last.png,(last frame),media/demo/*.gif,,current,last frame of each clip for the static deck and the PDF
