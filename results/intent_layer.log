@@ -1,0 +1,151 @@
+GATE (fixed before any result):
+  the intent->range chain is adopted as a validated layer if, on the test rows labelled turn_left/turn_right, its
+  interval score (90%, both axes averaged; Gneiting & Raftery) is lower than the single TabPFN range model's with a
+  paired person-bootstrap 95% interval excluding 0, AND its overall interval score is not worse (interval includes 0
+  or favours the chain). Otherwise it is reported as tested and not adopted.
+  Operational form: d = chained - single per test row, averaged over context seeds per row (pooled seed x row records,
+  persons resampled), 2,000 person-bootstrap draws (rng 0). Adopt iff upper(d | turns) < 0 and lower(d | all) <= 0.
+  Decided per setting. The gate arm 'chained' reads the mixture quantiles from the exact mixture CDF (below); the
+  400-draw estimator is a labelled sensitivity arm with its own verdict, because in the dry run it alone shifted the
+  single model's interval score by -0.04 to -0.12 (it widens the 5-95 box), larger than the effects being tested.
+
+setting S: train pool 166439 rows (90 ep), test 1500 rows (1003 persons); test modes {'straight': 995, 'turn_right': 246, 'turn_left': 229, 'stop': 30}
+setting R: train pool 2870 rows (12 ep), test 1500 rows (319 persons); test modes {'straight': 1342, 'stop': 85, 'turn_right': 37, 'turn_left': 36}
+  plan S seed 0: context modes {'straight': 1373, 'stop': 36, 'turn_left': 295, 'turn_right': 296}; fitted modes ['straight', 'stop', 'turn_left', 'turn_right']; 11 calls (0 clf + 9 reg not cached)
+  plan S seed 1: context modes {'straight': 1425, 'stop': 32, 'turn_left': 281, 'turn_right': 262}; fitted modes ['straight', 'stop', 'turn_left', 'turn_right']; 11 calls (1 clf + 10 reg not cached)
+  plan R seed 0: context modes {'straight': 1227, 'stop': 715, 'turn_left': 31, 'turn_right': 27}; fitted modes ['straight', 'stop', 'turn_left']; 9 calls (1 clf + 8 reg not cached)
+  plan R seed 1: context modes {'straight': 1211, 'stop': 733, 'turn_left': 30, 'turn_right': 26}; fitted modes ['straight', 'stop', 'turn_left']; 9 calls (1 clf + 8 reg not cached)
+  plan R seed 2: context modes {'straight': 1209, 'stop': 728, 'turn_left': 36, 'turn_right': 27}; fitted modes ['straight', 'stop', 'turn_left']; 9 calls (1 clf + 8 reg not cached)
+API plan: 4 classifier calls x 130,000 + 43 regressor calls x 30,000 = 1,810,000 credits (cap 8,000,000); hosted TabPFN
+server before (raw): Currently, you have used 3040000 of the allowed limit of 50000000 credits. The limit will reset at 2026-12-01 00:00:00 UTC.
+server before: 3040000
+price check after 1 call(s): server 30,000 vs plan 30,000; projected total 1,810,000 (cap 8,000,000)
+  estimator check: exact mixture of single == single (max dev 5.0e-09); single through 400 draws - raw single IS +0.0103; max |draws - exact| chained 0.0713
+S seed 0: done in 36 s; calls so far 9
+  estimator check: exact mixture of single == single (max dev 5.0e-09); single through 400 draws - raw single IS +0.0094; max |draws - exact| chained 0.0652
+S seed 1: done in 83 s; calls so far 20
+  estimator check: exact mixture of single == single (max dev 5.0e-09); single through 400 draws - raw single IS -0.0159; max |draws - exact| chained 0.0978
+R seed 0: done in 50 s; calls so far 29
+  estimator check: exact mixture of single == single (max dev 5.0e-09); single through 400 draws - raw single IS -0.0182; max |draws - exact| chained 0.0601
+R seed 1: done in 33 s; calls so far 38
+  estimator check: exact mixture of single == single (max dev 5.0e-09); single through 400 draws - raw single IS -0.0147; max |draws - exact| chained 0.0682
+R seed 2: done in 51 s; calls so far 47
+server after: 4130000
+wrote results\intent_layer.csv
+mixture sanity (one-hot, sigma ~0.6): draws max abs dev 0.0728, exact max abs dev 4.99e-09
+
+=== Setting S ===
+intent classifier (95% person bootstrap):
+  balanced_accuracy   tabpfn_clf: 0.303 [0.290, 0.317]  lgbm_clf: 0.307 [0.294, 0.320]
+  accuracy            tabpfn_clf: 0.670 [0.645, 0.694]  lgbm_clf: 0.665 [0.641, 0.688]
+  logloss             tabpfn_clf: 0.808 [0.765, 0.852]  lgbm_clf: 1.528 [1.401, 1.661]
+  brier               tabpfn_clf: 0.441 [0.415, 0.467]  lgbm_clf: 0.560 [0.520, 0.601]
+  ece10               tabpfn_clf: 0.036 [0.032, 0.041]  lgbm_clf: 0.242 [0.233, 0.252]
+  recall straight     tabpfn_clf: 0.946 [0.933, 0.959]  lgbm_clf: 0.930 [0.916, 0.944]  (n 995)
+  recall stop         tabpfn_clf: 0.000 [0.000, 0.000]  lgbm_clf: 0.000 [0.000, 0.000]  (n 30)
+  recall turn_left    tabpfn_clf: 0.111 [0.079, 0.146]  lgbm_clf: 0.122 [0.091, 0.156]  (n 229)
+  recall turn_right   tabpfn_clf: 0.154 [0.115, 0.195]  lgbm_clf: 0.177 [0.140, 0.216]  (n 246)
+  tabpfn - lgbm logloss: -0.720 [-0.810, -0.630]
+  tabpfn - lgbm brier: -0.119 [-0.137, -0.102]
+range (95% person bootstrap):
+  [all] rows 1500, persons 1003
+    single         IS 2.784 [2.647, 2.916]  err 0.757  joint 83.6%  width 2.13/2.04  pinball 0.1213
+    chained        IS 3.013 [2.917, 3.111]  err 0.771  joint 90.7%  width 2.58/2.70  pinball 0.1260
+    oracle_intent  IS 2.508 [2.379, 2.652]  err 0.691  joint 80.9%  width 1.84/1.82  pinball 0.1104
+    d chained-single       IS 0.229 [0.175, 0.287]  err 0.015 [0.009, 0.021]  joint 0.072 [0.060, 0.083]
+    d oracle_intent-single IS -0.275 [-0.371, -0.173]  err -0.066 [-0.083, -0.048]  joint -0.026 [-0.042, -0.011]
+    d chained_draws400-single IS 0.230 [0.175, 0.288]  err 0.015 [0.009, 0.021]  joint 0.073 [0.061, 0.085]
+    d single_via_draws400-single IS 0.010 [0.002, 0.017]  err -0.000 [-0.000, 0.000]  joint 0.017 [0.013, 0.022]
+  [straight] rows 995, persons 748
+    single         IS 2.257 [2.152, 2.371]  err 0.578  joint 88.5%  width 1.95/1.91  pinball 0.0955
+    chained        IS 2.661 [2.584, 2.744]  err 0.594  joint 94.4%  width 2.43/2.58  pinball 0.1031
+    oracle_intent  IS 2.119 [1.957, 2.304]  err 0.565  joint 83.6%  width 1.48/1.61  pinball 0.0913
+    d chained-single       IS 0.404 [0.347, 0.454]  err 0.016 [0.009, 0.023]  joint 0.059 [0.046, 0.072]
+    d oracle_intent-single IS -0.138 [-0.213, -0.051]  err -0.014 [-0.025, -0.002]  joint -0.049 [-0.066, -0.034]
+    d chained_draws400-single IS 0.405 [0.349, 0.456]  err 0.016 [0.009, 0.023]  joint 0.060 [0.048, 0.073]
+    d single_via_draws400-single IS 0.029 [0.023, 0.036]  err 0.000 [0.000, 0.000]  joint 0.021 [0.015, 0.028]
+  [stop] rows 30, persons 29
+    single         IS 2.523 [2.326, 2.727]  err 0.884  joint 91.7%  width 2.45/2.30  pinball 0.1200
+    chained        IS 2.856 [2.694, 3.044]  err 0.826  joint 98.3%  width 2.88/2.83  pinball 0.1200
+    oracle_intent  IS 0.850 [0.705, 1.000]  err 0.249  joint 70.0%  width 0.64/0.53  pinball 0.0386
+    d chained-single       IS 0.334 [0.136, 0.493]  err -0.058 [-0.099, -0.025]  joint 0.067 [0.000, 0.172]
+    d oracle_intent-single IS -1.673 [-1.924, -1.432]  err -0.636 [-0.846, -0.440]  joint -0.217 [-0.339, -0.091]
+    d chained_draws400-single IS 0.334 [0.136, 0.495]  err -0.058 [-0.099, -0.025]  joint 0.067 [0.000, 0.172]
+    d single_via_draws400-single IS 0.057 [0.022, 0.083]  err -0.001 [-0.001, -0.000]  joint 0.000 [0.000, 0.000]
+  [turns] rows 475, persons 389
+    single         IS 3.902 [3.571, 4.233]  err 1.122  joint 72.7%  width 2.47/2.31  pinball 0.1756
+    chained        IS 3.760 [3.529, 3.997]  err 1.138  joint 82.6%  width 2.89/2.93  pinball 0.1745
+    oracle_intent  IS 3.428 [3.215, 3.640]  err 0.984  joint 76.1%  width 2.67/2.34  pinball 0.1552
+    d chained-single       IS -0.143 [-0.275, -0.005]  err 0.016 [0.005, 0.029]  joint 0.099 [0.074, 0.122]
+    d oracle_intent-single IS -0.474 [-0.724, -0.201]  err -0.138 [-0.182, -0.094]  joint 0.034 [-0.003, 0.069]
+    d chained_draws400-single IS -0.143 [-0.274, -0.006]  err 0.016 [0.005, 0.029]  joint 0.100 [0.075, 0.124]
+    d single_via_draws400-single IS -0.034 [-0.052, -0.017]  err -0.000 [-0.000, -0.000]  joint 0.011 [0.004, 0.017]
+per seed interval score:
+model           chained  chained_draws400  oracle_draws400  oracle_intent  single  single_via_draws400
+subset seed_id                                                                                        
+all    0.0        3.029             3.030            2.467          2.472   2.776                2.786
+       1.0        2.997             2.998            2.547          2.545   2.791                2.800
+turns  0.0        3.807             3.806            3.385          3.414   3.925                3.888
+       1.0        3.713             3.714            3.428          3.443   3.880                3.849
+GATE S: tested, NOT adopted  (upper CI of d on turns -0.005 must be < 0; lower CI of d on all 0.175 must be <= 0; turn rows 475, turn persons 389)
+sensitivity (400-draw chained) S: tested, NOT adopted  (upper CI of d on turns -0.006 must be < 0; lower CI of d on all 0.175 must be <= 0; turn rows 475, turn persons 389)
+
+=== Setting R ===
+intent classifier (95% person bootstrap):
+  balanced_accuracy   tabpfn_clf: 0.490 [0.474, 0.499]  lgbm_clf: 0.488 [0.469, 0.502]
+  accuracy            tabpfn_clf: 0.938 [0.912, 0.961]  lgbm_clf: 0.939 [0.913, 0.962]
+  logloss             tabpfn_clf: 0.237 [0.161, 0.325]  lgbm_clf: 0.709 [0.453, 0.996]
+  brier               tabpfn_clf: 0.103 [0.067, 0.143]  lgbm_clf: 0.119 [0.075, 0.168]
+  ece10               tabpfn_clf: 0.017 [0.015, 0.019]  lgbm_clf: 0.059 [0.059, 0.059]
+  recall straight     tabpfn_clf: 0.987 [0.974, 0.996]  lgbm_clf: 0.989 [0.977, 0.998]  (n 1342)
+  recall stop         tabpfn_clf: 0.973 [0.917, 1.000]  lgbm_clf: 0.953 [0.894, 1.000]  (n 85)
+  recall turn_left    tabpfn_clf: 0.000 [0.000, 0.000]  lgbm_clf: 0.009 [0.000, 0.027]  (n 36)
+  recall turn_right   tabpfn_clf: 0.000 [0.000, 0.000]  lgbm_clf: 0.000 [0.000, 0.000]  (n 37)
+  tabpfn - lgbm logloss: -0.472 [-0.676, -0.290]
+  tabpfn - lgbm brier: -0.016 [-0.028, -0.006]
+range (95% person bootstrap):
+  [all] rows 1500, persons 319
+    single         IS 1.583 [1.457, 1.706]  err 0.390  joint 71.1%  width 0.81/0.97  pinball 0.0651
+    chained        IS 1.560 [1.448, 1.668]  err 0.397  joint 76.1%  width 0.93/1.09  pinball 0.0655
+    oracle_intent  IS 1.570 [1.450, 1.689]  err 0.393  joint 71.6%  width 0.80/1.00  pinball 0.0650
+    d chained-single       IS -0.022 [-0.057, 0.009]  err 0.007 [0.004, 0.010]  joint 0.050 [0.038, 0.062]
+    d oracle_intent-single IS -0.013 [-0.058, 0.027]  err 0.003 [-0.002, 0.008]  joint 0.005 [-0.008, 0.019]
+    d chained_draws400-single IS -0.025 [-0.060, 0.006]  err 0.007 [0.004, 0.010]  joint 0.059 [0.047, 0.071]
+    d single_via_draws400-single IS -0.016 [-0.022, -0.011]  err 0.000 [0.000, 0.000]  joint 0.018 [0.014, 0.022]
+  [straight] rows 1342, persons 308
+    single         IS 1.524 [1.419, 1.640]  err 0.388  joint 72.6%  width 0.82/1.01  pinball 0.0639
+    chained        IS 1.516 [1.423, 1.613]  err 0.396  joint 76.8%  width 0.94/1.12  pinball 0.0645
+    oracle_intent  IS 1.536 [1.429, 1.655]  err 0.393  joint 72.8%  width 0.80/1.04  pinball 0.0644
+    d chained-single       IS -0.009 [-0.043, 0.022]  err 0.008 [0.005, 0.011]  joint 0.042 [0.030, 0.054]
+    d oracle_intent-single IS 0.012 [-0.018, 0.040]  err 0.005 [0.000, 0.010]  joint 0.002 [-0.010, 0.015]
+    d chained_draws400-single IS -0.011 [-0.044, 0.020]  err 0.008 [0.005, 0.011]  joint 0.052 [0.041, 0.063]
+    d single_via_draws400-single IS -0.015 [-0.021, -0.009]  err 0.000 [0.000, 0.000]  joint 0.018 [0.014, 0.022]
+  [stop] rows 85, persons 13
+    single         IS 0.782 [0.455, 1.078]  err 0.137  joint 69.8%  width 0.41/0.30  pinball 0.0273
+    chained        IS 0.750 [0.441, 1.075]  err 0.125  joint 77.3%  width 0.51/0.40  pinball 0.0256
+    oracle_intent  IS 0.645 [0.360, 0.955]  err 0.103  joint 67.5%  width 0.27/0.20  pinball 0.0221
+    d chained-single       IS -0.032 [-0.148, 0.069]  err -0.012 [-0.026, -0.002]  joint 0.075 [0.021, 0.120]
+    d oracle_intent-single IS -0.137 [-0.334, 0.006]  err -0.034 [-0.086, -0.002]  joint -0.024 [-0.082, 0.023]
+    d chained_draws400-single IS -0.032 [-0.148, 0.071]  err -0.012 [-0.026, -0.002]  joint 0.071 [0.020, 0.108]
+    d single_via_draws400-single IS -0.003 [-0.015, 0.009]  err 0.000 [-0.000, 0.000]  joint 0.012 [0.000, 0.022]
+  [turns] rows 73, persons 37
+    single         IS 3.589 [2.672, 4.664]  err 0.715  joint 45.7%  width 1.11/1.04  pinball 0.1316
+    chained        IS 3.326 [2.512, 4.243]  err 0.736  joint 62.6%  width 1.38/1.27  pinball 0.1296
+    oracle_intent  IS 3.273 [2.519, 4.140]  err 0.725  joint 54.3%  width 1.42/1.23  pinball 0.1253
+    d chained-single       IS -0.263 [-0.481, -0.075]  err 0.021 [0.002, 0.040]  joint 0.169 [0.106, 0.236]
+    d oracle_intent-single IS -0.317 [-0.740, 0.119]  err 0.010 [-0.050, 0.064]  joint 0.087 [-0.006, 0.179]
+    d chained_draws400-single IS -0.267 [-0.490, -0.079]  err 0.021 [0.002, 0.040]  joint 0.174 [0.107, 0.243]
+    d single_via_draws400-single IS -0.053 [-0.078, -0.031]  err -0.000 [-0.000, 0.000]  joint 0.027 [0.009, 0.052]
+per seed interval score:
+model           chained  chained_draws400  oracle_draws400  oracle_intent  single  single_via_draws400
+subset seed_id                                                                                        
+all    0.0        1.556             1.555            1.555          1.569   1.571                1.555
+       1.0        1.566             1.563            1.559          1.576   1.587                1.569
+       2.0        1.559             1.556            1.550          1.565   1.590                1.575
+turns  0.0        3.294             3.288            3.182          3.207   3.576                3.526
+       1.0        3.410             3.403            3.330          3.398   3.642                3.579
+       2.0        3.274             3.274            3.178          3.213   3.549                3.504
+GATE R: ADOPTED  (upper CI of d on turns -0.075 must be < 0; lower CI of d on all -0.057 must be <= 0; turn rows 73, turn persons 37)
+sensitivity (400-draw chained) R: ADOPTED  (upper CI of d on turns -0.079 must be < 0; lower CI of d on all -0.060 must be <= 0; turn rows 73, turn persons 37)
+wrote media\fig_intent_layer.png
+API calls made this run: 47
