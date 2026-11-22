@@ -349,7 +349,12 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
   - Paired over the common seeds, mean time_capped is no worse by more than 2 s, and mean intrusion_s no worse by more than 1 s (the D-14 differences).
   - The moving-collision rate rises by at most 0.1 (one seed in ten).
 - **Decision:** if all three learned planners pass, smoothing is ON for every planner using the shared planner in T5. Otherwise it is OFF.
-- **Latency arm:** set to the primary's measured ms per plan in the T5 config (T4 offset test), rounded up to the next 0.2 s simulation step.
+- **Latency arm:** set to the primary's measured ms per plan in the T5 config (T4 offset test), rounded up to the next 0.2 s simulation step. *(Replaced by part 3.)*
+
+**T4 addendum, part 3: latency arm and fast-replan arm** (written before any latency result; no latency run exists):
+- **Latency arm fixed at 0.4 s**, one replan period: tabpfn_split at q 0.15 with `--latency 0.4`, testing predictions that are one step stale.
+- Part 2's rule (measured ms per plan rounded up) would have given ~2.0 s. It was replaced before any result because the ~1.9 s per plan comes from 8 contended processes on an x64-emulated CPU. That is a worst case no deployment would budget; a real system budgets one replan period.
+- **Fast-replan baselines:** reactive m0.4 and vo w1 replan every simulation step, 0.2 s. Amendment 2's "0.1 s" is below the 0.2 s simulation step and cannot be run.
 
 ## Deployment notes (wording rules for the deck)
 

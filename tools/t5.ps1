@@ -3,7 +3,7 @@
 # frozen context 2,000 rows at natural frequency, TabPFN 3.5-Fast 1 estimator. Seed-outer, planner-inner, checkpointed.
 # Values from the T4 addendum: -Smooth (D-28 gate), -Offset off|row|batch (offset gate), -Latency (secondary arm).
 #   tools/t5.ps1 -Offset batch -Latency 0.6 [-Smooth] [-DryRun]
-param([switch]$Smooth, [string]$Offset = "off", [double]$Latency = 0.6, [switch]$DryRun)
+param([switch]$Smooth, [string]$Offset = "off", [double]$Latency = 0.4, [switch]$DryRun)
 $env:POLARS_SKIP_CPU_CHECK = "1"; $env:PYTHONIOENCODING = "utf-8"; $env:PYTHONUNBUFFERED = "1"
 Set-Location $PSScriptRoot\..
 $py = "C:\Users\samco\tools\lerobot-test\.venv-x64\Scripts\python.exe"
