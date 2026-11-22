@@ -682,6 +682,32 @@ Plan: `docs/TABPFN_POLICY.md`. Pilot and DAgger rule: `docs/runs/policy_pilot_ru
 - **The teacher itself collides while moving in 40% of these crowds** at q 0.35. The dial sweep's 15% was on other seeds.
 - **The collision-rate interval is wide** at 20 crowds.
 
+## Same core, another form factor: highway cars (exploratory, offline, Sun 22 Nov; rules fixed before any TabPFN run)
+
+Plan, rules and results: `docs/HIGHWAY.md` (plan 34f1954, results 06d8d93). Figure `media/fig_highway.png`.
+- **Simulator:** highway-env `highway-v0`, a 4-lane road with 20 IDM/MOBIL cars plus an ego car, and regimes defensive, normal and aggressive.
+- **Data:** 72 episodes; 54 training and 18 held out. The core is unchanged: same features, same models, same planner-free scoring.
+- **Statistics:** paired vehicle bootstrap.
+
+**H1, the same core on cars: PASSED** (interval score lower than both rivals, intervals excluding 0).
+
+| Model | Coverage | Interval score |
+|---|---|---|
+| TabPFN (1,500 rows) | 85.6% | 3.57 |
+| lgbm_all (100,440 rows) | 82.1% | 4.06 |
+| cv_band | 82.9% | 7.78 |
+
+- TabPFN − lgbm_all: −0.49 [−0.66, −0.34], with 67× fewer rows.
+- TabPFN is also lowest in every regime.
+
+**H2, adapts after traffic turns aggressive** (a style the bank never saw): **PASSED**.
+- Split against frozen: coverage 76.7% against 62.5%, interval score −0.98 [−1.41, −0.56], error −0.14 m.
+- About 80% of the gain falls in the first 6 s after the switch (coverage 20% → 51%), so it means "adapts through the transition". Once traffic has settled, the frozen model is roughly right again.
+
+**H2b, wrong embodiment** (no pass rule): a pedestrian bank predicting cars gives boxes about 50 m wide. That fails safe but is useless. Adding car scene rows halves the damage (interval score 51.7 → 28.2) but does not rescue it, so the bank must match the embodiment (D-35).
+
+**Limits:** offline and simulated, with no closed loop on cars.
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):

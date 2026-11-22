@@ -142,6 +142,17 @@ def build():
                     "intent is random by construction and the chain is not adopted (D-34). Offline only.")
     image(s, "fig_intent_layer.png")
 
+    s = slide(prs, "Same core, another form factor", kicker="Result · highway cars",
+              notes="The core, unchanged, on highway-env cars (4 lanes, 20 IDM/MOBIL cars; offline, simulated; "
+                    "docs/HIGHWAY.md, rules fixed before any TabPFN run). H1 passed: TabPFN on 1,500 rows holds 85.6% "
+                    "with interval score 3.57, against LightGBM on 100,440 rows at 82.1% / 4.06 (−0.49 [−0.66, −0.34]) "
+                    "and constant velocity plus band at 82.9% / 7.78. H2 passed: after traffic turns aggressive, a style "
+                    "the bank never saw, split beats frozen (coverage 76.7% vs 62.5%, interval score −0.98 [−1.41, "
+                    "−0.56]); about 80% of the gain is in the first 6 s after the switch. A pedestrian bank on cars gives "
+                    "~50 m boxes, so each embodiment needs its own bank (D-35). No closed loop on cars.")
+    image(s, "fig_highway.png", max_h=Inches(5.1))
+    caption(s, "Cars: TabPFN 85.6% coverage, interval score 3.57 vs LightGBM (67x more rows) 4.06 · adapts after traffic turns aggressive")
+
     s = slide(prs, "Adapts in the loop when behaviour changes", kicker="Result · claim B",
               notes="20 fresh simulated crowds that turn erratic at 5 s; erratic was never in the bank. After the switch, "
                     "reading this scene's last completed rows (split) keeps the box holding the truth 59.3% of the time, "
