@@ -142,6 +142,26 @@ def build():
                     "intent is random by construction and the chain is not adopted (D-34). Offline only.")
     image(s, "fig_intent_layer.png")
 
+    s = slide(prs, "TabPFN at every step", kicker="Result · chained TabPFN",
+              notes="In the running loop TabPFN does three jobs: it predicts ranges (frozen bank model), adapts them "
+                    "(recent-only scene model) and picks the move (a TabPFN classifier over the candidate moves, fitted "
+                    "once on its teacher's choices). On 20 fresh crowds it matched its teacher, the box planner on the "
+                    "same ranges: goal 100% vs 100%, time +0.55 s [−0.34, +1.65], gap +0.009 m, collision crowds +5 "
+                    "points [−15, +25]. It picks the teacher's move at 87% of replans; the 0.4 s safety check and the "
+                    "area check override it at 0.9%; 333 ms per plan on an NVIDIA L4. Honesty line: it matches its "
+                    "teacher on point estimates; the collision interval is too wide at 20 crowds to rule out a "
+                    "25-point worse rate. It imitates a planner that does not beat the baselines, so this shows TabPFN "
+                    "can be the controller, not a better one. A fourth role, offline on real data: a TabPFN intent "
+                    "classifier feeding per-manoeuvre range models (better-calibrated ranges for people who turn; it "
+                    "does not forecast turns). The pictured crowd (3403) is the lowest test seed where both reached the "
+                    "goal without contact, so it is not a typical crowd: the policy happened to keep more clearance there.")
+    _text(s, "Predicts ranges (frozen bank) → adapts (scene model) → picks the move (classifier over candidates)\n"
+             "Offline, real data: intent classifier → per-manoeuvre ranges", Inches(0.6), Inches(1.45), Inches(12.1),
+          Inches(0.9), 16, color=INK)
+    image(s, "demo/policy_seed3403_paths.png", top=Inches(2.35), max_h=Inches(4.35))
+    caption(s, "Teacher (left) vs TabPFN policy (right), crowd 3403: lowest test seed where both reached the goal without "
+               "contact · overall: matches its teacher on 20 crowds, safety checks override 0.9%, 333 ms per plan on an L4")
+
     s = slide(prs, "Same core, another form factor", kicker="Result · highway cars",
               notes="The core, unchanged, on highway-env cars (4 lanes, 20 IDM/MOBIL cars; offline, simulated; "
                     "docs/HIGHWAY.md, rules fixed before any TabPFN run). H1 passed: TabPFN on 1,500 rows holds 85.6% "

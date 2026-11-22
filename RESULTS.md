@@ -673,6 +673,7 @@ Plan: `docs/TABPFN_POLICY.md`. Pilot and DAgger rule: `docs/runs/policy_pilot_ru
 | Moving-collision crowds | 45% | 40% | +5 points [−15, +25] | ≤ +24.4 points | pass |
 
 **Verdict by the rule: "TabPFN can drive the loop at the teacher's level."**
+- **Honesty line:** the plan's margins were applied to point estimates. Read as a non-inferiority test on the 95% intervals, time passes (upper end +1.65 s against 2.6) and so does the gap (lower end −0.113 m against −0.158). The collision rate's upper end, +0.25, just exceeds the 0.244 margin. So it matches its teacher on point estimates, but the collision interval is too wide at 20 crowds to rule out a rate 25 points worse.
 - It picks the teacher's move at 87.4% of replans (66–98% per crowd).
 - The hard checks overrode its first choice at only 0.94% of replans, so TabPFN does the driving.
 - It costs 333 ms per plan on the L4, against 255 ms for the teacher.

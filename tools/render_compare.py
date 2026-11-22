@@ -46,7 +46,7 @@ C_INK, C_MUTED, C_OBST, C_GRID = W.C_INK, W.C_MUTED, W.C_OBST, W.C_GRID
 NAMES = {"stop_go": "Stop-and-go", "reactive": "Reactive", "vo": "Velocity obstacle", "cv": "Constant velocity",
          "cv_band": "CV + fixed band", "oracle": "Oracle (true future)", "tabpfn_split": "Foresight (TabPFN split)",
          "tabpfn": "TabPFN frozen", "tabpfn_live": "TabPFN live", "lgbm": "LightGBM", "lgbm_all": "LightGBM (all rows)",
-         "lgbm_live": "LightGBM live"}
+         "lgbm_live": "LightGBM live", "tabpfn_policy": "TabPFN picks the move"}
 NO_BOXES = ("stop_go", "reactive", "vo")
 NEAR = 0.5                                                   # run_episode's intrusion threshold (surface gap, m)
 FPS = 10                                                     # 0.2 s steps at 2x speed
@@ -270,6 +270,7 @@ def main():
     ap.add_argument("--duration", type=float, default=40.0, help="episode cap in s (T5: 40)")
     ap.add_argument("--dpi", type=int, default=100, help="animation dpi (100 = 1280x720)")
     ap.add_argument("--no-anim", action="store_true", help="paths and stats only")
+    ap.add_argument("--policy-ctx", nargs="*", default=None, help="teacher candidate-row CSVs for tabpfn_policy")
     a = ap.parse_args()
     import torch
     torch.set_num_threads(3)
@@ -277,6 +278,8 @@ def main():
     specs = [parse_spec(s) for s in a.planners]
     base = W.final_args(a.seed, smooth=a.smooth, offset=a.offset, duration=a.duration)
     base.dt = 0.2
+    if a.policy_ctx:                                         # absolute: run_planner works in a temp directory
+        base.policy_ctx, base.neg_ratio, base.log_cands = [str(Path(p).resolve()) for p in a.policy_ctx], 3.0, None
     print(f"final configuration: seed {a.seed}, duration {a.duration:g} s, people {base.people}, switch into "
           f"{base.switch_to} at {base.switch_t:g} s, replan {base.replan:g} s, latency {base.latency:g} s, "
           f"{W.settings_line(base)}", flush=True)

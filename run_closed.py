@@ -90,6 +90,8 @@ class Predictor:
         self.split = kind.endswith("_split") or kind == "tabpfn_policy"      # the policy reads split's ranges
         self.base = kind.replace("_live", "").replace("_all", "").replace("_split", "").replace("_policy", "")
         self.policy = None
+        if kind == "tabpfn_policy" and getattr(args, "policy_ctx", None):    # TabPFN classifier over candidate rows
+            self.policy = POL.Policy(args.policy_ctx, neg_ratio=getattr(args, "neg_ratio", 3.0))
         self.frozen_model, self.n_rec = None, 0
         self.agg = []                                            # boxes served this episode (in-loop aggregates)
         self.offset = bool(getattr(args, "offset", False)) and kind.startswith(("lgbm", "tabpfn", "cv_band"))
@@ -557,8 +559,7 @@ def main():
     csv_path = Path(f"results/closed/{run_id}.csv")
     preds = {kind: Predictor(kind, bank, bank_obj, a) for kind in a.planners}
     if "tabpfn_policy" in preds:
-        pol = POL.Policy(a.policy_ctx, neg_ratio=a.neg_ratio)
-        preds["tabpfn_policy"].policy = pol
+        pol = preds["tabpfn_policy"].policy
         print(f"policy context: {pol.n_pos} positives + {pol.n_neg} negatives (of {pol.n_all} rows; ratio {a.neg_ratio:g})",
               flush=True)
     # seed outer, planner inner: a run cut short still holds complete, paired seeds
