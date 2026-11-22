@@ -4,11 +4,11 @@
 
 Slides carry a title, one visual and at most a few words; explanations go in the speaker
 notes. Missing figures become placeholder slides, so the deck always shows what is still to do.
-This is the collect-everything deck; the 5-minute final is filtered from it.
+Final deck on the f4 verdicts (RESULTS.md, Sun 22 Nov): what works (claims A, B, data efficiency, intent),
+what did not (claim C, closed-loop speed) and why.
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from pptx import Presentation
@@ -55,156 +55,128 @@ def bullets(s, lines, top=Inches(1.8), size=22):
     _text(s, "\n".join(lines), Inches(0.8), top, Inches(11.7), Inches(5), size)
 
 
-def results_table(s, ev):
-    rows = [("Direction", "Model", "Rows seen", "Error +1.2 s", "Error +2 s", "Error +4.8 s",
-             "Box holds truth (~80%)", "Pinball")]
-    label = {"cv": "Const. velocity", "cv_band": "Const. velocity + band", "lgbm": "LightGBM (1,500)",
-             "lgbm_all": "LightGBM (all)", "tabpfn": "TabPFN (1,500)"}
-    for pair, r in ev["results"].items():
-        a, b = (x.replace("eth", "ETH").replace("hotel", "Hotel") for x in pair.split("->"))
-        for k in ("cv", "cv_band", "lgbm", "lgbm_all", "tabpfn"):
-            v = r[k]
-            rows.append((f"{a} → {b}", label[k], f"{v['2']['train_rows']:,}",
-                         *(f"{v[h]['err_mean']:.2f} m" for h in ("1.2", "2", "4.8")),
-                         "—" if k == "cv" else f"{100 * v['2'].get('joint90', float('nan')):.0f}%",
-                         f"{v['2'].get('pinball', float('nan')):.3f}"))
-    shape = s.shapes.add_table(len(rows), len(rows[0]), Inches(0.6), Inches(1.6), Inches(12.1), Inches(0.38) * len(rows))
-    for i, row in enumerate(rows):
-        for j, val in enumerate(row):
-            c = shape.table.cell(i, j); c.text = val
-            para = c.text_frame.paragraphs[0]; para.font.size = Pt(12); para.font.name = "Segoe UI"
-            para.font.bold = (i == 0) or (row[1].startswith("TabPFN"))
+def strip(s, paths, top=Inches(1.7), max_h=Inches(4.9), gap=Inches(0.15)):
+    """Several images side by side, equal height, centred; missing ones become placeholders."""
+    pics = []
+    for path in paths:
+        p = MEDIA / path if not str(path).startswith("docs/") else ROOT / path
+        if not p.exists():
+            _text(s, f"[figure to come: {path}]", Inches(0.6), Inches(3.2), Inches(12), Inches(1), 18, color=MUTED)
+            return
+        pics.append(s.shapes.add_picture(str(p), 0, top))
+    for pic in pics:
+        r = max_h / pic.height; pic.width, pic.height = int(pic.width * r), int(pic.height * r)
+    total = sum(p.width for p in pics) + gap * (len(pics) - 1)
+    if total > Inches(12.3):                                   # shrink to fit the width
+        r = Inches(12.3) / total
+        for pic in pics:
+            pic.width, pic.height = int(pic.width * r), int(pic.height * r)
+        total = sum(p.width for p in pics) + gap * (len(pics) - 1)
+    x = int((W - total) / 2)
+    for pic in pics:
+        pic.left = x; x += pic.width + gap
 
 
-def _closed_table(s):
-    import pandas as pd
-    p = RESULTS / "closed.csv"
-    if not p.exists():
-        _text(s, "[results/closed.csv to come]", Inches(0.6), Inches(3.2), Inches(12), Inches(1), 18, color=MUTED)
-        return
-    import sys
-    sys.path.insert(0, str(ROOT))
-    from run_closed import load_closed
-    df = load_closed(p)
-    df = df[(df.sim == "crowd") & (df.box_q == 0.05)]
-    g = df.groupby("planner").agg(n=("seed", "nunique"), reached=("reached", "mean"), t=("time_to_goal", "mean"),
-                                  coll=("collided", "mean"), gap=("min_gap", "mean"), freeze=("freeze_rate", "mean"))
-    order = [k for k in ("cv", "cv_band", "lgbm", "tabpfn") if k in g.index]
-    label = {"cv": "Const. velocity", "cv_band": "Const. velocity + band", "lgbm": "LightGBM", "tabpfn": "TabPFN"}
-    rows = [("Planner", "Crowds", "Reached goal", "Time to goal", "Runs with a collision", "Closest gap (mean)", "Frozen")]
-    for k in order:
-        r = g.loc[k]
-        rows.append((label[k], f"{int(r.n)}", f"{100 * r.reached:.0f}%", f"{r.t:.1f} s", f"{100 * r.coll:.0f}%",
-                     f"{r.gap:.2f} m", f"{100 * r.freeze:.0f}%"))
-    shape = s.shapes.add_table(len(rows), len(rows[0]), Inches(0.6), Inches(1.8), Inches(12.1), Inches(0.45) * len(rows))
-    for i, row in enumerate(rows):
-        for j, val in enumerate(row):
-            c = shape.table.cell(i, j); c.text = val
-            para = c.text_frame.paragraphs[0]; para.font.size = Pt(14); para.font.name = "Segoe UI"
-            para.font.bold = (i == 0) or row[0] == "TabPFN"
+def caption(s, text, top=Inches(6.85)):
+    _text(s, text, Inches(0.6), top, Inches(12.1), Inches(0.5), 14, color=MUTED)
 
 
 def build():
+    """The final deck on the f4 verdicts (RESULTS.md, Sun 22 Nov). Numbers in notes and captions come from RESULTS.md."""
     prs = Presentation(); prs.slide_width, prs.slide_height = W, H
-    ev = json.loads((RESULTS / "eval.json").read_text()) if (RESULTS / "eval.json").exists() else None
 
     s = slide(prs, "Foresight", kicker="HackLab Berlin · Prior Labs track",
-              notes="One prediction-and-planning layer for any robot among people or cars. TabPFN predicts where each "
-                    "nearby agent will be in the next seconds, as a range; the robot keeps clear of the ranges.")
-    _text(s, "Where will everyone be in 2 seconds, and how sure are we?", Inches(0.6), Inches(1.6), Inches(12), Inches(1), 24, color=MUTED)
-    _text(s, "Darshak Panseriya · Nooshin Pourkamali", Inches(0.6), Inches(6.4), Inches(12), Inches(0.5), 16, color=MUTED)
+              notes="One prediction layer for a robot among people. TabPFN reads a table of what people just did and "
+                    "returns, for each person, a range for where they will be in one and two seconds. The robot keeps "
+                    "clear of the ranges. Darshak Panseriya, Nooshin Pourkamali.")
+    _text(s, "Where will everyone be in two seconds, and how sure are we?", Inches(0.6), Inches(1.4), Inches(12), Inches(0.8), 22, color=MUTED)
+    image(s, "../docs/walkthrough/s6_all_boxes.png", top=Inches(2.2), max_h=Inches(4.4))
+    caption(s, "Darshak Panseriya · Nooshin Pourkamali")
 
-    s = slide(prs, "A robot in public needs the next 2 seconds", kicker="Problem",
-              notes="Robots among people (delivery robots, humanoids, cars) must plan around where others will be, not "
-                    "where they are. A single guess is not enough: the planner needs to know how sure the guess is.")
-    bullets(s, ["Where will each person be?", "How sure is that?", "Which move stays clear?"])
+    s = slide(prs, "A robot needs the next two seconds, and how sure it is", kicker="Problem",
+              notes="Walking straight is a strong baseline on real people (Schöller et al. 2020): constant velocity is "
+                    "off by 0.37 m (ETH) and 0.25 m (Hotel) at +2 s. The hard part is knowing how wrong it might be, "
+                    "and that is hardest in a place the robot has never seen, where an overconfident model is dangerous.")
+    image(s, "diagrams/01_problem.png")
 
     s = slide(prs, "Scene → table → TabPFN → ranges → robot", kicker="Approach",
-              notes="Each agent at each moment becomes a table row (its own motion, nearest neighbours, robot, obstacles). "
-                    "Target: deviation from constant velocity after h seconds, in the agent's own frame. TabPFN returns "
-                    "quantiles: a range, not just a point. No training: it reads labelled example rows as context.")
-    bullets(s, ["1 row = 1 agent, 1 moment, 1 horizon", "Target: deviation from constant velocity",
-                "TabPFN: quantiles from example rows, no training", "Planner: pick the move clear of the ranges"])
+              notes="One row = one person, one moment, one look-ahead: their own motion, three nearest neighbours, the "
+                    "robot, in the person's own frame. The label is how far they end up from walking straight. TabPFN "
+                    "reads labelled rows as examples and returns quantiles in one pass, no training.")
+    image(s, "diagrams/02_pipeline.png")
 
-    s = slide(prs, "Real pedestrians: ETH and Hotel (Zurich)", kicker="Data",
-              notes="ETH Walking Pedestrians dataset (Pellegrini et al. 2009), via OpenTraj. Positions in metres every "
-                    "0.4 s. ETH: 360 people; Hotel: 390 people. We take context rows from one scene and test on the "
-                    "other, so the model never saw the test place. Plus a stand-in simulated crowd with a robot.")
-    bullets(s, ["750 people, positions every 0.4 s", "Context from one place, test on the other",
-                "Plus a simulated crowd with a robot"])
+    s = slide(prs, "One real decision, stage by stage", kicker="How it works",
+              notes="Real values at one moment, picked by a fixed rule (docs/walkthrough.html, f4, seed 6001): the "
+                    "example rows TabPFN read, one person's range, and the planner vetoing moves that enter a range.")
+    strip(s, ["docs/walkthrough/s4_context.png", "docs/walkthrough/s5_person_box.png", "docs/walkthrough/s8_planner.png"])
+    caption(s, "Examples it read  ·  one person's range  ·  the move the planner keeps")
 
-    s = slide(prs, "TabPFN on real people it never saw", kicker="Demo",
-              notes="Hotel scene; TabPFN saw 1,500 rows from the ETH scene only. Orange box: 80% range for the position "
-                    "2 s ahead. Black x: where the person actually was. (Coverage for this clip: see RESULTS.md; this clip predates f4.) "
-                    "of the time, median error 0.26 m.")
-    image(s, "demo_hotel_tabpfn.png")
+    s = slide(prs, "Tested so it can fail", kicker="Method",
+              notes="Every pass condition was written before its run. A leak was found and fixed (D-20). Our constant "
+                    "velocity matches the published one (ETH 1.12 vs 1.15 m, Hotel 0.46 vs 0.51 m at 4.8 s, D-26). The "
+                    "plaza could not separate planners (T1), so the crowd was chosen by a rule from baselines alone (T2). "
+                    "The oracle gate failed (D-33), so the closed loop is a stress test.")
+    image(s, "diagrams/11_tests.png")
 
-    s = slide(prs, "Same people, four predictors", kicker="Comparison",
-              notes="Same moment, same people. Constant velocity with a fixed band: honest but wide. LightGBM: narrow "
-                    "boxes that miss more often. TabPFN: narrower than the band, holds the truth as often as promised.")
-    image(s, "compare_hotel.png")
+    s = slide(prs, "Honest ranges in a place it never saw", kicker="Result · claim A",
+              notes="Real Zurich pedestrians, context from one scene, test on the other, 5 context samples, paired person "
+                    "bootstrap. Hotel → ETH: TabPFN's 5-95% box holds the truth 74.8% (LightGBM on all rows 57.7%); "
+                    "interval score −0.303 [−0.425, −0.184] against LightGBM. ETH → Hotel: 86.4% vs 74.9%, interval "
+                    "score level with LightGBM on all rows. Direction-dependent; in the hard direction TabPFN still "
+                    "under-covers (75% against about 81%). Point error level with LightGBM, slightly better than tuned CV.")
+    image(s, "fig_f4_claim_a.png")
 
-    s = slide(prs, "Error by horizon", kicker="Results",
-              notes="Mean distance between predicted (median) and actual position. Both directions: context from one "
-                    "scene, test on the other. LightGBM (all rows) is its best case: every training row of the source scene.")
-    image(s, "fig_error_by_horizon.png")
+    s = slide(prs, "Few rows are enough", kicker="Result · data efficiency",
+              notes="TabPFN on 2,000 rows is about level with LightGBM on 20,000 (results/context_size.csv, crowd_cross, "
+                    "f4). Retrieved (similar) rows did not beat random rows at equal size.")
+    image(s, "fig_f4_context_size.png")
 
-    s = slide(prs, "Are the ranges honest?", kicker="Results",
-              notes="For ranges promising 20 to 90% coverage, how often the actual position fell inside. On the dotted "
-                    "line = honest. Below = overconfident (dangerous for a robot). Above = too cautious (slows it down).")
-    image(s, "fig_calibration.png")
+    s = slide(prs, "TabPFN at two chained layers", kicker="Result · intent",
+              notes="A TabPFN classifier predicts the manoeuvre (straight, stop, turn left or right); per-manoeuvre TabPFN "
+                    "range models give the range, mixed by the class probabilities. Real Hotel → ETH: on turning people "
+                    "the interval score improves by −0.263 [−0.481, −0.075] (73 rows, 37 people), coverage on turns "
+                    "+16.9 points, overall level. In the simulator intent is random by construction and the chain is "
+                    "not adopted (D-34). Offline only.")
+    image(s, "fig_intent_layer.png")
 
-    s = slide(prs, "How many examples does it need?", kicker="Results",
-              notes="Error at +2 s against the number of example rows, ETH to Hotel (one seed). TabPFN is ahead with few "
-                    "rows (50-500); from 1,000 rows on LightGBM catches up. One seed: indicative only.")
-    image(s, "fig_data_efficiency.png")
+    s = slide(prs, "Adapts in the loop when behaviour changes", kicker="Result · claim B",
+              notes="20 fresh simulated crowds that turn erratic at 5 s; erratic was never in the bank. After the switch, "
+                    "reading this scene's last completed rows (split) keeps the box holding the truth 59.3% of the time, "
+                    "against 49.3% for frozen TabPFN (+10.0 points [+8.4, +11.6]) and 41.3% for LightGBM; interval "
+                    "score 5.03 vs 6.34 (−1.31 [−1.55, −1.08]); error −0.057 m. Before the switch it costs a little. "
+                    "No model reaches the 81% target. Simulation; real-data check: RESULTS.md.")
+    image(s, "fig_t5.png", max_h=Inches(5.15))
+    caption(s, "Right panel: box holds the true position at +2 s, before and after the switch (20 paired crowds)")
 
-    s = slide(prs, "Rows from this place are worth more", kicker="Finding",
-              notes="LightGBM, 5 seeds, +2 s. Rows from another place level off at about 0.30 m from 1,000 rows on; rows "
-                    "from the same place keep improving, to 0.27 m at 2,000. (An earlier version showed rows from another "
-                    "place making things worse; that came from a leaking feature and is gone.) The test sets differ, so "
-                    "compare shapes. This is why context rows are chosen from the current scene.")
-    image(s, "fig_rows_place.png")
+    s = slide(prs, "Calibrated, but slower", kicker="Closed loop · claim C",
+              notes="Pre-registered rule, 20 paired crowds: the TabPFN planner beats no baseline (Holm, p = 1.0). At "
+                    "constant velocity m0.4's safety it is 4.3 s slower (gap) and 3.0 s slower (collision rate). Even "
+                    "the open-loop oracle could not beat every baseline by 2 s: the fastest baseline runs 1.5 s above "
+                    "the 17.7 s time floor. Claim C is reported as a stress test.")
+    strip(s, ["demo/seed3013_paths.png"], max_h=Inches(5.0))
+    caption(s, "Showcase crowd 3013, chosen by rule (median split time): same crowd for every planner")
 
-    s = slide(prs, "Robot crossing a crowd: two planners", kicker="Closed loop",
-              notes="Same simulated crowd (Nooshin's social-force simulator), same start and goal. Left: constant-velocity "
-                    "predictions with a safety margin. Right: TabPFN 80% ranges. The robot picks, every 0.4 s, the move "
-                    "that gets closest to its goal while keeping clear of the predicted ranges at +1 s and +2 s.")
-    image(s, "closed_crowd_1001_cv_vs_tabpfn.png")
+    s = slide(prs, "Why slower, and what comes next", kicker="Honest framing",
+              notes="The planner only vetoes moves into the box, so it uses the range's width and nothing else. Better-"
+                    "calibrated ranges after the switch are wider, so more moves are vetoed and the robot waits. Next "
+                    "work, not done: a planner that uses the range's shape, e.g. a chance-constrained cost, so a wide "
+                    "but thin-tailed range does not block a move.")
+    bullets(s, ["Honest ranges are wider after a change", "Our planner only reads the width: more vetoes, slower",
+                "Next: use the range's shape (chance-constrained cost)", "Not claimed as done"])
 
-    s = slide(prs, "Fast, safe, or both?", kicker="Closed loop",
-              notes="Six crowds per planner (seeds 1000-1005), the same for every planner. Collision = robot touching a "
-                    "person while moving. Freeze = share of decisions where the robot stood still.")
-    _closed_table(s)
+    s = slide(prs, "When to use which", kicker="Honest framing",
+              notes="Familiar place, many rows: LightGBM is as good, with narrower boxes. New place or new behaviour, few "
+                    "rows: TabPFN keeps its promise better. Limits: two real scenes, a simulated crowd, no robot in the "
+                    "real data, no statistical safety guarantee; calibrated ranges are for efficiency, a worst-case "
+                    "floor is for safety.")
+    bullets(s, ["Familiar place, many rows: LightGBM is as good", "New place or new behaviour, few rows: TabPFN is safer",
+                "Two real scenes, simulated crowd, no safety guarantee claimed"])
 
-    s = slide(prs, "Any agent: people, cars, robots", kicker="Scenarios",
-              notes="Every scenario writes the same track format. Done: simulated plaza, real ETH/Hotel pedestrians. Next: "
-                    "mixed street (cars in lanes, pedestrians on pavements, a delivery robot crossing). Pitch only: "
-                    "warehouse floor robots, drone swarms.")
-    bullets(s, ["Plaza crowd + robot (simulated)", "Real pedestrians, Zurich", "Next: street with cars, people, delivery robot",
-                "Same layer: warehouse robots, drones"])
-
-    s = slide(prs, "Numbers", kicker="Results",
-              notes="Mean position error at three horizons; coverage of the 80% range at +2 s. TabPFN and LightGBM "
-                    "(1,500) see the same 1,500 random rows. LightGBM (all) and the band use every training row.")
-    if ev:
-        results_table(s, ev)
-    else:
-        _text(s, "[results/eval.json to come]", Inches(0.6), Inches(3.2), Inches(12), Inches(1), 18, color=MUTED)
-
-    s = slide(prs, "Baselines, built fairly", kicker="Method",
-              notes="Constant velocity: last filtered velocity, held. Constant velocity + band: fixed range from training "
-                    "residual quantiles per horizon. LightGBM: one quantile-regression model per quantile per axis, 300 "
-                    "trees, learning rate 0.05, 31 leaves, min 10 rows per leaf, default otherwise, no tuning; same "
-                    "features and rows as TabPFN, plus a version on all rows. Split by place: no test person in context.")
-    bullets(s, ["Constant velocity (± fixed band)", "LightGBM quantile regression, same features",
-                "Same rows as TabPFN, and all rows", "Tested on a place none of them saw"])
-
-    s = slide(prs, "Next", kicker="Plan",
-              notes="R2: per-moment context selection (recent rows + similar situations) and adaptation after a "
-                    "behaviour change. R3: robot planner choosing moves clear of the ranges, against baselines. R4: same "
-                    "layer on highway-env cars.")
-    bullets(s, ["Pick the right examples per moment", "Robot chooses its path from the ranges", "Same layer drives a car"])
+    s = slide(prs, "On a robot", kicker="Deployment",
+              notes="A small cached context in the loop, constant velocity as the safety floor, the cloud never in the "
+                    "loop. TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are non-commercial: this is "
+                    "a research prototype; a product needs the commercial licence or the Apache v2 weights.")
+    image(s, "diagrams/12_deployment.png")
 
     OUT.parent.mkdir(exist_ok=True); prs.save(OUT)
     print(f"wrote {OUT} ({len(prs.slides)} slides)")
