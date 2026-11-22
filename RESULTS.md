@@ -150,6 +150,28 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
   - **Caveat:** the two test sets differ, so compare the shapes. This is the reason for choosing context rows from the current scene (adaptation experiment, next).
 - **Hotel is easy for constant velocity:** about 45% of people there stand still. ETH is harder, and every learned model gains more there.
 
+## Intent layer: TabPFN at two chained layers (exploratory, Sun 22 Nov; gate fixed in the script before any result)
+
+`tools/intent_layer.py` → `results/intent_layer.log`, `media/fig_intent_layer.png` (hosted TabPFN, 47 calls, ~1.8M credits, commit ed06094).
+
+- **Chain:**
+  1. A TabPFN classifier predicts each person's manoeuvre at +2 s (straight, stop, turn left, turn right).
+  2. Per-manoeuvre TabPFN range models give the range.
+  3. The ranges are mixed by the class probabilities, with quantiles read from the exact mixture distribution.
+  - It is compared with the single TabPFN range model on the same context rows (3 seeds of 2,000 rows), at +2 s, with a paired person bootstrap.
+- **Gate:** the chain must have a lower interval score on turn rows (interval excluding 0) and an overall interval score that is not worse.
+
+| Setting | Intent balanced accuracy (chance 0.25) | Turn rows: interval score, chain − single | Overall: interval score | Overall: joint coverage | Error | Gate |
+|---|---|---|---|---|---|---|
+| Simulated (crowd_cross_t2) | 0.30 | −0.143 [−0.275, −0.005] (475 rows) | **+0.229 [+0.175, +0.287]** (worse) | +7.2 pts | +0.015 m | **not adopted** |
+| Real (Hotel → ETH) | 0.49 | **−0.263 [−0.481, −0.075]** (73 rows, 37 people) | −0.022 [−0.057, +0.009] | +5.0 pts (turns +16.9) | +0.007 m | **adopted** |
+
+- **Classifier quality:** TabPFN's log loss beats LightGBM's in both settings: 0.81 against 1.53 simulated, 0.24 against 0.71 real. Balanced accuracy is level.
+- **What this says:**
+  - On real pedestrians, intent is partly predictable. Feeding it into per-manoeuvre range models gives better-calibrated boxes on turns, the rows where the single model's box holds the truth only 46% of the time; the chain raises that to 63%. Overall it is level or slightly better.
+  - In the simulator, intent is random by construction (balanced accuracy 0.30), and the chain makes the overall score worse.
+- **Limits:** a small turn sample (73 rows, 37 people), offline only, one direction, not in the closed loop (D-34).
+
 ## Calibration layer: on arrival and in the scene (`tools/conformal_eval.py`, `media/fig_conformal_*.png`)
 
 Every model's 10–90% box (per axis) is widened or narrowed by one offset, so that the 2D box holds the truth 80% of the time, jointly over both axes. This uses conformalised quantile regression with a joint score (`foresight/core/conformal.py`).
