@@ -1,0 +1,78 @@
+{
+ "seed": 3013,
+ "commit": "beed64b",
+ "generated": "2026-11-22 03:54",
+ "settings": "smoothing off, online offset batch (alpha 0.2, eta_b 0.05 per 2 s batch)",
+ "switch_t": 5.0,
+ "switch_to": "erratic",
+ "box_drawn": "raw 5-95% box (q05/q95 along and across heading, logged in plans[*]['pred']), the box run_closed's inloop_cov90 scores; not the q15-85 + online-offset box the planner steers with",
+ "truth": "features.build_rows(full history, h = 2 s, row_every = dt) true positions, inner-merged on (agent_id, t), as Predictor.inloop_stats",
+ "post_definition": "forecast made at t >= switch_t (so the first post forecasts come due at switch_t + 2 s)",
+ "nominal_joint_coverage": "a 5-95% interval on each of two axes covers ~0.9 x 0.9 = 81% jointly if calibrated and independent",
+ "planners": [
+  {
+   "planner": "tabpfn_split",
+   "label": "TabPFN (reads the scene)",
+   "box_q": 0.15,
+   "window": {
+    "from_s": 3.2,
+    "to_s": 20.0,
+    "cov90_post": 0.6143497757847534,
+    "n_post": 669,
+    "note": "forecasts made at t >= 5 s that came due by 20 s (what the GIF's last frame shows)"
+   },
+   "full_episode": {
+    "cov90_post": 0.6010582010582011,
+    "n_post": 945,
+    "cov90_pre": 0.6166666666666667,
+    "episode_s": 25.8,
+    "reached": true,
+    "time_to_goal": 25.8,
+    "equals_run_episode_inloop_cov90_post": true
+   },
+   "t5_csv": {
+    "csv": "results/closed/20261122-011210-t5-split-q15.csv",
+    "inloop_cov90_post": 0.6010582010582011,
+    "inloop_n_post": 945,
+    "inloop_cov90_pre": 0.6166666666666667,
+    "time_to_goal": 25.8,
+    "csv_mean_cov90_post_all_seeds": 0.5926543136080327,
+    "csv_seeds": 20
+   },
+   "matches_t5": true,
+   "wall_s": 69.12471010000445
+  },
+  {
+   "planner": "lgbm_all",
+   "label": "LightGBM (all rows)",
+   "box_q": 0.15,
+   "window": {
+    "from_s": 3.2,
+    "to_s": 20.0,
+    "cov90_post": 0.458528951486698,
+    "n_post": 639,
+    "note": "forecasts made at t >= 5 s that came due by 20 s (what the GIF's last frame shows)"
+   },
+   "full_episode": {
+    "cov90_post": 0.45187901008249315,
+    "n_post": 1091,
+    "cov90_pre": 0.6875,
+    "episode_s": 29.400000000000002,
+    "reached": true,
+    "time_to_goal": 29.400000000000002,
+    "equals_run_episode_inloop_cov90_post": true
+   },
+   "t5_csv": {
+    "csv": "results/closed/20261122-013619-t5-lgbmall-q15.csv",
+    "inloop_cov90_post": 0.4518790100824931,
+    "inloop_n_post": 1091,
+    "inloop_cov90_pre": 0.6875,
+    "time_to_goal": 29.4,
+    "csv_mean_cov90_post_all_seeds": 0.41262809167007825,
+    "csv_seeds": 20
+   },
+   "matches_t5": true,
+   "wall_s": 38.04881549999118
+  }
+ ]
+}
