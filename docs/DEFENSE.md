@@ -274,7 +274,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 ### 10. "Your filter was tuned on the test scene, and 'our baseline matches the published one' contradicts your own rules."
 
 **Exposure.**
-- **The tuning file contradicts D-26.** `data/eth/kalman.json` says `"tuned_on": "data/eth", "episodes": "all"`, and Hotel's says the same of Hotel. D-26 and explainer.html:456 say "tuned on the other scene".
+- **The tuning file contradicts D-26.** `data/eth/kalman.json` says `"tuned_on": "data/eth", "episodes": "all"`, and Hotel's says the same of Hotel. D-26 and explainer.html:456 say "tuned on the other scene". Resolved: eth/kalman.json and hotel/kalman.json record cross-scene tuning (tuned_on the other scene).
 - **Likely cause.** `tools/tune_kalman.py:84` writes into the tuned dataset by default, so the `--report-fde48` gate run overwrote the cross-scene file.
 - **Effect on the numbers: none.** Both scenes pick q 0.1, r 0.1.
 - **"Matches" breaks three rules:**
@@ -459,7 +459,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
     - In T1 the learned planner sits on the CV-margin curve: LightGBM q0.15 at 23.3 s and 0.80 s intrusion, against CV margin 0.6 at 23.8 s and 0.87 s (D-19).
 
 29. **Q: What did the oracle show?**
-    - Nothing yet; the gate is written (D-21) and the runs are pending.
+    - The open-loop oracle ran in the chosen cell and failed its gate (D-33): the fastest baseline is only 1.50 s above the 17.74 s time floor, so claim C is reported as a stress test.
     - It is an open-loop oracle: true futures under the current command, not under the chosen candidate (attack 7).
 
 30. **Q: Is the simulation real-time?**
@@ -473,7 +473,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 
 32. **Q: Is the robot safer with TabPFN?**
     - Not shown. T1: no learned planner beats the baseline frontier in the plaza (D-19).
-    - The crossing-crowd test (T5) is the only confirmatory test, and it has not run.
+    - The crossing-crowd test (T5) is the only confirmatory test. T5 is running (pruned to 20 seeds for the learned arms, addendum part 5).
 
 **Deployment**
 

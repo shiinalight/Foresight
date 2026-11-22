@@ -56,14 +56,14 @@ Each tier runs where its latency fits:
 
 | Tier | Model | Job | Where |
 |---|---|---|---|
-| Real-time predictor | **TabPFN-3.5 with 1 estimator** (D-18; pending tier_seeds), cached, about 1,000 context rows. Fast with 1 estimator fails when the context comes from another place (ETH → Hotel 0.385 against 0.300 m); it stays an option only in-distribution (crowd: every tier within 0.01 m) | Every person, every replan (2.5–10 Hz) | On the robot |
+| Real-time predictor | **TabPFN-3.5 with 1 estimator** (D-18; tier_seeds was dropped (D-29); the closed loop runs TabPFN-3.5-Fast with 1 estimator), cached, about 1,000 context rows. Fast with 1 estimator fails when the context comes from another place (ETH → Hotel 0.385 against 0.300 m); it stays an option only in-distribution (crowd: every tier within 0.01 m) | Every person, every replan (2.5–10 Hz) | On the robot |
 | Second opinion | TabPFN-3.5 (8 estimators) | Only the people whose range is wide or whose box just failed: the uncertainty-triggered step. Runs off the control path, in the background | On the robot (GPU) |
 | Offline | TabPFN-3.5 or the hosted Thinking/Plus models (API) | Building and checking the context bank, analysis, evaluation | Cloud. **Never in the control loop** (network delay and dropouts) [judgment] |
 | Safety floor | Constant velocity plus band, and the 0.4 s hard check | Takes over whenever the predictor is late or fails | On the robot, independent of TabPFN |
 
 **Correction (red-team, DEFENSE.md #8):** v2 was *better* than 3.5 on Hotel → ETH (0.449 vs 0.474 m, 3 seeds), not "matching". The closed loop runs 3.5-Fast with 1 estimator; every result states its tier. The context-size test (results/context_size.csv) shows TabPFN still improving at 2,000 rows in the simulator, so the real-time context is set per setting at the 02:00 decision.
 
-**Evidence (tier grid, 21 Nov; results/tier_grid*.csv, single context sample, seed repeats in tier_seeds):** across 3.5 / Fast × 1-8 estimators × 250-2,000 rows, accuracy barely changes on Hotel → ETH and on the crowd; on ETH → Hotel Fast-1 is clearly worse from 1,000 rows on, while 3.5-1 equals 3.5-8 in both directions. v2 (Apache) matches 3.5 from 1,000 rows on Hotel → ETH and the crowd, and is weaker on ETH → Hotel (0.325–0.350 m). The cost of 3.5-1 against Fast-1 is the deck trade-off; `tools/latency.py` times both.
+**Evidence (tier grid, 21 Nov; results/tier_grid*.csv, single context sample, seed repeats in tier_seeds):** across 3.5 / Fast × 1-8 estimators × 250-2,000 rows, accuracy barely changes on Hotel → ETH and on the crowd; on ETH → Hotel Fast-1 is clearly worse from 1,000 rows on, while 3.5-1 equals 3.5-8 in both directions. v2 was better than 3.5 on Hotel→ETH (0.449 vs 0.474 m) and weaker on ETH→Hotel; see the correction above. The cost of 3.5-1 against Fast-1 is the deck trade-off; `tools/latency.py` times both.
 
 **Original evidence request:** the earlier "Fast with 1 estimator equals the default" check (F3) compared Fast with 1 estimator against the default with 8, which mixes two changes. Run a clean grid:
 - models: 3.5 and Fast;
@@ -87,7 +87,7 @@ Report pinball, joint coverage, width and fit/predict time. Accuracy does not de
 - `TABPFN_MPS_MEMORY_FRACTION` defaults to 0.7.
 - The docs recommend a recent PyTorch for Apple silicon.
 
-**Bug in our code:** `foresight/core/models.py:83` picks only `"cuda"` or `"cpu"`, so a Mac silently runs on CPU. It should pass `"auto"`.
+Fixed in bd1e240 (device auto: cuda > mps > cpu). **Bug in our code:** `foresight/core/models.py:83` picks only `"cuda"` or `"cpu"`, so a Mac silently runs on CPU. It should pass `"auto"`.
 - **Hold this edit** until tonight's baseline processes have finished. They import the code from disk when each one starts.
 
 **Nooshin's checklist:**

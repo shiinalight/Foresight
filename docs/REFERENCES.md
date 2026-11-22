@@ -48,7 +48,7 @@ Checked on 21 Nov 2026. Each entry was looked up online, not cited from memory. 
 
 **Protocol of these numbers.** Leave-one-scene-out over the 5 ETH/UCY scenes. 8 observed steps (3.2 s), 12 predicted (4.8 s), at 0.4 s per step. ADE is the mean over all 12 predicted steps and FDE is the error at the 12th. Units are metres. Schöller et al. keep windows with at least 2 future steps (sequences shorter than 10 are dropped), so some of their test windows end before 12 steps [1].
 
-**How ours differs.** We train on one scene and test on the other. We report the error at fixed horizons on randomly sampled rows. A row needs the person observed throughout a short history window (`features.py`, f2: 5 samples at 0.2 s, about 1 s), not the 8 steps (3.2 s) of the standard protocol. Our CV uses a Kalman-filtered velocity, not the last two points. So these numbers are a **reference point, not a like-for-like comparison**. Our "+4.8 s error" corresponds to **FDE** and should be read against the **deterministic** rows only.
+**How ours differs.** We train on one scene and test on the other. We report the error at fixed horizons on randomly sampled rows. A row needs the person observed throughout a short history window (`features.py`, f2: 5 samples (0.2 s steps in simulation, 0.4 s on ETH/Hotel), about 1 s), not the 8 steps (3.2 s) of the standard protocol. Our CV uses a Kalman-filtered velocity, not the last two points. So these numbers are a **reference point, not a like-for-like comparison**. Our "+4.8 s error" corresponds to **FDE** and should be read against the **deterministic** rows only.
 
 ### Deterministic (one prediction per person): comparable in kind to our point error
 
@@ -80,7 +80,7 @@ Checked on 21 Nov 2026. Each entry was looked up online, not cited from memory. 
 
 ### Our CV against the published CVM (open issue)
 
-RESULTS.md (21 Nov, after the leakage fix) gives our CV error at +4.8 s as **0.858 m on Hotel** (ETH → Hotel) and **1.442 m on ETH** (Hotel → ETH). Schöller's CVM FDE is **0.51 m** and **1.15 m**. Ours is clearly higher. The gap is **unexplained**. CV needs no training, so the cross-scene split cannot be the reason. Candidate causes, none checked:
+Resolved by D-26 (filter tuned on training data; constant velocity now within 3-14% of the published values). RESULTS.md (21 Nov, after the leakage fix) gives our CV error at +4.8 s as **0.858 m on Hotel** (ETH → Hotel) and **1.442 m on ETH** (Hotel → ETH). Schöller's CVM FDE is **0.51 m** and **1.15 m**. Ours is clearly higher. The gap is **unexplained**. CV needs no training, so the cross-scene split cannot be the reason. Candidate causes, none checked:
 
 - Kalman-filtered velocity against the raw last-two-point velocity;
 - a shorter required history (about 1 s against 3.2 s), so people who appeared recently are included;
