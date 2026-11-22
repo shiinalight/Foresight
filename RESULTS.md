@@ -571,6 +571,23 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 - **Same arms and dials:** tabpfn_split q0.15 and q0.10, frozen tabpfn q0.15, lgbm_all q0.15, vo w 0.5/1/2 and oracle m 0.2/0.4/0.6, on only the seeds not yet run.
 - **The 20-seed analysis above stays the confirmatory result.** The 40-seed tables follow as an update, computed by the same scripts and rules.
 
+**Update: 40 seeds (3000–3039), addendum part 5 extension** (same arms, rules and scripts; the 20-seed result above stays the confirmatory one):
+- Files: `results/t5_primary_40.csv`, `results/t5_oracle_matchedtime_40.csv`, `results/inloop_claimb_40.csv`.
+- **Primary:** unchanged. tabpfn_split beats no baseline; all four fail Holm (p = 1.0).
+  - Points (time / gap / collision rate): split q0.10 29.28 s / 0.193 m / 15%; q0.15 27.20 / 0.155 / 20%.
+  - cv m0.2–0.8: 22.14–28.83 s. vo w0.5–2: 20.02–22.93 s. reactive m0.2–0.8: 22.86–32.26 s. stop_go 31.72 s.
+- **Exploratory (a):** unchanged. By the per-baseline rule the oracle beats no baseline. Oracle points: m0.2 20.69 s / 0.221 m / 0%, m0.4 22.37 / 0.383 / 0%, m0.6 25.71 / 0.441 / 5%.
+- **In-loop claim B, after the switch, split − frozen tabpfn:**
+  - coverage +10.2 points [+9.3, +11.2] (59.5% against 49.3%);
+  - interval score −1.33 [−1.47, −1.20];
+  - error −0.061 m [−0.085, −0.039].
+  - Against lgbm_all: +18.5 points, −2.00, −0.022 m [−0.041, −0.003].
+  - Before the switch split is slightly worse, as at 20 seeds (interval score +0.22 against frozen).
+- **Speed of the learned planners at q0.15:** split 27.20 s, frozen TabPFN 27.16 s, lgbm_all 25.96 s.
+  - split − frozen: +0.03 s [−1.08, +1.16], the same.
+  - split − lgbm_all: **+1.24 s [+0.17, +2.34]**. At 40 seeds LightGBM, with 0.64 m narrower boxes after the switch, drives about 1.2 s faster than both TabPFN planners. At 20 seeds the interval included 0.
+  - So the two TabPFN planners (split's boxes 0.26 m wider than frozen's) drive the same, while narrower LightGBM boxes buy about a second. The caution setting still dominates: all learned planners stay 3–5 s slower than cv and vo at comparable safety.
+
 **Showcase seed** (CTO's rule): **3013**, a seed on which every primary-test planner reached the goal and tabpfn_split q0.15's time (25.8 s) is closest to its median (26.40 s).
 
 ## Deployment notes (wording rules for the deck)
