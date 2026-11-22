@@ -132,7 +132,7 @@ This mirrors live_variants Setting B and realdata_claimb.
 
 Setup: 1,500 held-out rows × 3 context seeds = 4,500 scored rows, 355 vehicles, all regimes.
 
-| Model | Joint 5–95 coverage | Interval score | Median error | Width |
+| Model | Joint 5–95 coverage | Interval score | Mean error of the median | Width |
 |---|---|---|---|---|
 | cv | 0% | 15.62 | 1.32 m | 0 |
 | cv_band | 82.9% | 7.78 | 1.32 m | 3.64 m |
@@ -150,13 +150,13 @@ Paired vehicle bootstrap, TabPFN minus rival, with 95% intervals:
 
 - TabPFN has the lowest interval score in every regime: aggressive 4.77 vs lgbm_all 4.93, defensive 3.03 vs 3.67, normal 3.10 vs 3.72.
 - Its coverage is 84–87% in every regime, slightly above the 81% target, while its boxes are the narrowest of the calibrated models.
-- On five pedestrian scenes (`docs/LOSO5.md`) TabPFN only tied lgbm_all. On cars it beats lgbm_all, which has 67x more rows, from the same simulator.
+- On five pedestrian scenes (`docs/LOSO5.md`) TabPFN only tied lgbm_all. On cars it beats lgbm_all, which has 67x more rows, from the same simulator. lgbm_all uses LightGBM m50:n100 (100 trees), the `loso5.py` setting. `realdata_claimb.py` used the 300-tree default; that was not rerun here.
 
 ### H2: adaptation after a switch to the unseen `aggressive` regime
 
 Setup: 600 query rows, 100 vehicles, 30 moments, 5 held-out episodes; no moment was thin.
 
-| Model | Joint 5–95 coverage | Interval score | Median error | Width |
+| Model | Joint 5–95 coverage | Interval score | Mean error of the median | Width |
 |---|---|---|---|---|
 | frozen (2,000 bank rows) | 62.5% | 13.96 | 2.05 m | 2.57 m |
 | **split (frozen + scene)** | **76.7%** | **12.98** | **1.91 m** | 2.93 m |
@@ -184,9 +184,11 @@ By time since the switch (interval score, frozen → split; coverage, frozen →
 
 Once traffic has settled into the new regime, the frozen model is roughly right again on its own, and split still gains a little.
 
+**Where the H2 gain comes from:** about 80% of split's gain over frozen falls in the first 6 s after the switch. So the result means "adapts through the transition". It does not mean that settled aggressive traffic is out of distribution for the bank: from 6 s on, frozen already covers 82–92%.
+
 ### H2b (exploratory): pedestrian bank predicting cars
 
-| Model | Joint 5–95 coverage | Interval score | Median error | Width |
+| Model | Joint 5–95 coverage | Interval score | Mean error of the median | Width |
 |---|---|---|---|---|
 | ped (2,000 crowd_cross_t2 rows) | 92.8% | 51.68 | 3.02 m | **50.6 m** |
 | ped + car scene model | 92.3% | 28.16 | 2.33 m | 26.9 m |
@@ -194,7 +196,7 @@ Once traffic has settled into the new regime, the frozen model is roughly right 
 
 - **The wrong embodiment fails in a safe direction.** On car rows the pedestrian-trained TabPFN gives boxes about 50 m wide. The car features (distances, speeds about 24 m/s against people's 1–1.6 m/s) are far outside its context, so it says "I don't know" rather than giving narrow, wrong boxes. Its coverage stays high (93%), but the boxes are useless for planning.
 - **Scene data halves the damage but does not rescue it.** Averaging with the car scene model cuts the interval score from 51.7 to 28.2 (−23.5 [−23.9, −23.1]) and the error by 0.69 m. That is still about twice split's interval score (+15.2 [+14.3, +16.1]), because averaging quantiles keeps half of the 50 m pedestrian width. A context that mixes the rows, rather than averaging the two models, might do better; it was not tested.
-- **Takeaway:** the core transfers, but each embodiment needs its own bank.
+- **This suggests,** without a verdict (there is no pass rule), that the core transfers but each embodiment needs its own bank.
 
 ### API use
 
@@ -207,4 +209,6 @@ Once traffic has settled into the new regime, the frozen model is roughly right 
 - **Simulator only.** IDM/MOBIL traffic in highway-env, with regimes I set by hand. Real highway data (highD, NGSIM) would be the next check.
 - **Lateral behaviour on a highway is easier than people.** The median CV error at +2 s is 0.63 m. Most of the tail comes from lane changes, about 4% of steps, and from the speed change after a switch.
 - **Small H2 test set.** 5 held-out episodes and 100 vehicles. The time bins are descriptive.
-- **Figure.** `media/fig_highway.png` shows episode 8, t = 26.2 s, 8.2 s after a defensive → aggressive switch. It was chosen by a fixed rule: the frame ≥ 6 s after the switch with the most lane changes, among frames with no box wider than 10 m. The boxes are tight for cars holding their lane and wide for the car that is mid lane-change. Three cars that start a lane change inside the next 2 s land outside their boxes.
+- **Figure.** `media/fig_highway.png` shows episode 8, t = 26.2 s, 8.2 s after a defensive → aggressive switch.
+  - **How it was chosen:** after the run, from the stored H2 quantiles, so this is not a pre-set rule. Two frames were rejected first: one where a single runaway box filled the plot, and one 0.2 s after the switch, where every box lagged the accelerating cars. The final rule picks the frame ≥ 6 s after the switch with the most lane changes, among frames with no box wider than 10 m.
+  - **What it shows, checked against `highway_h2_rows.csv`:** 17 of the 20 cars are inside their split box. Boxes are tight for cars holding their lane. The one car mid lane-change gets a box spanning −5.8 to +3.0 m across, and it is inside it. The 3 misses are cars that start a lane change within the next 2 s (true across moves of 2.3, 3.9 and 4.5 m).
