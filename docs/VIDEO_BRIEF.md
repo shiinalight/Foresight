@@ -32,6 +32,19 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 
 **Our assets** (`darshak/core`): `media/demo/seed3013.gif` (robot loop, crowd turns erratic at 5 s), `media/demo/calibration_seed3013.gif` (coverage counters, this crowd 60% vs 45%), `media/fig_t5.png`, `media/fig_highway.png` (titled "same core"), `media/fig_loso5.png`, `media/demo/policy_seed3403.gif` and `.mp4`, `media/diagrams/01_problem.png` and `02_pipeline.png`.
 
+**Explainers we planned, and what became of them** (`docs/VISUALS.md`, `docs/PRESENTATION.md` section 5, `TEAM-PLAN.md`):
+
+| Planned | Status | Where |
+|---|---|---|
+| Four-panel bird's-eye video: stop-and-go, reactive, velocity obstacles, TabPFN on the same crowd | **Made** | `media/demo/seed3013.gif` (crowd picked by rule: median) |
+| "Pipeline at work": one moment, every stage | **Made** as a stage-by-stage page | `docs/walkthrough.html`, images `docs/walkthrough/s1`–`s9` |
+| Explainer diagrams (problem, pipeline, row, TabPFN step, planner, coverage, tests, deployment) | **Made** | `media/diagrams/01`–`12`, used in `docs/explainer.html` |
+| 3D viewer | **Made by Nooshin** as the street and doorway scenes with their own pipeline, not as a replay of the robot loop's trace | `nooshin/dev`: `media/street3d_demo.html`, `media/demo_full.mp4` |
+| Calibration and policy clips | **Made** | `media/demo/calibration_seed3013.gif`, `media/demo/policy_seed3403.gif` |
+| Occupancy overlay with its metric | **Not made** (the grid is drawn; its metric was never reported) | — |
+| Live camera demo (webcam, YOLO, ranges drawn live) | **Not made** | — |
+| Side-by-side constant velocity against ours (`TEAM-PLAN.md`) | **Superseded** by the four-panel video | — |
+
 **Fixes needed in the 3D video's text** (Nooshin; template `tools/street3d_template.html` on `nooshin/dev`):
 1. **The outro's "Honest limits" panel is out of date.** It says "the final pre-registered test is running" and "honest ranges for real people in a new place: being re-checked". Both have finished: the planner test failed (slower than standard planners) and the new-place claim ties on five scenes. Replace the panel with our "where it breaks" card, or cut the outro.
 2. **Street Test 2 says "No faster adaptation here"** (the street's rush hour is mild; all models recover within 1 s). It is honest but, next to our proof 1, it confuses a first-time viewer. Leave the street tests out of the video and keep them for the README. If kept, say why: "on this street the switch is mild".
@@ -44,31 +57,43 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 
 ## 3. The three-minute cut
 
-The pace limit is about 2.3 spoken words per second. No numbers on camera; numbers in voice-over and captions only.
+**Clip lengths in the 3D video** (from `tools/street3d_template.html` on `nooshin/dev`; they add up to its 2:29):
+- problem: 15 s;
+- five-step explainer: 45.5 s (title 2.7 s, then about 7–8 s per step, then "every agent" 4.5 s);
+- street: 43 s (establishing shot 4 s, four events of about 5 s each with faster follow shots between, overview tail 6 s);
+- evidence outro: 45 s.
+
+**The plan uses about 93 s of it:** the problem, the five steps without their title and "every agent" cards (38 s), and the street without its establishing shot and with the overview tail cut to 2 s (35 s). The outro is replaced by our proofs. These are cuts in the editor, so no re-render is needed. Target 2:53, which leaves a few seconds for fades.
+
+Pace limit: about 2.3 spoken words per second. No numbers on camera; numbers go in the voice-over and captions. The explainer's own step captions are burned in, so the voice-over says one sentence per step, in step with them.
 
 | Time | On screen | Voice-over (words) |
 |---|---|---|
-| **0:00–0:12** | **On camera:** Darshak. Lower third "Foresight · Prior Labs track" | "A delivery robot shares the street with people, cars and bikes. Where will everyone be in two seconds, and how sure can it be?" (24) |
-| 0:12–0:27 | 3D problem cards (Nooshin), then `media/diagrams/01_problem.png` | "Today most robots assume people keep going straight, or keep one fixed margin. Too narrow and they collide, too wide and they freeze. Learned models do better, but they learn one place." (32) |
-| 0:27–1:00 | 3D five-step explainer on one pedestrian (Nooshin) | "We turn every moment into a row of a table. A filter smooths the sensor track. The row holds the person's motion, their neighbours, the robot and the obstacles. TabPFN reads thousands of example rows like it, with known outcomes, and answers in one step, with no training: where this person will be, as a range. The robot's knowledge is the table." (62) |
-| 1:00–1:35 | 3D street: Café door, sudden stop, zebra braking, jaywalker, rush hour, with every agent's range. Caption "Illustration: held-out simulated street; scripted robot route" | "Here is a street the model never saw. Someone stops dead: walking straight would run past them. A car brakes hard for the zebra, and its range has to change with it. A jaywalker leaves every expected path. Then rush hour: the crowd changes how it moves. That is the moment swapping rows is for." (55) |
-| 1:35–1:55 | **Proof 1.** `media/demo/calibration_seed3013.gif`, caption "this crowd: 60% vs 45%, target 81%"; then `media/fig_t5.png` | "Does swapping rows work? In our robot loop the crowd turns erratic. Reading the last seconds gave eighteen points more coverage than LightGBM, ten from the scene alone, in all three crowds we tried." (34) |
-| 1:55–2:10 | **Proof 2.** `media/fig_highway.png` | "The same core on simulated highway traffic: fifteen hundred rows match LightGBM trained on sixty-seven times more, with more honest ranges." (21) |
-| 2:10–2:22 | **Proof 3.** `media/fig_loso5.png` | "On five real pedestrian scenes it beats LightGBM on the same rows, and ties one trained on fifteen times more." (20) |
-| 2:22–2:45 | "Where it breaks" text card (make in the editor; four lines, the bullets below) | "Where it breaks. Our robot wasn't faster than standard planners: this planner ignores the range's shape. In a new place it ties a model with far more data. Each body needs its own examples. And it's all simulated except the real pedestrians." (42) |
-| **2:45–3:00** | **On camera:** Darshak and Nooshin. End card: repo URL, "every number comes from a script in the repo" | "Foresight lets a robot adapt its forecasts by swapping examples, not retraining. It's open source, and every number comes from a script. Thank you, Prior Labs." (26) |
+| **0:00–0:11** | **On camera:** Darshak. Lower third "Foresight · Prior Labs track" | "A delivery robot shares the street with people, cars and bikes. Where will they be in two seconds, and how sure is it?" (23) |
+| 0:11–0:26 | 3D problem cards (15 s) | "Today most robots assume people keep going straight, or keep one fixed margin. Too narrow and they collide, too wide and they freeze. Learned models do better, but they learn one place." (32) |
+| 0:26–0:33 | 3D step 1, "Watching" | "A filter turns noisy sensor dots into a smooth track: position and speed." (13) |
+| 0:33–0:41 | 3D step 2, "One row of a table" | "Every moment becomes one row of a table: motion, neighbours, the robot, obstacles." (13) |
+| 0:41–0:48 | 3D step 3, "The question" | "The model only learns the correction to keep going straight." (10) |
+| 0:48–0:56 | 3D step 4, "TabPFN answers" | "TabPFN reads thousands of example rows with known outcomes, and answers in one step, with no training." (17) |
+| 0:56–1:04 | 3D step 5, "Sizing the patch" | "The range is sized so the truth lands inside as often as promised." (13) |
+| 1:04–1:39 | 3D street: sudden stop, zebra braking, jaywalker, rush hour, every agent's range. Caption "Illustration: held-out simulated street; scripted robot route" | "The robot's knowledge is the table. Here is a street it never saw. Someone stops dead: walking straight would run past them. A car brakes hard for the zebra; its range has to change with it. A jaywalker leaves every expected path. Then rush hour: the crowd changes how it moves. That is what swapping rows is for." (57) |
+| 1:39–1:57 | **Proof 1.** `media/demo/calibration_seed3013.gif`, caption "this crowd: 60% vs 45%, target 81%"; then `media/fig_t5.png` | "Swapping rows works. In our robot loop the crowd turns erratic; reading its last seconds gave eighteen points more coverage than LightGBM, ten from the scene alone, and it led in all three crowds." (34) |
+| 1:57–2:10 | **Proof 2.** `media/fig_highway.png` | "The same core on simulated highway traffic: fifteen hundred rows match LightGBM trained on sixty-seven times more, with more honest ranges." (21) |
+| 2:10–2:21 | **Proof 3.** `media/fig_loso5.png` | "On five real pedestrian scenes it beats LightGBM on the same rows, and ties one trained on fifteen times more." (20) |
+| 2:21–2:41 | "Where it breaks" text card (make in the editor; the four lines below) | "Where it breaks. Our robot was slower than standard planners: this planner ignores the range's shape. Our new-place claim didn't survive five scenes. Each body needs its own examples. And everything but the real pedestrians is simulated." (37) |
+| **2:41–2:53** | **On camera:** Darshak and Nooshin. End card: repo URL, "every number comes from a script in the repo" | "Foresight lets a robot adapt by swapping examples, not retraining. Open source; every number comes from a script. Thank you, Prior Labs." (22) |
 
-Beats: 12 + 15 + 33 + 35 + 20 + 15 + 12 + 23 + 15 = 180 s. Fastest beat: the problem, 2.1 words per second; the rest are 1.4 to 2.0.
+Beats: 11 + 15 + 38 (five steps) + 35 + 18 + 13 + 11 + 20 + 12 = 173 s (2:53). Fastest beats: the problem and step 4 at about 2.1 words per second; the rest are 1.4 to 2.0. If the steps' own timings differ by a second in the edit, move the step sentences with them.
 
 **"Where it breaks" card (four lines):**
-- Not faster than standard planners (3–4 s slower at equal safety)
-- New place: ties LightGBM trained on 15× more data
+- Slower than standard planners (3–4 s at equal safety, three crowds)
+- New place: held on two real scenes, a tie on five
 - Each body needs its own example bank
 - Simulated robot loop and cars · non-commercial TabPFN-3.5 weights
 
 **Optional beats, if there is room** (cut first if the cut runs long):
 - After proof 1: `media/demo/policy_seed3403.gif`, "A second TabPFN can even pick the robot's move; on average it drove like the planner it learned from." (21)
-- `media/demo/seed3013.gif` under the 1:35 beat, to show the real robot loop with all four planners.
+- `media/demo/seed3013.gif` under the proof 1 beat, to show the real robot loop with all four planners side by side.
 
 **Never cut:** the open, the five-step table walkthrough, the street, the three proofs, "where it breaks", the close.
 
@@ -83,21 +108,21 @@ Short form for the README, the deck notes and Q&A. Full entries in `docs/REFEREN
 | Choice | Why | Backed by |
 |---|---|---|
 | **The problem: uncertainty, not just a point guess** | A planner needs to know how wrong a forecast might be; freezing and collisions are both real failure modes | Trautman & Krause 2010 [20], Trautman et al. 2015 [21] (the freezing robot problem); Mavrogiannis et al. 2023 [23] (survey) |
-| **Baseline: constant velocity** | The strongest simple baseline on real pedestrians; "keep going straight" is what many robots assume | Schöller et al. 2020 [1] (CVM beats deterministic deep models on ETH/UCY) |
-| **Predict the correction to walking straight, in the person's own frame** | Relative, rotation-free inputs carry over to new scenes; residual targets lower error | Schöller et al. 2020 [1], Sec. III and VI-A |
+| **Baseline: constant velocity** | The strongest simple baseline on real pedestrians; "keep going straight" is what many robots assume | Schöller et al. 2020 [1]: on average it matched or beat the deterministic neural predictors of 2019–20, most clearly on Hotel (not on ETH; later sampled models report lower errors) |
+| **Predict the correction to walking straight, in the person's own frame** | Relative, rotation-free inputs carry over to new scenes | Schöller et al. 2020 [1], Sec. VI-A. They predict relative displacements (Sec. III); the residual-to-constant-velocity target in the person's frame is our own design choice |
 | **What robots do today** | Stock Nav2 plans on current obstacle positions; deployed sidewalk robots describe slow-down and stop rules | Nav2 docs and maintainer posts [N9, N10, N12]; Starship and Serve public pages [S1–S5] |
-| **Data: ETH, Hotel, Zara1, Zara2, Univ** | The standard real pedestrian benchmark, world coordinates, used by every method we compare with | Pellegrini et al. 2009 [5] (ETH, Hotel); Lerner et al. 2007 [6] (UCY: Zara, Univ); read through OpenTraj, Amirian et al. 2020 [7] |
-| **Leave one scene out** | Tests a place the model has never seen; the standard protocol is train on four, test on the fifth | Gupta et al. 2018 [2], Salzmann et al. 2020 [3], Yuan et al. 2021 [4], Schöller et al. 2020 [1] |
+| **Data: ETH, Hotel, Zara1, Zara2, Univ** | The standard real pedestrian benchmark, world coordinates, used by every method we compare with | Pellegrini et al. 2009 [5] (ETH, Hotel); Lerner et al. 2007 [6] (UCY: Zara, Univ); read through OpenTraj, Amirian et al. 2020 [7]. REFERENCES.md row 7 still says UCY is not used; it now is (`docs/LOSO5.md`) |
+| **Leave one scene out** | Tests a place the model has never seen; the standard protocol is train on four, test on the fifth, which our five-scene test follows | Gupta et al. 2018 [2], Salzmann et al. 2020 [3], Yuan et al. 2021 [4], Schöller et al. 2020 [1]. We score fixed horizons with ranges, not 12-step ADE/FDE, so published numbers are a reference point, not a like-for-like comparison |
 | **Step size 0.4 s** | ETH/UCY are annotated every 0.4 s (2.5 fps), the grid every published result uses (8 observed and 12 predicted frames = 3.2 s and 4.8 s); the robot replans on the same step (D-2) | Gupta et al. 2018 [2]; Alahi et al. 2016 [36]; OpenTraj [7] (2.5 fps) |
 | **Horizons 1 and 2 s** | At walking speed 2 s is about 2 m, the space a robot plans in; Nav2's local controllers roll the robot's motion 1–3 s ahead; driving benchmarks use 3–8 s for much faster vehicles (D-1). 4.8 s is reported only for comparison with published work | Nav2 docs [N5, N6, N11]; Waymo Open Motion [A1], Argoverse 2 [A2] |
 | **TabPFN: examples in, prediction out, no training** | One forward pass over labelled rows; strongest on small data, which is what a robot has in a new place | Hollmann et al. 2025, *Nature* [8]; TabPFN-3.5 technical report [10] (the model we run) |
 | **Adapting by choosing which rows to read** | Same-scene in-context examples adapt a trajectory model to new scenes without weight updates; neighbour rows as context help TabPFN | TrajICL, Fujii et al. 2025 [13]; LoCalPFN, Thomas et al. 2024 [12] (precedent, not the same method) |
 | **Online calibration offset** | Keeps long-run coverage near target when the scene shifts | Gibbs & Candès 2021 [17] (adaptive conformal); Romano et al. 2019 [39] (conformalized quantile regression); Lindemann et al. 2023 [15] (why this is not a safety guarantee: people react to the robot) |
 | **Scores: coverage, interval score, pinball** | Coverage alone rewards wide boxes; the interval score charges width plus misses and is proper | Gneiting & Raftery 2007 [31]; Koenker & Bassett 1978 [30] (quantile regression) |
-| **Learned baseline: LightGBM quantile regression** | The standard strong tabular learner; we also gave it 15× and 67× more rows | Ke et al. 2017 [29] |
-| **Planner baselines: reactive, velocity obstacles, stop-and-go** | The families deployed stacks and the literature use | Fox et al. 1997 [26] (dynamic window); van den Berg et al. 2008, 2011 [27, 28] (velocity obstacles, ORCA); stop-and-go as described by deployed sidewalk robots [S1–S5] |
+| **Learned baseline: LightGBM quantile regression** | The standard strong tabular learner. We ran it untuned, with a small-data setting, and well-fitted on 15× and 67× more rows | Ke et al. 2017 [29] |
+| **Planner baselines: reactive, velocity obstacles, stop-and-go** | The families deployed stacks and the literature use | Fox et al. 1997 [26]: ours is "reactive, DWA-style" (same velocity sampler, people frozen where they are), not full DWA; van den Berg et al. 2008 [27]: ours is a sampling velocity-obstacle planner without reciprocity, so not RVO or ORCA; stop-and-go as described by deployed sidewalk robots [S1–S5] |
 | **Crowd simulator: social force** | The classic model of pedestrian motion; ours adds a sudden behaviour switch | Helbing & Molnár 1995 [22] |
-| **Cars: highway-env with IDM and MOBIL** | A standard open driving simulator with the classic car-following and lane-change models | Leurent 2018, highway-env (GitHub); Treiber, Hennecke & Helbing 2000, *Phys. Rev. E* 62:1805 (IDM); Kesting, Treiber & Helbing 2007, *Transportation Research Record* 1999:86–94 (MOBIL). Not yet in REFERENCES.md |
+| **Cars: highway-env with IDM and MOBIL** | A standard open driving simulator with the classic car-following and lane-change models | Leurent 2018, highway-env (GitHub); Treiber, Hennecke & Helbing 2000, *Phys. Rev. E* 62:1805 (IDM); Kesting, Treiber & Helbing 2007, *Transportation Research Record* 1999:86–94 (MOBIL). Cited from memory and not yet in REFERENCES.md: check against highway-env's own citation before quoting |
 | **Robot metrics: time to goal, closest gap, collisions, freezing** | The recommended set for social navigation | Francis et al. 2025 [25]; Chen et al. 2019 [24] |
 | **Statistics: paired crowds, bootstrap, Holm, rules written first** | Same crowds for every planner; intervals instead of single numbers; correction for testing against four baselines; no tuning after seeing results | Law 2015 [42] (common random numbers); Efron 1979 [38]; Agarwal et al. 2021 [33]; Holm 1979 [37]; Nosek et al. 2018 [40] (pre-registration); Gelman & Loken 2013 [41] (forking paths) |
 
@@ -108,7 +133,8 @@ Short form for the README, the deck notes and Q&A. Full entries in `docs/REFEREN
 ## 5. Before recording
 
 - **Who does what:** Darshak opens and closes on camera; Nooshin co-presents the close. [confirm roles]
-- **Nooshin:** fixes 1–4 in section 2 to the 3D template, then re-render with `python tools/record_clip.py --video --fps 30`. Or render without the outro and cut our figures in.
+- **Nooshin: the only must is fix 1** (the stale limits panel), and cutting the outro in the editor does it with no re-render. Fixes 2–6 apply only if the outro or those captions stay. If she re-renders: `python tools/record_clip.py --video --fps 30`.
+- **The 3D street lives only on `nooshin/dev`.** That branch forked from the first core commit, so it is not merged before the freeze. The README points to it. No street number goes on screen unless her `features.py` has the leak fixes the core got (D-20, D-26).
 - **Editor:** the "where it breaks" text card; captions burned in; the policy beat only if under 3:00.
-- **Read the voice-over aloud once with a timer.** Every beat is at or under 2.1 words per second, so there is room to slow down.
+- **Read the voice-over aloud once with a timer.** Every beat is at or under about 2.1 words per second, so there is a little room to slow down.
 - **Upload unlisted;** the link must open logged out; put it in the README `[confirm: video link]`.

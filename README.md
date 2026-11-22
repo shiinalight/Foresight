@@ -28,6 +28,8 @@ Video: [link: confirm] · Repository: `shiinalight/Robodetect`
 
 | Read | What it gives you |
 |---|---|
+| [`docs/VIDEO_BRIEF.md`](docs/VIDEO_BRIEF.md) | The 3-minute video plan: the story on one card, the timed script, and why we chose our data, step size, horizons and baselines, with references |
+| Branch `nooshin/dev` | The 3D street and doorway scenes behind the video (`media/street3d_demo.html`, `media/demo_full.mp4`). They use their own simulator setup and are not merged into this branch |
 | [`docs/STORY.md`](docs/STORY.md) | The story in one page: every claim with its status, number, source and exact wording; what exists; the video script; the hard questions |
 | [`docs/explainer.html`](docs/explainer.html) | Picture-first explainer, about 5 minutes. Published as an artifact page: https://claude.ai/artifact/So3d3641GrgCkkRMxyaii9 [confirm: set the page's sharing to public before submitting]. Also opens locally in a browser (GitHub shows HTML as source) |
 | [`docs/walkthrough.html`](docs/walkthrough.html) | One real planning decision, stage by stage, with the actual values (features f4, seed 6001). It uses the split setup of the T5 loop (frozen bank plus this scene's recent rows) |
