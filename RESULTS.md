@@ -150,6 +150,40 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
   - **Caveat:** the two test sets differ, so compare the shapes. This is the reason for choosing context rows from the current scene (adaptation experiment, next).
 - **Hotel is easy for constant velocity:** about 45% of people there stand still. ETH is harder, and every learned model gains more there.
 
+## Claim B on real data with the final live design (Sun 22 Nov)
+
+`tools/realdata_claimb.py` → `results/realdata_claimb.csv` (summary and bootstrap), `results/realdata_claimb_rows.csv` (per query row).
+- Hosted TabPFN, default model, 658 calls. Server usage on the new account went from 0 to 7.07M credits; the account is shared with other sessions (the intent layer ran on it meanwhile).
+
+**Design** (as T5's primary, on real pedestrians):
+- Hotel → ETH and ETH → Hotel, every test episode, a moment every 2 s, queries at +2 s (f4, noise 0).
+- **frozen:** TabPFN on 2,000 bank rows at natural move frequency, fitted once.
+- **split:** frozen plus a recent-only scene model on at most 250 completed rows of this episode, labelled from observed positions; quantiles averaged. Frozen alone below 20 rows.
+- **lgbm_all:** LightGBM on every bank row.
+- Each also with the batch-rule offset.
+- Analysis from 5 s on (the first 5 s are cold start), with a paired person bootstrap.
+
+**From 5 s on** (pooled: 1,540 rows, 544 people):
+
+| | Error +2 s | Joint 5–95 coverage | Width | Interval score |
+|---|---|---|---|---|
+| frozen | 0.341 m | 77.0% | 0.89 m | 1.370 |
+| **split** | 0.342 m | 78.3% | 0.89 m | **1.325** |
+| lgbm_all | 0.340 m | 61.2% | 0.66 m | 1.579 |
+| split − frozen, pooled | +0.001 [−0.004, +0.007] | +1.3 pts [−0.5, +3.1] | −0.001 [−0.020, +0.019] | **−0.045 [−0.080, −0.009]** |
+| split − frozen, Hotel → ETH (319 people) | +0.002 [−0.005, +0.009] | +2.3 pts [−0.2, +4.7] | +0.045 [+0.023, +0.069] | −0.045 [−0.093, +0.007] |
+| split − frozen, ETH → Hotel (225 people) | −0.001 [−0.008, +0.007] | −0.6 pts [−2.9, +1.9] | −0.085 [−0.104, −0.066] | **−0.046 [−0.086, −0.005]** |
+| split − frozen, both with offset, pooled | +0.001 | +0.7 pts [−1.0, +2.3] | −0.019 [−0.037, −0.000] | −0.018 [−0.049, +0.015] |
+| split − lgbm_all, pooled | +0.002 [−0.004, +0.008] | **+17.1 pts [+14.6, +19.6]** | +0.23 m | **−0.254 [−0.324, −0.188]** |
+
+**What this says:**
+- **On real pedestrians the scene model helps a little, not much.** The pooled interval score improves (−0.045, interval excluding 0). Error and coverage are not different from the frozen model.
+  - Going to Hotel, the gain comes from narrower boxes at the same coverage.
+  - Going to ETH, the boxes are slightly wider and cover slightly more; that interval score difference includes 0.
+- **With the online offset on both, they are level.**
+- **Against LightGBM on all rows, split is clearly better calibrated:** +17 points coverage, interval score −0.25.
+- **So claim B on real data is "small and direction-dependent".** The simulator's large after-switch gain (+10 points) comes from a behaviour change the real scenes don't contain. Real scenes differ from the bank in place, not in a sudden switch of behaviour.
+
 ## Intent layer: TabPFN at two chained layers (exploratory, Sun 22 Nov; gate fixed in the script before any result)
 
 `tools/intent_layer.py` → `results/intent_layer.log`, `media/fig_intent_layer.png` (hosted TabPFN, 47 calls, ~1.8M credits, commit ed06094).
