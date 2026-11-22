@@ -85,7 +85,7 @@ TabPFN on 2,000 rows is about level with LightGBM on 20,000. Choosing rows by si
 | Box coverage | +12.6 points [+9.0, +16.3] |
 | Median error | −0.057 m [−0.092, −0.021] |
 
-Limits: no variant reaches the 80–90% target after the switch (best 68%). The split setup was chosen on this same data (D-30), so this is a selection-stage result; the in-loop check (3b) reproduces it on fresh seeds. Split costs about 3 s per moment offline against 0.27 s for frozen (emulated CPU). On real data (Hotel → ETH, 137 query rows over 44 moments, 83 people) no variant was distinguishable from constant velocity (split vs CV −0.015 m, paired person bootstrap 95% interval [−0.041, +0.010]). Real-data check of claim B (`tools/realdata_claimb.py`): result to be added.
+Limits: no variant reaches the 80–90% target after the switch (best 68%). The split setup was chosen on this same data (D-30), so this is a selection-stage result; the in-loop check (3b) reproduces it on fresh seeds. Split costs about 3 s per moment offline against 0.27 s for frozen (emulated CPU). On real data (Hotel → ETH, 137 query rows over 44 moments, 83 people) no variant was distinguishable from constant velocity (split vs CV −0.015 m, paired person bootstrap 95% interval [−0.041, +0.010]). Real-data check of claim B (`tools/realdata_claimb.py`, `results/realdata_claimb.csv`), from 5 s, split vs frozen: interval score −0.045 [−0.080, −0.009] pooled over both directions, coverage level, level with the offset; small and direction-dependent.
 
 **3b. Claim B in the closed loop** (T5 exploratory b: crossing crowd, every seed switches into erratic at 5 s, 20 paired seeds 3000–3019, box q 0.15, +2 s against true positions). Source: `results/inloop_claimb.csv`, written by `tools/inloop_claimb.py`; `RESULTS.md`, "Closed loop T5 results". Split minus other, 95% paired-seed intervals:
 
@@ -122,7 +122,7 @@ On real data the chain adds 5.0 points of joint coverage overall and 16.9 on tur
 |---|---|
 | T5 latency arm (predictions 0.4 s stale) | not run (compute; `RESULTS.md` addendum part 5) |
 | T5 fast-replan baselines (0.2 s) | reactive m0.4 finished 20 seeds, not yet reported; the other three were stopped (addendum part 5) |
-| Claim B on real data (`tools/realdata_claimb.py`) | result to be added |
+| Claim B on real data (`tools/realdata_claimb.py`) | **done:** real pedestrians (from 5 s, split vs frozen, paired person bootstrap, `results/realdata_claimb.csv`): small gain, interval score −0.045 [−0.080, −0.009] pooled (1,540 rows, 544 people), coverage level (+1.3 pts [−0.5, +3.1]), level with the offset on both; direction-dependent (ETH→Hotel −0.046 [−0.086, −0.005], narrower boxes at equal coverage; Hotel→ETH −0.045 [−0.093, +0.007], level). Against LightGBM: +17.1 pts coverage, interval score −0.254. The real scenes have no sudden behaviour switch, which is where the simulator's +10 pts came from |
 | Calibration on arrival and after 20 s in the scene (`tools/conformal_eval.py`) | pending: f4 rerun (the existing table is f1) |
 | Time per plan on a GPU (`tools/latency_gpu.py`) | **measured, NVIDIA L4:** TabPFN 71 ms per replan (split design, 48 query rows), scene rebuild 318 ms every 2 s; real loop 225 ms per plan; see `docs/DEPLOYMENT.md` |
 
@@ -132,7 +132,7 @@ On real data the chain adds 5.0 points of joint coverage overall and 16.9 on tur
 
 - **No safety guarantee.** Calibrated ranges are for efficiency; a worst-case floor is for safety (RSS; ISO/IEC TR 5469, see `docs/INDUSTRY.md`). What exists is the 0.4 s constant-velocity check; a takeover when the predictor is late is designed, not built. Online conformal gives long-run average coverage, not a per-step bound, and conformal safe-planning guarantees assume people who do not react to the robot (Lindemann et al. 2023, Assumption 1).
 - **Claim A is direction-dependent:** honest going to Hotel, under-covering (but closest) going to ETH. Two real scenes only, no robot in the real data.
-- **Claim B is simulation-only** (offline and in the closed loop), and no model reaches the 80% target after the switch. Real data showed no gain over constant velocity; real-data check: result to be added.
+- **Claim B is simulation-only** (offline and in the closed loop), and no model reaches the 80% target after the switch. On real pedestrians the gain is small and direction-dependent: real pedestrians (from 5 s, split vs frozen, paired person bootstrap, `results/realdata_claimb.csv`): small gain, interval score −0.045 [−0.080, −0.009] pooled (1,540 rows, 544 people), coverage level (+1.3 pts [−0.5, +3.1]), level with the offset on both; direction-dependent (ETH→Hotel −0.046 [−0.086, −0.005], narrower boxes at equal coverage; Hotel→ETH −0.045 [−0.093, +0.007], level). Against LightGBM: +17.1 pts coverage, interval score −0.254. The real scenes have no sudden behaviour switch, which is where the simulator's +10 pts came from.
 - **Claim C is not supported.** In T5 the TabPFN planner beat no baseline and was slower at comparable safety. The closed loop is a demonstration and a stress test.
 - **The intent chain is offline only,** on 37 turning people and 3 context seeds.
 - **Simulated people turn far more than real ones:** calm and hurried people in the crossing crowd turn in 8.5–13% of 2 s windows, against 2–3% on ETH and Hotel (D-24, `docs/DATA.md`).
