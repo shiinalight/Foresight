@@ -11,6 +11,15 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 
 **File:** 1920×1080, 30 fps, 2:46 (4,985 frames), silent. Rendered by `python tools/record_clip.py --video --fps 30` from `tools/street3d_template.html` on `nooshin/dev`; the street's ranges are the same stored TabPFN predictions as before (no numbers in the scene changed). It replaces the 2:29 cut (`media/demo_full.mp4`, commit 28a6b13).
 
+**The perspective for the final cut (Darshak, 13:15).** It sets how the video reads from start to end:
+
+- **We sell the forecaster.** TabPFN is the best forecaster we tested per example, and when behaviour changes (proof 1). It is level with models fed far more data (proofs 2 and 3: 67× and 15× fewer examples). Say "level with", never "far better".
+- **TabPFN worked at every layer we tried, and pays off most as the forecaster.** We also used it to tag intent and to pick the robot's move; the move picker drove like the planner it learned from. Say this in Q&A, not on screen.
+- **One real limit: the planner.** The forecasts are better, but our planner turns each range into a yes/no box. At the same safety it arrives 3–4 s after standard planners. It is simple on purpose and can be extended: the next step weighs how likely each spot is.
+- **The five-scene tie is data efficiency,** in proof 3: the same result with 15× fewer examples. It is not a limit.
+- **"Each body needs its own examples" is the product, not a limit.** Every method needs examples of the body it predicts. Ours needs only a new example bank per body, no retraining. It moves to the close.
+- **Simulation is one scope line** in the footer: where we tested, not where it fails.
+
 | Time | On screen | Voice-over cue |
 |---|---|---|
 | 0:00–0:11 | Title card "Foresight · Prior Labs track" over the street | Open (or cut to the on-camera shot) |
@@ -19,8 +28,8 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 | 1:04–1:39 | The street: four events, each with a plain-language card | As section 3 |
 | 1:39–1:49 | Proof 1 clip: `calibration_seed3013.gif`, "60% vs 45%, target 81%" | Proof 1 sentence starts here |
 | 1:49–2:17 | **"Three proofs"**: one frame, three columns appear in turn (at 1:49, 1:58, 2:08); the column being talked about is outlined | One proof sentence per column |
-| 2:17–2:37 | **"Where it breaks"**: one frame, two columns (at 2:17, 2:27) and a footer | One limit sentence per column |
-| 2:37–2:46 | End card: Foresight, repo link, "Every number comes from a script in the repo", names, "Thank you, Prior Labs" | Close |
+| 2:17–2:37 | **"Where it stops"**: one frame, two columns (the limit at 2:17, the next step at 2:27) and a footer. **Re-render: new wording, see "Final render changes" below** | One sentence per column |
+| 2:37–2:46 | End card: Foresight, repo link, "Every number comes from a script in the repo", names, "Thank you, Prior Labs" | Close, now with "one example bank per body, no retraining" (voice-over only) |
 
 **What changed against sections 2–3, and why:**
 
@@ -48,20 +57,22 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
    - **Proof 3:** five real scenes, 1.36 for TabPFN on 1,500 rows, 1.49 for LightGBM on the same rows, 1.37 for LightGBM on about 22,000 (15×).
    - The CEO-check clips (`highway.gif`, `scenes5.gif`) are not in this render. The editor can lay them over the proof 2 and 3 columns, or show them in the deck.
 5. **Proofs and limits are one steady frame each, not a card per point.** Nine full-screen cards in about 77 s changed every 7–11 s and were tiring to watch. Each frame now builds up column by column in time with the voice-over.
-6. **"Where it breaks" has two limits, not four lines:**
-   - **The robot wasn't faster:** +4.3 s at the same closest gap, +3.0 s at the same collision rate. Why: the planner only checks whether a move enters a box, so it ignores the range's shape.
-   - **Each body needs its own examples:** predicting cars from pedestrian rows scores 51.7, against 13.0 for car rows. Why: people and cars move differently; the code carries over, the examples don't.
-   - **Footer:** the robot loop and the cars are simulated (real data: pedestrians only) · TabPFN-3.5 weights are non-commercial.
-   - **The new-place tie is no longer listed as a limit.** On five scenes TabPFN on 1,500 rows ties a LightGBM given 15× more data, which is the data-efficiency result of proof 3, not a failure. Proof 3 says it: "Same result, 15× less data". The honest wording stays in STORY.md: claim A ("honest ranges in a new place") held on two scenes and tied on five. Say so if asked; don't call it a win in calibration.
-   - The planner result is a limit both here and in STORY.md, and the bodies result is the per-body bank point.
+6. **"Where it breaks" had two limits.** It is replaced by **"Where it stops"** (see "Final render changes" below), which has one limit and one next step:
+   - **Column 1, the limit:** the planner is simple on purpose. It only asks yes or no: is this move inside a range? At the same safety it arrives 3–4 s after standard planners: +4.3 s at the same closest gap, +3.0 s at the same collision rate (`RESULTS.md` T5).
+   - **Column 2, the next step:** a planner that weighs how likely each spot is, instead of a yes/no box. This is a plan, not a result: nothing on it was measured.
+   - **Footer, the scope line:** robot loop and cars simulated · 5 real pedestrian scenes · TabPFN-3.5 weights are non-commercial.
+   - **"Each body needs its own examples" leaves this frame.** Every method needs examples of the body it predicts, so it is not a limit of ours. It becomes the product point in the close: one example bank per body, no retraining. The number (pedestrian rows on cars score 51.7, car rows 13.0) stays in STORY.md and the Q&A.
+   - **The new-place tie stays out of the limits.** On five scenes TabPFN on 1,500 rows ties a LightGBM given 15× more data: that is the data-efficiency result of proof 3 ("Same result, 15× less data"). The honest wording stays in STORY.md: claim A ("honest ranges in a new place") held on two scenes and tied on five. Say so if asked; don't call it a win in calibration.
+   - **Simulation is a scope line, not a limit.** It says where we tested, not where the method fails.
 7. **The length is 2:46**, under 3:00.
 
 **Voice-over for the two frames** (a sentence each, about 9–10 s):
 - Proof 1 (over the clip and the first column): as section 3.
 - Proof 2: "It works across modalities: on cars it matches LightGBM with 67 times less data."
 - Proof 3: "It works with very little data: on five real scenes, the same result as LightGBM given 15 times more."
-- Limit 1: "The robot wasn't faster. Our planner only checks whether a move enters a box, so it ignores the range's shape."
-- Limit 2: "Each body needs its own examples. People and cars move differently; the code carries over, the examples don't."
+- Where it stops, column 1 (2:17): "Our planner is simple on purpose: it only asks yes or no. At the same safety, it arrives three to four seconds behind standard planners." (24 words, about 10 s)
+- Where it stops, column 2 (2:27): "Next, it weighs how likely each spot is. The robot loop and the cars are simulated." (16 words, about 7 s)
+- Close (2:37, over the end card): "Foresight adapts by swapping examples: one example bank per body, no retraining. Every number comes from a script. Thank you, Prior Labs." (22 words, about 9 s)
 
 **Proof frame wording (applied, approved 12:50 from a still frame):** short, self-explanatory titles and one-line verdicts, so a non-technical viewer gets each proof at a glance.
 
@@ -75,6 +86,25 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 - **"Examples"** replaces "rows".
 - **Source lines are a few words each:** "Simulated robot loop · 3 crowds", "Simulated highway · 355 cars", "5 real pedestrian scenes".
 
+**Final render changes (Darshak, 13:15).** Only the limits frame changes on screen. Everything else is voice-over. Keep the timing slots (2:17 and 2:27, 20 s), so the cut stays 2:46.
+
+| Element | Was | Now | Needs |
+|---|---|---|---|
+| Frame title | Where it breaks | **Where it stops** | Re-render |
+| Column 1 title | The robot wasn't faster | **A simple planner** | Re-render |
+| Column 1 chart | As rendered | Keep it, as long as it shows **+4.3 s** at the same closest gap, **+3.0 s** at the same collision rate | Keep |
+| Column 1 verdict | (limit line) | **✗ Same safety, 3–4 s slower** | Re-render |
+| Column 1 source | | Simulated robot loop · 20 crowds | Re-render |
+| Column 2 title | Each body needs its own examples | **Next step** | Re-render |
+| Column 2 body | 51.7 vs 13.0 chart | No chart. One line: **A planner that weighs how likely each spot is, not just yes or no** | Re-render |
+| Column 2 verdict | (limit line) | **→ Uses the whole range** | Re-render |
+| Footer | Robot loop and cars are simulated (real data: pedestrians only) · TabPFN-3.5 weights are non-commercial | **Robot loop and cars simulated · 5 real pedestrian scenes · TabPFN-3.5 weights non-commercial** | Re-render |
+| Close | "…swapping examples, not retraining…" | "…one example bank per body, no retraining…" | Voice-over only; change the end card only if re-rendering anyway |
+
+- **Why:** the forecast is the strong layer and the planner is the simple one. Our robot loses on time at equal safety because a yes/no box throws away the range's shape, not because the ranges are poor: they beat the fixed margin in all five real scenes. Saying "where it stops" and "next" tells the viewer what the result means and what we would build next.
+- **If the column 1 chart showed the planner beside the baselines, keep it.** Only the words change.
+- **If asked whether caution explains it:** with less caution (q 0.35) the planner is about as fast as constant velocity with more clearance, but the difference is not significant (`RESULTS.md` T5 follow-up). Don't put it on screen.
+
 ---
 
 ## 1. The whole story on one card
@@ -85,9 +115,9 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 | **What do robots do today?** | Assume everyone keeps going straight (constant velocity), add one fixed margin, or slow down and stop when someone is close. Stock ROS 2 Nav2 plans around where obstacles are now; it does not predict people. Learned forecasters do better, but once trained they are frozen: a new site or a change in behaviour means training again. |
 | **What do we do?** | Each agent at each moment becomes one row of a table: its motion, its neighbours, the robot, obstacles. TabPFN reads example rows (a frozen bank plus the last seconds of this scene) and returns a range for every agent at +1 and +2 s, in one pass, with no training. The robot keeps clear of those ranges. **The robot's knowledge is the table, so it adapts by swapping rows.** |
 | **How well does it work?** | 1) When the crowd suddenly turns erratic, reading the scene's last seconds gives 18 points more coverage than LightGBM, 10 of them from the scene alone, ahead in all three simulated crowds. 2) The same core on simulated highway traffic: 1,500 rows match LightGBM trained on 67 times more, with more honest ranges. 3) On five real pedestrian scenes: better than the fixed-margin guess in every scene (interval score −0.365 [−0.405, −0.328] pooled), better than LightGBM on the same rows, level with one trained on 15 times more. |
-| **Where did it fail?** | Our robot was not faster than standard planners (3 to 4 s slower at equal safety, in three crowds): better ranges did not change how a simple box-avoiding planner drives. The "honest ranges in a new place" claim held on two real scenes, not on five (a tie). Each body needs its own examples: pedestrian rows on cars give useless boxes. |
-| **What else did we try?** | A second TabPFN that picks the robot's move: on average it drove like the planner it learned from. A TabPFN intent classifier: better ranges for people who turn (offline, real data). Hand-made features such as time to closest approach: no gain, TabPFN already finds them. A latency test: predictions must arrive within the 0.4 s replan (71 ms on an NVIDIA L4 does). |
-| **What is it for?** | An uncertainty layer under any planner, re-targeted to a new site, a new behaviour or a new body by swapping its example table. Few examples or changed behaviour: TabPFN. Plenty of familiar data: a well-fitted LightGBM is as good. |
+| **Where does it stop?** | The planner. The forecasts are better, but our planner only asks yes or no (is this move inside a range?), so at the same safety it arrives 3 to 4 s after standard planners, in three crowds. It is simple on purpose; the next step weighs how likely each spot is. Scope: the robot loop and the cars are simulated; the five pedestrian scenes are real. If asked: "honest ranges in a new place" held on two real scenes and tied on five; pedestrian rows on cars give useless boxes, so each body gets its own bank. |
+| **What else did we try?** | TabPFN at other layers; it pays off most as the forecaster. A second TabPFN that picks the robot's move: on average it drove like the planner it learned from. A TabPFN intent classifier: better ranges for people who turn (offline, real data). Hand-made features such as time to closest approach: no gain, TabPFN already finds them. A latency test: predictions must arrive within the 0.4 s replan (71 ms on an NVIDIA L4 does). |
+| **What is it for?** | An uncertainty layer under any planner, re-targeted to a new site, a new behaviour or a new body by swapping its example table: one example bank per body, no retraining. Few examples or changed behaviour: TabPFN. Plenty of familiar data: a well-fitted LightGBM is as good. |
 | **How do we know?** | Every pass rule was written before its run; failures stay in the README; every number comes from a script in the repo. |
 
 ---
@@ -101,7 +131,7 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 | Problem (~15 s) | Three cards: "Where will everyone be in two seconds, and how sure are we?"; "The usual guess is not good enough" (0.93 m off after 2 s in a crowd); "A guess alone is not enough" (too narrow: collides; too wide: freezes) | **Keep.** Voice-over in section 3 |
 | How it works (five steps, one pedestrian) | 1 Watching (noisy dots, Kalman track) · 2 One row of a table · 3 The question (correction to "keep going straight") · 4 TabPFN answers (5%, 50%, 95% in one step, no training) · 5 Sizing the patch (stretched until 80% land inside, on validation) · "Every agent, every half second" | **Keep.** This is the "measurements become a table" walkthrough. Fix two captions (below) |
 | Street scene ("last-metre delivery", 40 × 25 m) | Robot leaves the Café through a narrow door (waits for a customer), crosses at the zebra, goes to the Station. Scripted events: 12 s sudden stop · 22 s pedestrian steps onto the zebra, car brakes hard · 32 s jaywalker mid-block · 40 s rush hour (hurried people, commuters, twice the cars). Each event card has a "why it matters" line | **Keep.** Core of the demo. Add one caption: "Illustration: a held-out simulated street; the robot's route is scripted, the ranges are TabPFN's". Its ranges come from a fixed example set (`data/street`, `tools/street3d.py`), so the voice-over does not claim live adaptation here; proof 1 shows that |
-| Evidence (outro) | Three street tests (range size at equal coverage; adaptation at rush hour; error against number of rows), the crossing-crowd context-size bar, "Honest limits", end card | **Replace** with our three proofs and "where it breaks" (section 3). See the fixes below |
+| Evidence (outro) | Three street tests (range size at equal coverage; adaptation at rush hour; error against number of rows), the crossing-crowd context-size bar, "Honest limits", end card | **Replace** with our three proofs and "where it stops" (section 3). See the fixes below |
 
 **Our assets** (`darshak/core`): `media/demo/highway.gif` (the cars test as a clip: the same road twice, frozen bank against bank plus scene rows, boxes turn green or red after 2 s; replay of the stored H2 predictions, episode picked by rule, `tools/render_highway.py`), `media/demo/scenes5.gif` (the five real scenes side by side with TabPFN's boxes; an illustration of the five-scene setup run locally, `tools/render_scenes5.py`), `media/demo/seed3013.gif` (robot loop, crowd turns erratic at 5 s), `media/demo/calibration_seed3013.gif` (coverage counters, this crowd 60% vs 45%), `media/fig_t5.png`, `media/fig_highway.png` (titled "same core"), `media/fig_loso5.png`, `media/demo/policy_seed3403.gif` and `.mp4`, `media/diagrams/01_problem.png` and `02_pipeline.png`.
 
@@ -150,25 +180,24 @@ Pace limit: about 2.3 spoken words per second. No numbers on camera; numbers go 
 | 0:48–0:56 | 3D step 4, "TabPFN answers" | "TabPFN reads thousands of example rows with known outcomes, and answers in one step, with no training." (17) |
 | 0:56–1:04 | 3D step 5, "Sizing the patch" | "The range is sized so the truth lands inside as often as promised." (13) |
 | 1:04–1:39 | 3D street: sudden stop, zebra braking, jaywalker, rush hour, every agent's range. Caption "Illustration: held-out simulated street; scripted robot route" | "The robot's knowledge is the table. Here is a street run it never saw. Someone stops dead: walking straight would run past them. A car brakes hard for the zebra; its range has to change with it. A jaywalker leaves every expected path. Then rush hour: the crowd changes how it moves. Can the table keep up? We tested it." (59) |
-| 1:39–1:57 | **Proof 1.** `media/demo/calibration_seed3013.gif`, caption "this crowd: about 60% vs 45%, target 81%" (the clip's own counters end at 61% and 46%; the whole run is 60% and 45%); then the **right panel only** of `media/fig_t5.png` (crop it: the left panel is the planner result, where our robot loses, and belongs to "where it breaks") | "Swapping rows works. In our robot loop the crowd turns erratic; reading its last seconds gave eighteen points more coverage than LightGBM, ten from the scene alone, and it led in all three crowds." (34) |
+| 1:39–1:57 | **Proof 1.** `media/demo/calibration_seed3013.gif`, caption "this crowd: about 60% vs 45%, target 81%" (the clip's own counters end at 61% and 46%; the whole run is 60% and 45%); then the **right panel only** of `media/fig_t5.png` (crop it: the left panel is the planner result, where our robot loses, and belongs to "where it stops") | "Swapping rows works. In our robot loop the crowd turns erratic; reading its last seconds gave eighteen points more coverage than LightGBM, ten from the scene alone, and it led in all three crowds." (34) |
 | 1:57–2:10 | **Proof 2.** `media/demo/highway.gif` (the road before and after the switch, two models), caption "this road: 77 vs 67 of 100 forecasts held · all five roads: 77% vs 63%" (the clip's own counters; never caption it with the pooled number alone) | "Same core, simulated highway traffic. Fifteen hundred rows match LightGBM trained on sixty-seven times more. When traffic turns aggressive, reading the scene adds fourteen points." (25) |
 | 2:10–2:22 | **Proof 3.** `media/demo/scenes5.gif` for 5 s (the five scenes, people and boxes), caption "one 16 s window per scene" (its counters, 78–95%, are these windows; the test's coverage is 78–87%), then `media/fig_loso5.png` | "On five real pedestrian scenes it beats the fixed-margin guess, beats LightGBM on the same rows, and ties one trained on fifteen times more." (24) |
-| 2:22–2:44 | "Where it breaks" text card (make in the editor; the four lines below) | "Where it breaks. Our robot was slower than standard planners: this planner ignores the range's shape. Better ranges in a new place? On five scenes, a tie. Each body needs its own examples. And everything but the real pedestrians is simulated." (41) |
-| **2:44–2:56** | **On camera:** Nooshin and Darshak. End card: repo URL, "every number comes from a script in the repo" | "Foresight lets a robot adapt by swapping examples, not retraining. Open source; every number comes from a script. Thank you, Prior Labs." (22) **The repo has no LICENSE file yet.** Add one before the freeze, or the end card and the description say "the code is public" |
+| 2:22–2:44 | "Where it stops" frame (section 0: the limit, the next step, the scope footer) | "Where it stops. Our planner is simple on purpose: it only asks yes or no. At the same safety, it arrives three to four seconds behind standard planners. Next, it weighs how likely each spot is. The robot loop and the cars are simulated." (42) |
+| **2:44–2:56** | **On camera:** Nooshin and Darshak. End card: repo URL, "every number comes from a script in the repo" | "Foresight adapts by swapping examples: one example bank per body, no retraining. Every number comes from a script. Thank you, Prior Labs." (22) **The repo has no LICENSE file yet.** Add one before the freeze, or the end card and the description say "the code is public" |
 
 Beats: 11 + 15 + 38 (five steps) + 35 + 18 + 13 + 12 + 22 + 12 = 176 s (2:56). Fastest beats: the problem and step 4 at about 2.1 words per second; the rest are 1.4 to 2.0. If the steps' own timings differ by a second in the edit, move the step sentences with them.
 
-**"Where it breaks" card (four lines):**
-- Slower than standard planners (3–4 s at equal safety, three crowds)
-- New place: held on two real scenes, a tie on five
-- Each body needs its own example bank
-- Simulated robot loop and cars · non-commercial TabPFN-3.5 weights
+**"Where it stops" frame (replaces the four-line "Where it breaks" card; wording in section 0):**
+- A simple planner: ✗ same safety, 3–4 s slower (+4.3 s at the same closest gap, +3.0 s at the same collision rate)
+- Next step: a planner that weighs how likely each spot is → uses the whole range
+- Footer: robot loop and cars simulated · 5 real pedestrian scenes · TabPFN-3.5 weights non-commercial
 
 **Optional beats, if there is room** (cut first if the cut runs long):
 - After proof 1: `media/demo/policy_seed3403.gif`, "A second TabPFN can even pick the robot's move; on average it drove like the planner it learned from." (21)
 - `media/demo/seed3013.gif` under the proof 1 beat, to show the real robot loop with all four planners side by side.
 
-**Never cut:** the open, the five-step table walkthrough, the street, the three proofs, "where it breaks", the close.
+**Never cut:** the open, the five-step table walkthrough, the street, the three proofs, "where it stops", the close.
 
 **Words we never use:** "safer", "beats LightGBM" for cars, "same code, unchanged", "kept the ranges honest" or "calibrated" for the loop, "predicts turns", "any robot", "real-time", "10 Hz", "drives a car". The full list is in STORY.md section 2.
 
@@ -208,7 +237,7 @@ Short form for the README, the deck notes and Q&A. Full entries in `docs/REFEREN
 - **Who does what:** Darshak opens and closes on camera; Nooshin co-presents the close. [confirm roles]
 - **Nooshin: the only must is fix 1** (the stale limits panel), and cutting the outro in the editor does it with no re-render. Fixes 2–6 apply only if the outro or those captions stay. If she re-renders: `python tools/record_clip.py --video --fps 30`.
 - **The 3D street lives only on `nooshin/dev`.** That branch forked from the first core commit, so it is not merged before the freeze. The README points to it. No street number goes on screen unless her `features.py` has the leak fixes the core got (D-20, D-26).
-- **Editor:** the "where it breaks" text card; captions burned in; the policy beat only if under 3:00; `fig_t5.png` cropped to its right panel in proof 1; the two new clips in proofs 2 and 3.
+- **Editor:** the "where it stops" frame (or Nooshin re-renders it); captions burned in; the policy beat only if under 3:00; `fig_t5.png` cropped to its right panel in proof 1; the two new clips in proofs 2 and 3.
 - **If the voice-over is already recorded:** the picture fixes (crop, clips, captions) need no new audio. Re-record only the street's first and last sentence, proof 2, proof 3 and the new-place sentence; if there is no time, the two street sentences come first ("a street it never saw" is not true: it is a held-out run of the same street, and its ranges use a fixed example set).
 - **Licence:** the close says "open source" and the repo has no LICENSE file. [Darshak, shiinalight]
 - **Read the voice-over aloud once with a timer.** Every beat is at or under about 2.1 words per second, so there is a little room to slow down.
