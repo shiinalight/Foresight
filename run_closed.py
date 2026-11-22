@@ -33,7 +33,7 @@ reactive; true positions for the open-loop oracle; none for vo (time-to-collisio
 
 Writes results/closed/<run_id>.csv (one row per planner x seed), robot features of the live
 queries to results/closed/robotfeat_<run_id>.csv (bank-vs-live shift check), and with --log
-results/closed/<sim>_<planner>_<seed>.pkl for render_closed.py.
+results/closed/<sim>_<planner>_<seed>.pkl (per-step logs for rendering).
 """
 from __future__ import annotations
 
