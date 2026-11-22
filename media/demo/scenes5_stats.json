@@ -16,7 +16,7 @@
    "rows": 112,
    "people": 9,
    "inside_all_rows": 0.902,
-   "inside_drawn": 0.917
+   "inside_drawn": 0.902
   },
   "hotel": {
    "episode": 6,
@@ -34,7 +34,7 @@
    "rows": 93,
    "people": 7,
    "inside_all_rows": 0.946,
-   "inside_drawn": 0.951
+   "inside_drawn": 0.946
   },
   "zara2": {
    "episode": 3,
@@ -43,7 +43,7 @@
    "rows": 406,
    "people": 22,
    "inside_all_rows": 0.837,
-   "inside_drawn": 0.842
+   "inside_drawn": 0.837
   },
   "univ": {
    "episode": 1,
@@ -52,7 +52,7 @@
    "rows": 1459,
    "people": 59,
    "inside_all_rows": 0.779,
-   "inside_drawn": 0.787
+   "inside_drawn": 0.779
   }
  }
 }

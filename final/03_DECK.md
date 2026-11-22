@@ -1,4 +1,4 @@
-> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 11:52 (after commit `ab3740b`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 11:52 (after commit `713e532`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: finalist deck outline (5 minutes)
 
@@ -58,14 +58,14 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 ### 7 · Proof 2: same core, another body (30 s)
 - **Headline:** The same core predicts highway traffic.
 - **Layout:** headline on top; the highway figure across the full width (it is wide); one bold line of numbers under it.
-- **Visual:** `media/demo/highway.gif` (the same road twice: frozen bank on top, bank plus this road's last seconds below; a box is where the model expects a car in 2 s and turns green or red when the car gets there). Still alternative: `media/fig_highway.png`.
+- **Visual:** `media/demo/highway.gif` (the same road twice: frozen bank on top, bank plus this road's last seconds below; a box is where the model expects a car in 2 s and turns green or red when the car gets there). Caption it "this road: 77 vs 67 of 100; all five roads: 77% vs 63%". Still alternative: `media/fig_highway.png`.
 - **Say:** we pointed the same core, same features and same models, at simulated highway traffic, with a small adapter for the cars. 1,500 example rows match LightGBM trained on 67 times more, and our ranges held the truth 86% of the time against 69–82%. When drivers turn aggressive, reading the scene adds 14 points.
 - **Numbers:** 1,500 vs 100,440 rows; 86% vs 69–82%; +14 pts after the switch.
 
 ### 8 · Proof 3: more from each example (30 s)
 - **Headline:** On five real scenes, TabPFN gets more from each example.
 - **Layout:** headline on top; the five-scene chart across the full width; one bold line of numbers under it.
-- **Visual:** `media/demo/scenes5.gif` (the five scenes side by side, people and TabPFN's boxes) for a few seconds, then `media/fig_loso5.png` (each real scene held out once).
+- **Visual:** `media/demo/scenes5.gif` (the five scenes side by side, people and TabPFN's boxes; caption "one 16 s window per scene", because its counters are for these windows, not the test) for a few seconds, then `media/fig_loso5.png` (each real scene held out once).
 - **Say:** ETH, Hotel, Zara 1 and 2, Univ: train on four, test on the fifth. TabPFN beats the fixed-margin guess from slide 2 in all five scenes. On the same 1,500 rows it beats LightGBM in four scenes and ties on Hotel. LightGBM catches up only with about 15 times the data.
 - **Numbers:** against the fixed margin −0.365 [−0.405, −0.328] pooled; interval score −0.130 pooled at equal rows; tie at 15×; coverage 78–87% against LightGBM's 64–79% on the same rows.
 
