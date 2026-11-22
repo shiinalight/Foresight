@@ -1,6 +1,8 @@
 # Results
 
-> **Numbers below are being rerun on feature version f4; see PLAN.md for status.**
+> **The story we submit (22 Nov, 09:00 Berlin): [`docs/STORY.md`](docs/STORY.md).** The robot's knowledge is a table of examples; it adapts to new behaviour, and to a new body, by swapping rows, with no training step. Proofs: adapts in the loop when behaviour changes (simulated); same core on highway cars (simulated, offline); learns more per example on five real scenes. What failed: claim C (slower than standard planners), claim A on five scenes (a tie), feature engineering. STORY.md holds the claims ledger with exact wording, the video script and the deck list.
+>
+> Sections below are in the order they were run. Each section names its feature version; quote only f4 numbers.
 
 Live document: numbers update as experiments finish. Times on this page are commit hashes with their commit times (`git log --format='%h %ci'`, Berlin = UTC+1); run ids from the L4 pod are UTC. The figures in `media/` carry only labels and legends; this file holds the explanations.
 

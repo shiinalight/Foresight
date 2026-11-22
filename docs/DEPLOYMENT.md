@@ -73,7 +73,7 @@ Each tier runs where its latency fits:
 
 | Tier | Model | Job | Where |
 |---|---|---|---|
-| Real-time predictor | **TabPFN-3.5 with 1 estimator** (D-18; tier_seeds was dropped (D-29); the closed loop runs TabPFN-3.5-Fast with 1 estimator), cached, about 1,000 context rows. Fast with 1 estimator fails when the context comes from another place (ETH → Hotel 0.385 against 0.300 m); it stays an option only in-distribution (crowd: every tier within 0.01 m) | Every person, every replan (2.5–10 Hz) | On the robot |
+| Real-time predictor | **TabPFN-3.5 with 1 estimator** (D-18; tier_seeds was dropped (D-29); the closed loop runs TabPFN-3.5-Fast with 1 estimator), cached, about 1,000 context rows (as shipped in the T5 loop: 3.5-Fast, a 2,000-row frozen bank plus at most 250 scene rows refit every 2 s, 0.4 s replan, 10 Hz not claimed). Fast with 1 estimator fails when the context comes from another place (ETH → Hotel 0.385 against 0.300 m); it stays an option only in-distribution (crowd: every tier within 0.01 m) | Every person, every replan (0.4 s in the loop) | On the robot |
 | Second opinion | TabPFN-3.5 (8 estimators) | Only the people whose range is wide or whose box just failed: the uncertainty-triggered step. Runs off the control path, in the background | On the robot (GPU) |
 | Offline | TabPFN-3.5 or the hosted Thinking/Plus models (API) | Building and checking the context bank, analysis, evaluation | Cloud. **Never in the control loop** (network delay and dropouts) [judgment] |
 | Safety floor | Constant velocity plus band, and the 0.4 s hard check | Takes over whenever the predictor is late or fails | On the robot, independent of TabPFN |

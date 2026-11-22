@@ -141,8 +141,8 @@ We read free previews of the standards, not the full texts. "Not found" below me
 - **Compute for TabPFN itself (vendor figures).** The README recommends a GPU (about 8 GB of VRAM works, 16 GB for large datasets), calls CPU slow, and caps CPU use at 5,000 samples for the 3.x models [M1]. The TabPFN-3 report gives cached predict at 0.1–3 ms per test point (batches of 100) on an **H100** [M3]. We found **no Jetson or other embedded figure** for TabPFN.
 
 **What this means for Foresight**
-- Our 0.4 s replan (2.5 Hz) is slower than Nav2's 20 Hz controller. It is roughly the rate of Nav2's 1 Hz global replanner and 5 Hz costmap. Present TabPFN as a 2.5–10 Hz **prediction layer** that feeds the planner, with a fast local check below it, as DEPLOYMENT.md already does.
-- Our own measured plan times (199–861 ms on an emulated CPU, DEPLOYMENT.md) are a worst case. They are not evidence about embedded hardware. The only GPU figures are the vendor's H100 numbers, a datacentre GPU and not a robot one. Until we measure on a GPU or Apple MPS, say "plausible on robot-class GPUs, not yet measured". Do not turn DEPLOYMENT.md's 10 Hz judgment into a sourced fact.
+- Our 0.4 s replan (2.5 Hz) is slower than Nav2's 20 Hz controller. It is roughly the rate of Nav2's 1 Hz global replanner and 5 Hz costmap. Present TabPFN as a **prediction layer** at the 0.4 s replan (10 Hz needs the background rebuild, designed, not built) that feeds the planner, with a fast local check below it, as DEPLOYMENT.md already does.
+- Our own measured plan times (199–861 ms on an emulated CPU, DEPLOYMENT.md) are a worst case. They are not evidence about embedded hardware. The only GPU figures are the vendor's H100 numbers, a datacentre GPU and not a robot one. Measured since: NVIDIA L4 71 ms per replan, Apple M3 Pro 287–321 ms per plan (DEPLOYMENT.md). Neither is embedded hardware: say "fits the 0.4 s replan on an L4; embedded timing not measured". Do not turn DEPLOYMENT.md's 10 Hz judgment into a sourced fact.
 - One batched call over every person and horizon (we already do this) is what the README recommends [M1].
 
 ## 6. Tabular foundation models in industry
@@ -174,7 +174,7 @@ We read free previews of the standards, not the full texts. "Not found" below me
 3. "We predict 1–2 s ahead because that is the robot's planning range at walking speed. Nav2's own local tools roll the robot's motion 1–3 s ahead [N5, N6, N11]. Self-driving benchmarks use 3–8 s [A1, A2], for vehicles that move much faster."
 4. "We report calibrated ranges with coverage and width, plus a box miss rate in the spirit of AV miss rate, defined for single box predictions."
 5. "The learned predictor sits above a non-learned short-horizon check, the supervision pattern described in ISO/IEC TR 5469 [T4]. This is not a certified safety function." Add "with a constant-velocity fallback when the predictor is late" only once that takeover is built (GATES S8).
-6. "Calibrated ranges make the robot efficient. The worst-case floor keeps it safe. We claim no RSS-style guarantee [T5]."
+6. "Calibrated ranges are meant for efficiency (in our box planner they did not change the pace; its caution setting did). The worst-case floor is for safety. We claim no RSS-style guarantee [T5]."
 7. "TabPFN-3.5 weights are non-commercial. A product would use the commercial licence or the Apache-licensed v2 weights [M1]."
 8. Avoid: "industry standard", "complies with ISO 13482", "certified", "Nav2-equivalent", "like Waymo's occupancy flow", "real-time on a Jetson".
 
