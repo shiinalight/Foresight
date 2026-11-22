@@ -1,0 +1,19 @@
+a,b,axis,how,diff,lo,hi,p,beats
+lgbm_all,stop_go:-,gap,not comparable,,,,1.0,False
+lgbm_all,stop_go:-,mc,not comparable,,,,1.0,False
+lgbm_all,cv:0.2,gap,dominance,-1.7099999999999973,,-0.5199999999999996,0.9975,False
+lgbm_all,cv:0.2,mc,dominance,-1.7099999999999973,,-0.5199999999999996,0.9975,False
+lgbm_all,cv:0.4,gap,dominance,0.6800000000000033,,1.7502499999999988,0.199,False
+lgbm_all,cv:0.4,mc,dominance,0.6800000000000033,,1.7502499999999988,0.1905,False
+lgbm_all,cv:0.6,gap,not comparable,,,,1.0,False
+lgbm_all,cv:0.6,mc,not comparable,,,,1.0,False
+lgbm_all,reactive:0.4,gap,dominance,2.330000000000009,,4.53025,0.0765,False
+lgbm_all,reactive:0.4,mc,dominance,2.330000000000009,,4.53025,0.066,False
+lgbm_all,reactive:0.6,gap,not comparable,,,,1.0,False
+lgbm_all,reactive:0.6,mc,not comparable,,,,1.0,False
+lgbm_all,vo:0.5,gap,dominance,-3.5099999999999945,,-1.859750000000001,1.0,False
+lgbm_all,vo:0.5,mc,dominance,-3.5099999999999945,,-1.859750000000001,1.0,False
+lgbm_all,vo:1,gap,dominance,-2.009999999999998,-3.8902500000000004,-0.39975,0.993,False
+lgbm_all,vo:1,mc,dominance,-2.009999999999998,-3.9505000000000026,-0.39975,0.993,False
+lgbm_all,vo:2,gap,dominance,0.02000000000000668,-3.9951517686902696,1.879999999999999,0.4995,False
+lgbm_all,vo:2,mc,dominance,0.02000000000000668,-4.402749999999998,1.879999999999999,0.499,False
