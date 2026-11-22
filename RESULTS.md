@@ -536,7 +536,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 
 **Primary test (claim C, already a stress test after the oracle gate): tabpfn_split beats no baseline.**
 - All four fail Holm–Bonferroni (p = 1.0).
-- The split planner is more cautious and slower at comparable safety. At cv m0.4's safety it is 4.3 s slower on the min_gap axis and 3.0 s slower on the collision axis.
+- The split planner is slower at comparable safety. At cv m0.4's safety it is 4.3 s slower on the min_gap axis and 3.0 s slower on the collision axis.
 - **Against cv m0.2 and vo w0.5, w1 and w2, it is safer but slower.** It has a larger closest gap (0.158 m against −0.038 to 0.089 m) and fewer moving collisions (15% against 20–40%), but it is 3.9–6.2 s slower. The primary rule compares time at matched safety, so safer and slower does not count as beating. ("dominance" in `results/t5_primary.csv` names the comparison method, not a finding.)
   - Against the exploratory matched-time margins (0.158 m and 0.244), its safety edge stays below both against cv m0.2 (+0.069 m, −10 points), vo w1 (+0.094 m, −5 points) and vo w2 (+0.105 m, −15 points). It exceeds both only against vo w0.5 (+0.196 m, −25 points), which is 6.2 s faster.
   - The exploratory matched-time test of the primary was not run: by its pre-set rule it applies only to baselines the oracle beats, and the oracle beat none.
@@ -564,7 +564,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 - **In the loop, the scene model buys calibration after an unseen regime arrives:** +10 points coverage, a better interval score and lower error than the frozen model. It costs a little before the switch, while the scene model sees only calm or hurried rows the bank already covers.
 - **No model reaches the 80% target after the switch**, with or without the offset. The batch offset adds ~1.5 points.
 - **This reproduces WP-J2's offline Setting B result in closed loop** (simulated crowd only).
-- **The wider boxes are also why the split planner is slower:** better-calibrated ranges made the robot more cautious, not faster, in this crowd.
+- **The speed gap is not TabPFN's doing.** At q 0.15 every learned planner drove the same: split 26.23 s, frozen TabPFN 26.35 s, LightGBM on all rows 25.90 s. Paired: split − frozen −0.12 s [−1.35, +1.25], split − LightGBM +0.33 s [−1.29, +1.99], even though LightGBM's boxes are 0.63 m narrower after the switch. Better prediction did not change how this box planner drives; its caution setting did.
 
 **Extension to 40 seeds** (started Sun 22 Nov ~02:25 Berlin, before any result from seeds 3020–3039; `tools/t5_extend.py`):
 - **Why:** spare CPU, as addendum part 5 allows.

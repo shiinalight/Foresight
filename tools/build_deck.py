@@ -158,12 +158,15 @@ def build():
     caption(s, "Showcase crowd 3013, chosen by rule (median split time): same crowd for every planner")
 
     s = slide(prs, "Why slower, and what comes next", kicker="Honest framing",
-              notes="The planner only vetoes moves into the box, so it uses the range's width and nothing else. Better-"
-                    "calibrated ranges after the switch are wider, so more moves are vetoed and the robot waits. Next "
-                    "work, not done: a planner that uses the range's shape, e.g. a chance-constrained cost, so a wide "
-                    "but thin-tailed range does not block a move.")
-    bullets(s, ["Honest ranges are wider after a change", "Our planner only reads the width: more vetoes, slower",
-                "Next: use the range's shape (chance-constrained cost)", "Not claimed as done"])
+              notes="Not because of TabPFN. At q 0.15 every learned planner drove the same (T5, 20 paired crowds): split "
+                    "26.23 s, frozen TabPFN 26.35 s, LightGBM on all rows 25.90 s; split − frozen −0.12 s [−1.35, +1.25], "
+                    "split − LightGBM +0.33 s [−1.29, +1.99], although LightGBM's boxes are 0.63 m narrower. Better "
+                    "prediction did not change how this box planner drives; its caution setting did. The planner only "
+                    "vetoes moves into a box at one caution level. Next work, not done: a planner that uses the range's "
+                    "shape, e.g. a chance-constrained cost.")
+    bullets(s, ["Every learned planner drove the same at one caution setting",
+                "Better prediction did not change how this box planner drives",
+                "Next: a planner that uses the range's shape (chance-constrained cost)", "Not claimed as done"])
 
     s = slide(prs, "When to use which", kicker="Honest framing",
               notes="Familiar place, many rows: LightGBM is as good, with narrower boxes. New place or new behaviour, few "
@@ -178,10 +181,11 @@ def build():
                     "loop. Measured on a rented NVIDIA L4 GPU (docs/DEPLOYMENT.md): the TabPFN part of a replan takes "
                     "71 ms (split design, 48 query rows; 452 ms on the laptop CPU); the scene model is rebuilt in 318 ms "
                     "every 2 s, off the control path; the frozen fit is 490 ms once; the real loop is 225 ms per plan on "
-                    "3 T5 seeds; GPU and CPU quantiles agree within 0.021 m. So it fits a 10 Hz loop on an L4-class GPU; "
-                    "no Jetson was measured. TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are "
+                    "3 T5 seeds; GPU and CPU quantiles agree within 0.021 m. So 71 ms TabPFN and a 225 ms full loop fit the "
+                    "0.4 s replan period; 10 Hz needs the background rebuild, which is designed but not built. No Jetson "
+                    "was measured. TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are "
                     "non-commercial: research prototype; a product needs the commercial licence or the Apache v2 weights.")
-    _text(s, "TabPFN step 71 ms per replan on an NVIDIA L4 · fits a 10 Hz loop", Inches(0.6), Inches(6.8), Inches(12.1),
+    _text(s, "NVIDIA L4: TabPFN 71 ms, full loop 225 ms per plan · fits the 0.4 s replan period", Inches(0.6), Inches(6.8), Inches(12.1),
           Inches(0.5), 14, color=MUTED)
     image(s, "diagrams/12_deployment.png")
 

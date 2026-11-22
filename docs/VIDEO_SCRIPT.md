@@ -16,11 +16,11 @@ Every number comes from `RESULTS.md` (Sun 22 Nov). The structure and recording r
 | 0:55–1:15 | `docs/walkthrough/s4_context.png` → `s5_person_box.png` → `s8_planner.png` | "It reads what people here just did, plus examples from other crowds, and returns a range for each person, one and two seconds ahead. The planner rejects any move into a range." (32) |
 | 1:15–1:40 | `media/demo/seed3013.gif`. Caption: "crowd chosen by a fixed rule (median), not cherry-picked" | "Here is the full loop in a simulated crowd. Same crowd for every robot: stop-and-go, reactive, velocity obstacles, and ours, with the ranges it planned around. Five seconds in, the crowd turns erratic, a behaviour none of the models has seen." (42) |
 | 1:40–2:05 | `media/fig_f4_claim_a.png`, then `media/fig_intent_layer.png` | "On real Zurich pedestrians, in a scene it never saw, TabPFN's box held the truth seventy-five percent of the time where LightGBM's held fifty-eight. The other way round, they're level. A second TabPFN layer gave better-calibrated ranges for people who turn." (42) |
-| 2:05–2:25 | `media/fig_t5.png`: right panel, then left | "When the crowd changed, reading the scene's last seconds kept the ranges honest: ten points more coverage than the frozen model. But our robot was slower than standard planners: honest ranges are wider, and our planner only reads their width." (42) |
+| 2:05–2:25 | `media/fig_t5.png`: right panel, then left | "When the crowd changed, reading the scene's last seconds kept the ranges honest: ten points more coverage than the frozen model. But our robot was slower than standard planners, and not because of TabPFN: every learned planner drove the same at that caution setting." (45) |
 | 2:25–2:45 | "Where it breaks" card, `media/v_limits.png` (five lines) | "Where it breaks. Familiar place, many rows: LightGBM is as good. Still short of eighty percent after a change. Our crowd is simulated. The weights are non-commercial. Next: a planner that uses the range's shape." (36) |
 | **2:45–3:00** | **On camera:** Darshak and Nooshin. End card: repo URL, "every number comes from a script in the repo" | "Foresight is open source: every number here comes from a script in the repo. Next, real robot data and timing on robot hardware. Thank you, Prior Labs." (28) |
 
-Beats: 15 + 15 + 25 + 20 + 25 + 25 + 20 + 20 + 15 = 180 s, at most 2.0 words per second.
+Beats: 15 + 15 + 25 + 20 + 25 + 25 + 20 + 20 + 15 = 180 s, at most 2.3 words per second.
 
 **Sources for each spoken number:**
 - **"seventy-five … fifty-eight":** claim A f4, Hotel → ETH, joint 5–95 box. TabPFN 74.8%, LightGBM on all rows 57.7%; box miss −17.0 points [−21.0, −13.0], paired person bootstrap (`results/claim_a_f4.md`, `results/claim_a_boot_f4.csv`).
@@ -29,6 +29,7 @@ Beats: 15 + 15 + 25 + 20 + 25 + 25 + 20 + 20 + 15 = 180 s, at most 2.0 words per
   - It does not forecast turns: turn recall is 0. The gain is calibrated widening, so never say "it predicts turns".
 - **"ten points more coverage":** T5 exploratory (b), after the switch, split against frozen TabPFN: +10.0 points [+8.4, +11.6], 20 paired crowds (`results/inloop_claimb.csv`).
 - **"slower than standard planners":** T5 primary: no baseline beaten (Holm, p = 1.0); 4.3 s slower than constant velocity m0.4 at equal gap (`results/t5_primary.csv`).
+- **"not because of TabPFN: every learned planner drove the same":** T5 at q 0.15, split 26.23 s, frozen 26.35 s, LightGBM 25.90 s. Paired: split − frozen −0.12 s [−1.35, +1.25], split − LightGBM +0.33 s [−1.29, +1.99] (`RESULTS.md`, T5 "What this says").
 - **"Still short of eighty percent":** after the switch the best in-loop coverage is 59.3% (split).
 
 **If the real-data claim B result (`results/realdata_claimb.csv`) is positive,** add to the 2:05 beat: "and on real pedestrians too". Say it only if the split − frozen interval excludes 0 from 5 s on.
