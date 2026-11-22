@@ -192,7 +192,7 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
   1. A TabPFN classifier predicts each person's manoeuvre at +2 s (straight, stop, turn left, turn right).
   2. Per-manoeuvre TabPFN range models give the range.
   3. The ranges are mixed by the class probabilities, with quantiles read from the exact mixture distribution.
-  - It is compared with the single TabPFN range model on the same context rows (3 seeds of 2,000 rows), at +2 s, with a paired person bootstrap.
+  - It is compared with the single TabPFN range model on the same context rows (2,000 rows per context seed: 3 seeds on real data, 2 in the simulator), at +2 s, with a paired person bootstrap.
 - **Gate:** the chain must have a lower interval score on turn rows (interval excluding 0) and an overall interval score that is not worse.
 
 | Setting | Intent balanced accuracy (chance 0.25) | Turn rows: interval score, chain − single | Overall: interval score | Overall: joint coverage | Error | Gate |
@@ -589,6 +589,22 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
   - So the two TabPFN planners (split's boxes 0.26 m wider than frozen's) drive the same, while narrower LightGBM boxes buy about a second. The caution setting still dominates: all learned planners stay 3–5 s slower than cv and vo at comparable safety.
 
 **Showcase seed** (CTO's rule): **3013**, a seed on which every primary-test planner reached the goal and tabpfn_split q0.15's time (25.8 s) is closest to its median (26.40 s).
+
+## Caution-dial sweep and latency arm (exploratory, Sun 22 Nov)
+
+Plan, amendment and full results: `docs/EXPLORATORY_DIALS.md` (plan committed before launch, e6bc556; results c912241). Files: `results/dx_split.csv`, `results/dx_lgbm.csv`, `results/closed/*dx-*`, `results/closed/*gpu-lat*`.
+
+**Dial sweep** (fresh seeds 3100–3119; split, the baselines and the oracle on the rented L4 GPU, lgbm_all on the laptop, disclosed; analysed by the T5 curve rules):
+- **tabpfn_split beats no baseline under Holm.** Per-baseline p: cv 1.0, reactive 0.158, stop_go 1.0, vo 1.0. lgbm_all also beats none.
+- **Lower caution brings it into the baselines' range.** Split at q 0.35 runs 24.37 s / 0.137 m / 15% moving-collision crowds, against constant velocity m0.4 at 24.69 s / 0.060 m / 25%. That is about as fast with more clearance, but not significant.
+- **Against reactive,** split is faster at matched safety at every comparable point (+1.3 to +6.7 s), but the every-point rule still fails. Velocity obstacles stay faster (−0.4 to −2.9 s).
+- **The open-loop oracle** has 0% moving-collision crowds at every dial.
+
+**Latency arm** (pre-registered in T4 addendum part 3; tabpfn_split q 0.15, seeds 3000–3039, both arms on the L4 so the pair is on one device):
+- A 0.4 s command delay (one replan period of stale prediction) costs +1.35 s [+0.18, +2.50].
+- Crowds with a moving collision rise from 7.5% to 30% (+22.5 points [+10, +37.5]). The closest gap falls by 0.098 m [−0.207, +0.003].
+- **Reading:** prediction has to arrive within the replan period. The L4's 71 ms does; the laptop CPU's 452 ms would not.
+- The no-delay arm on the L4 (27.32 s / 7.5%) differs from the laptop T5 rows at the same seeds (27.20 s / 20%). That is the cross-device sensitivity documented in `docs/DEPLOYMENT.md`.
 
 ## Deployment notes (wording rules for the deck)
 

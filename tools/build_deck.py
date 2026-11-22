@@ -170,6 +170,7 @@ def build():
                 "The caution setting sets the pace, not calibration",
                 "LightGBM ~1 s faster, but its boxes hold 41% of people, ours 59%",
                 "Next: use the range's shape (chance-constrained cost), not done"])
+    caption(s, "At a lower caution setting it matches constant velocity's speed with more clearance (exploratory, not significant)")
 
     s = slide(prs, "When to use which", kicker="Honest framing",
               notes="Familiar place, many rows: LightGBM is as good, with narrower boxes. New place or new behaviour, few "
@@ -188,8 +189,9 @@ def build():
                     "0.4 s replan period; 10 Hz needs the background rebuild, which is designed but not built. No Jetson "
                     "was measured. TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are "
                     "non-commercial: research prototype; a product needs the commercial licence or the Apache v2 weights.")
-    _text(s, "TabPFN step 71 ms per replan on an NVIDIA L4 · full loop 225 ms · inside the 0.4 s replan period", Inches(0.6), Inches(6.8), Inches(12.1),
+    _text(s, "TabPFN step 71 ms per replan on an NVIDIA L4 · full loop 225 ms · inside the 0.4 s replan period", Inches(0.6), Inches(6.35), Inches(12.1),
           Inches(0.5), 14, color=MUTED)
+    caption(s, "One replan of stale prediction quadruples collision crowds (7.5% to 30%), so the GPU's 71 ms matters")
     image(s, "diagrams/12_deployment.png")
 
     OUT.parent.mkdir(exist_ok=True); prs.save(OUT)
