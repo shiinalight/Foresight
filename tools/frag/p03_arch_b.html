@@ -1,0 +1,128 @@
+
+<!-- ============================== S5 ============================== -->
+<h3 id="s5">S5 Calibration: split and online conformal offsets</h3>
+<div class="layer">
+<dl class="kv">
+  <dt>Purpose</dt><dd>One number d per model (per horizon offline) widens or narrows every box so its long-run miss rate tracks the target, for any model's quantiles.</dd>
+  <dt>Implementation</dt><dd><code>foresight/core/conformal.py</code>: joint conformity score <code>s = max over axes of max(lo − y, y − hi)</code> (CQR taken jointly, Romano et al. 2019); the box widened by d holds the truth exactly when s ≤ d. <code>split_offset()</code>: (1 − α) quantile with the finite-sample rank ⌈(n+1)(1−α)⌉ − 1. <code>online_offsets()</code>: <code>d ← d + η (miss − α)</code>, events sorted by time with "outcome known" applied before "predict", restart per episode. <code>widen()</code> keeps hi ≥ lo. In the loop: <code>run_closed.Predictor._update_offset()</code>.</dd>
+  <dt>Gate</dt><dd>Joint coverage within ±3 points of nominal after 20 s in a new scene, applied to every model (GATES S5).</dd>
+</dl>
+<div class="tbl dense"><table>
+  <thead><tr><th>Setting</th><th>Box scored</th><th>α (target miss)</th><th>Update</th><th>Labels</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td>Offline, on arrival</td><td>10–90% per axis (nominal joint 60–80%)</td><td>0.2</td><td>split offset from a held-out 30% of the <em>training</em> scene's episodes</td><td>truth</td><td><code>tools/conformal_eval.py</code></td></tr>
+    <tr><td>Offline, in the scene</td><td>same</td><td>0.2</td><td>online, η 0.02 per completed row, from d0 = split offset</td><td>truth</td><td>D-13 (η assumed)</td></tr>
+    <tr><td>T3 offline (live_variants_cp)</td><td>raw 5–95%</td><td>0.2</td><td>online η 0.02, updated every 4 s moment (only ~8 rounds per episode: d barely moved, mean 0.05–0.15 m after the switch)</td><td>truth</td><td>RESULTS amendment 2</td></tr>
+    <tr><td>Loop rule (i) per row</td><td>raw 5–95%</td><td>0.2</td><td>every 2 s refresh, each completed row in <code>t_known</code> order: d += 0.02 (miss − 0.2)</td><td>observed (filtered)</td><td>T4 part 1: <span class="st wd">unstable</span></td></tr>
+    <tr class="hl"><td>Loop rule (ii) per batch</td><td>raw 5–95%</td><td>0.2</td><td>once per 2 s refresh: d += 0.05 (batch miss rate − 0.2)</td><td>observed (filtered)</td><td>T4 part 4: <span class="st fin">chosen</span> for every learned T5 arm</td></tr>
+  </tbody>
+</table></div>
+<p>The planner's box [box_q, 1 − box_q] is widened by the same d, so the caution dial keeps its meaning. A miss is s(raw 5–95% box) &gt; d in force when the prediction was made. Why the batch rule: in the loop, 24 people × 2 horizons every 0.4 s give ~2,500 correlated row updates per episode in 2 s batches; per-row steps move d by η × batch and made the box oscillate and freeze the robot (4.40 s stopped vs 0.20 s with the offset off; freeze rate 0.123 vs 0.008). Adaptive conformal assumes one update per time step.</p>
+<h4>Offline calibration table on f1 <span class="st sup">superseded</span> (f4 rerun <span class="st pend">pending</span>)</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>Direction</th><th>Model</th><th class="num">Raw (10–90% box)</th><th class="num">On arrival</th><th class="num">After 20 s</th><th class="num">Width after 20 s</th></tr></thead>
+  <tbody>
+    <tr><td>Hotel → ETH</td><td>CV + band</td><td class="num">50%</td><td class="num">68%</td><td class="num">79%</td><td class="num">1.40 m</td></tr>
+    <tr><td>Hotel → ETH</td><td>LightGBM 1,500 / all</td><td class="num">32% / 37%</td><td class="num">67% / 67%</td><td class="num">79% / 79%</td><td class="num">1.16 / 1.15 m</td></tr>
+    <tr><td>Hotel → ETH</td><td>TabPFN (API default)</td><td class="num">62%</td><td class="num">73%</td><td class="num">80%</td><td class="num">1.43 m</td></tr>
+    <tr><td>ETH → Hotel</td><td>CV + band</td><td class="num">75%</td><td class="num">92%</td><td class="num">83%</td><td class="num">1.19 m</td></tr>
+    <tr><td>ETH → Hotel</td><td>LightGBM 1,500 / all</td><td class="num">60% / 56%</td><td class="num">93% / 91%</td><td class="num">82% / 82%</td><td class="num">0.90 / 0.87 m</td></tr>
+    <tr><td>ETH → Hotel</td><td>TabPFN</td><td class="num">80%</td><td class="num">95%</td><td class="num">81%</td><td class="num">1.16 m</td></tr>
+  </tbody>
+</table></div>
+<p class="small tsrc">RESULTS.md "Calibration layer" (results/conformal_*.csv, Sat 20:21–20:22, f1, one seed). Nominal joint coverage of the 10–90% box is 60–80%, not 80% (DEFENSE attack 5). The lesson that should survive: after ~20 s of local outcomes every model reaches ~80% and conformal LightGBM does it with narrower boxes; TabPFN's edge is the first seconds.</p>
+<p><strong>Tests</strong> (<code>test_robustness_loop.py</code>): online offsets converge to α (stationary), recover after a scale shift, are causal, restart per group; split offset coverage matches theory; tiny calibration sets; <code>widen</code> keeps order. One strict xfail documents a known bug: <code>split_offset</code> clips the conformal rank to n − 1, so for n &lt; (1 − α)/α it under-covers. <strong>Limits:</strong> adaptive conformal guarantees long-run average coverage only (Gibbs and Candès 2021), not per step or per person; it drives any model to ~80%, so post-calibration coverage says nothing about model quality, compare widths; in-loop labels come from filtered observations (deliberately unlike offline); no safety guarantee follows, since people react to the robot.</p>
+</div>
+
+<!-- ============================== S6 ============================== -->
+<h3 id="s6">S6 Occupancy: the same quantiles on a grid</h3>
+<div class="layer">
+<dl class="kv">
+  <dt>Purpose</dt><dd>One function for both the drawing and the metric: probability that each cell holds a person's centre at +h.</dd>
+  <dt>Implementation</dt><dd><code>occupancy.occupancy(rows, h, bounds, res=0.25, box_q, min_sd=0.05)</code>: per person a Gaussian per axis in their frame, centre = CV point + box midpoint, sd = (hi − lo)/(2z) with z = Φ⁻¹(1 − box_q) (floor 0.05 m); cell mass = density × area, averaged over ss × ss sub-points (ss 3–15) when the spread is narrower than a cell; people combined as 1 − Π(1 − pⱼ). <code>truth_grid()</code>, <code>scores()</code> → Brier and ROC AUC.</dd>
+  <dt>Gate</dt><dd>Brier and AUC against true future occupancy, against CV + band and LightGBM (GATES S6). <span class="st pend">pending</span>: no aggregate run; per-moment scores exist only in the walkthrough (appendix A.6).</dd>
+</dl>
+<p><strong>Two bugs fixed:</strong> (1) cell mass by density × area at the centre was badly off when the spread was narrower than a cell (mass ≠ 1 depending on where the centre sat): supersampling, <code>f4e103c</code> Sat 22:55; (2) AUC broke ties arbitrarily, biasing scores of constant or coarse maps: average ranks via <code>rankdata</code>, <code>65e6a2a</code> Sat 22:39. Both found by the robustness subagent's tests. <strong>Tests:</strong> range and empty grid, mass 1 on a fine grid, wider box spreads probability, mass independent of sub-cell position, truth grid cells, AUC perfect and oracle, partial ties match an exact oracle, constant prediction AUC 0.5. <strong>Limits:</strong> Gaussian approximation of the quantiles, independent axes, unimodal (a fork is one wide blob).</p>
+</div>
+
+<!-- ============================== S7 ============================== -->
+<h3 id="s7">S7 Planner and baselines</h3>
+<div class="layer">
+<dl class="kv">
+  <dt>Purpose</dt><dd>Deliberately simple, so any difference comes from the predictions, not planner cleverness.</dd>
+  <dt>Implementation</dt><dd><code>planner.candidates()</code>, <code>choose()</code>, <code>gap_to_box()</code>, <code>augment()</code>/<code>dynamics()</code> (smoothing), <code>choose_vo()</code>, <code>time_to_collision()</code>; driven by <code>run_closed.run_episode()</code>.</dd>
+</dl>
+<div class="tbl dense"><table>
+  <thead><tr><th>Parameter</th><th>Value</th><th>Decision</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Candidates</td><td>22: stop + 3 speeds (⅓, ⅔, 1 × top speed) × 7 directions (−90° … +90° in 30° steps around the goal direction)</td><td>run_closed passes <code>speeds = (0, ⅓, ⅔, 1) × max_speed</code>; <code>planner.SPEEDS</code> default (0, 0.4, 0.8, 1.2) is unused in runs</td><td>One top speed for every planner</td></tr>
+    <tr><td>Top speed</td><td>1.0 m/s (<code>--max-speed</code> default 1.0 = <code>CrowdConfig.robot_speed</code>)</td><td>v4 runs; <code>DEFAULTS["max_speed"] = 1.2</code> only back-fills old rows in <code>load_closed()</code></td><td>Walking pace</td></tr>
+    <tr><td>Horizons checked</td><td>+1 s and +2 s boxes; 0.4 s short check</td><td>D-1</td><td>2 s ≈ 2 m at 1 m/s, the space the robot plans in</td></tr>
+    <tr><td>Box (caution dial)</td><td>[box_q, 1 − box_q] per axis. T5 as run (part 5): primary 0.15 and 0.10, secondary 0.15. Planned but not run (compute): primary 0.20, secondary 0.10</td><td>D-6</td><td>q = 0.05 froze the robot (band 40%, TabPFN 70% success in 10 pilot seeds)</td></tr>
+    <tr><td>Margin</td><td>0.2 m for every learned planner</td><td>D-7 (assumed)</td><td>Equal for all learned planners; size is a design choice</td></tr>
+    <tr><td>Veto</td><td>worst gap (box distance − 0.4 − 0.3) &lt; margin at +1 or +2 s → "box"; leaves the walls → "bounds"; within r + 0.4 + margin of a pillar → "obstacle"; 0.4 s check gap &lt; 0.05 m → "short check"</td><td><code>choose()</code></td><td>First reason recorded per candidate (trace)</td></tr>
+    <tr><td>Choice</td><td>most progress toward the goal (distance reduction at 2 s) among safe moves; if none: stop unless an allowed move keeps a worst gap larger by <code>stop_bias</code> 0.15 m (<code>fallback</code> flag)</td><td><code>choose()</code></td><td>The <code>fallback</code> flag means "no safe candidate", not a deadline fallback</td></tr>
+    <tr><td>Replan</td><td>0.4 s; fast-replan baseline arms 0.2 s (one sim step): only reactive m0.4 (smoothing OFF) completed, 20 seeds (part 5)</td><td>D-2; T4 part 3</td><td>Matches the ETH annotation step; 0.1 s is below the 0.2 s sim step</td></tr>
+  </tbody>
+</table></div>
+<h4>Short 0.4 s check per planner (D-8, corrected Sun ~00:10)</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>Planner</th><th>What it plans against</th><th>0.4 s check</th><th>Dial swept</th></tr></thead>
+  <tbody>
+    <tr><td><code>stop_go</code></td><td>the simulator's own straight-line slow-and-stop policy</td><td>none (sim policy)</td><td>none</td></tr>
+    <tr><td><code>reactive</code></td><td>people frozen where they are (velocity 0, zero box), same <code>choose()</code></td><td>frozen people</td><td>margin 0.2 / 0.4 / 0.6 / 0.8</td></tr>
+    <tr><td><code>cv</code></td><td>CV point from the filtered state, zero-width box</td><td>CV from filtered state</td><td>margin 0.2 / 0.4 / 0.6 / 0.8</td></tr>
+    <tr><td><code>vo</code></td><td>sampling velocity obstacles: stop + 5 speeds × 16 directions over 360° + v_pref; penalty w/ttc (ttc &lt; 5 s) + |v − v_pref|; collision radius 0.4 + 0.3 + 0.1 m; not ORCA (no reciprocity)</td><td>none (ttc penalty plays that role)</td><td>weight 0.5 / 1 / 2</td></tr>
+    <tr><td><code>oracle</code> (open-loop)</td><td>deep-copied simulator rolled forward holding the <em>current</em> command; true positions at +0.4, +1, +2 s as zero-width boxes</td><td>true positions at +0.4 s</td><td>margin 0.2 / 0.4 / 0.6</td></tr>
+    <tr><td><code>cv_band</code>, <code>lgbm</code>, <code>lgbm_all</code>, <code>tabpfn</code>, <code>tabpfn_live</code>, <code>tabpfn_split</code></td><td>learned or banded boxes</td><td>CV from filtered state</td><td>box_q</td></tr>
+  </tbody>
+</table></div>
+<p class="small">The open-loop oracle knows each person's future under an action it may not take (people then react to the chosen candidate), and gets zero-width boxes: a strong reference for what better prediction could buy, not a strict upper bound (DEFENSE attack 7). A per-candidate oracle would cost ~22× the simulation.</p>
+<h4>Smoothing option (D-28, default OFF; T4 gate failed → OFF in T5)</h4>
+<div class="tbl dense"><table>
+  <thead><tr><th>Part</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Dynamic window</td><td>|Δspeed| ≤ 1.0 m/s² × 0.4 s up, 2.0 m/s² × 0.4 s braking; |Δheading| ≤ 90°/s × 0.4 s = 36°; extra candidates around the previous command; stop allowed if braking permits</td></tr>
+    <tr><td>Smoothness cost</td><td>score = progress − 0.3 m/rad · |Δheading| − 0.2 · |Δspeed|</td></tr>
+    <tr><td>Commitment</td><td>keep the previous command if safe and within 0.1 m of the best score</td></tr>
+    <tr><td>Metrics added</td><td><code>heading_change_per_m</code> (rad/m), <code>reversals_45</code></td></tr>
+    <tr><td>Smoke test (seed 1001)</td><td>cv 0.81 → 0.51 rad/m, reversals 8 → 3, time 21.0 → 20.4 s; vo 0.66 → 0.27, 3 → 0, 20.6 → 19.6 s</td></tr>
+  </tbody>
+</table></div>
+<h4>Closed-loop metrics (<code>run_closed.run_episode</code>)</h4>
+<div class="tbl dense idfirst"><table>
+  <thead><tr><th>Metric</th><th>Definition</th></tr></thead>
+  <tbody>
+    <tr><td><code>time_capped</code></td><td>time to goal (within 0.5 m), failures scored at the 40 s limit</td></tr>
+    <tr><td><code>min_gap</code></td><td>smallest edge-to-edge gap (centre distance − both radii) to any person over the episode</td></tr>
+    <tr><td><code>intrusion_s</code></td><td>seconds with any person's edge within 0.5 m of the robot's edge (Francis et al. 2025 personal-space category)</td></tr>
+    <tr><td><code>collided</code>, <code>moving_collision_steps</code></td><td>discs overlap; moving = robot speed ≥ 0.05 m/s (D-23: an ignoring person can walk into a parked robot)</td></tr>
+    <tr><td><code>freeze_rate</code>, <code>seconds_stopped</code></td><td>share / seconds of steps with robot speed &lt; 0.05 m/s</td></tr>
+    <tr><td><code>fallback_rate</code></td><td>share of plans with no safe candidate</td></tr>
+    <tr><td><code>heading_change_per_m</code>, <code>reversals_45</code></td><td>total |heading change| per metre; &gt; 45° turns reversed within 2 s</td></tr>
+    <tr><td><code>path_efficiency</code>, <code>people_decel</code></td><td>straight distance / path length; mean braking of people within 2 m</td></tr>
+    <tr><td><code>pred_ms_per_plan</code></td><td>wall time of predict + plan per replan (emulated CPU, contended)</td></tr>
+    <tr><td><code>inloop_*_{pre,post}</code></td><td>per-episode in-loop claim-B aggregates at +2 s against true positions: joint coverage of the raw 5–95% box (<code>cov90</code>), widened by the offset in force (<code>cov90d</code>), served-box coverage, width, interval score (α 0.1), median error; before / after the switch</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Tests:</strong> <code>tests/test_planners.py</code> (5: ttc head-on and overlapping, vo empty scene and head-on swerve, top speed respected); <code>test_robustness_loop.py</code> planner tests (empty scene at top speed, box on the straight path, all vetoed by the short check stops, fallback rules, random scenes keep bounds, obstacles, speed and gap, rotated <code>gap_to_box</code> against an analytic oracle) and closed-loop tests (metrics valid and consistent, cross-checks not vacuous, deterministic, never faster than the top speed, knobs forwarded). <strong>Limits:</strong> boxes are axis-aligned per person and do not depend on the candidate move (GATES item 8 not built); checks only at 0.4, 1 and 2 s; <code>vo</code> searches 360° with 16 directions while <code>choose()</code> searches ±90° with 7; reactive replans at 2.5 Hz against Nav2's 20 Hz controller (fast-replan arms added in T5).</p>
+</div>
+
+<!-- ============================== S8 ============================== -->
+<h3 id="s8">S8 System: latency, virtual time, fallback, trace, Mac kit</h3>
+<div class="layer">
+<div class="tbl dense"><table>
+  <thead><tr><th>Item</th><th>State</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td>Virtual time</td><td>The simulator waits for the planner, so default runs assume zero latency. <code>--latency L</code>: a command planned at t applies at t + L, the robot keeps its previous command meanwhile (queue in <code>run_episode</code>). Deterministic on any machine; real threads would make results depend on the laptop (DECISIONS §3, "Async")</td><td>D-2, D-3; RESULTS amendment 2</td></tr>
+    <tr><td>Latency arm</td><td><span class="st pend">planned, not run</span> (dropped for compute, part 5). Design: <code>tabpfn_split</code> q 0.15 with <code>--latency 0.4</code> (predictions one replan stale), seeds 3000–3019; fixed at 0.4 s before any latency result (the earlier rule, measured ms rounded up, would have given ~2.0 s, a worst case from 8 contended emulated processes). So no latency result exists</td><td>T4 addendum part 3 (722e1bd)</td></tr>
+    <tr><td>Refresh delay</td><td>Named in amendment 1 as a T4 setting; the code applies a refit immediately (no virtual refit delay)</td><td><code>run_closed.Predictor._predict</code></td></tr>
+    <tr><td>Deadline takeover (CV + band when TabPFN is late)</td><td><span class="st open">designed, not built</span></td><td>DEPLOYMENT §3, GATES S8, INDUSTRY §1</td></tr>
+    <tr><td>Short 0.4 s check</td><td>built, independent of TabPFN, in <code>choose()</code> for every planner that uses it</td><td>D-8</td></tr>
+    <tr><td>Trace</td><td><code>foresight/trace.py</code>: <code>results/trace/&lt;sim&gt;_&lt;planner&gt;_&lt;seed&gt;/</code> with meta, tracks, observed, rows, context (with source), pred (world boxes), occupancy, plan (every candidate and veto reason), timing, outcome (evaluation only). Captured outside the timed region; traced seed 1001 reproduces its overnight rows exactly for cv, reactive, vo and lgbm_all</td><td>33a445d; VISUALS.md</td></tr>
+    <tr><td>Bank vs live robot features (B7)</td><td>T2 bank: <code>robot_dist</code> quantiles bank 1.91 / 4.29 / 6.62 / 9.20 / 13.24 m vs live 2.08 / 4.46 / 6.86 / 9.56 / 13.83 m; robot within 2 m 5.6% vs 4.5%: no regeneration needed</td><td><code>tools/check_shift.py</code>, amendment 2</td></tr>
+    <tr><td>Run bookkeeping</td><td>one CSV per run (<code>results/closed/&lt;run_id&gt;.csv</code>, B1), seed-outer / planner-inner with per-seed checkpoint, <code>KEY</code> of 30 settings deduplicates (B2; it has no <code>replan</code>, see §5 E15), <code>features_version</code> and <code>tabpfn_cfg</code> in every row</td><td>run_closed.py</td></tr>
+    <tr><td>Mac kit</td><td><code>scripts/mac/setup.sh</code> (venv, PyTorch with MPS, mlx, OpenTraj download with fingerprints, crowd bank, filter tuning, ALL MATCH check, tests), <code>smoke.sh</code> (MPS parity, TabPFN timing, 2 crowds × 6 planners → <code>docs/runs/mac_smoke.md</code>), <code>run.sh</code> (caffeinated). Rules: compare only results from one machine; nothing in <code>results/</code> or <code>data/</code> committed; no code edits on the Mac. No smoke result has come back</td><td>docs/MAC_SETUP.md, 9ddbd96</td></tr>
+  </tbody>
+</table></div>
+</div>

@@ -7,7 +7,11 @@
 set -euo pipefail
 export TABPFN_MODEL_CACHE_DIR=/workspace/tabpfn-weights TABPFN_DISABLE_TELEMETRY=1 PYTHONUNBUFFERED=1 POLARS_SKIP_CPU_CHECK=1
 
+# venv on top of the template's CUDA torch (the system Python refuses pip installs, PEP 668)
+[ -d /workspace/venv ] || python -m venv --system-site-packages /workspace/venv
+source /workspace/venv/bin/activate
 pip install -q "tabpfn==9.2.0" numpy pandas pyarrow scikit-learn lightgbm matplotlib
+python -c "import torch; assert torch.cuda.is_available(), 'torch lost CUDA after pip install'"
 { nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv; python -c "import torch,tabpfn,importlib.metadata as m;print('torch',torch.__version__,'cuda',torch.version.cuda,'tabpfn',m.version('tabpfn'))"; nproc; } | tee results/pod_env.txt
 
 # 1. TabPFN call timings for the shipped design (and 3.5-1), plus parity against the laptop CPU quantiles

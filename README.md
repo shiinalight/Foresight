@@ -28,7 +28,7 @@ A robot crossing a station has to plan around where people will be in the next t
 2. **Table (S2).** One row = one person, one moment, one look-ahead (1 or 2 s). Features are in the person's own frame: their recent motion, their 3 nearest neighbours, the robot, the nearest obstacle, local density. The label is the deviation from the walking-straight point. A live query and an offline row give identical features (`tests/test_parity.py`).
 3. **Example selection (S3), the rows TabPFN reads.** A frozen bank of 2,000 rows sampled at natural move frequency, cached once, plus a "split" scene model that reads at most 250 of this episode's most recent completed rows, refit every 2 s and used only once their outcome is known (`foresight/core/context.py`, `run_closed.py`, D-30, D-31).
 4. **Ranges per person (S4), where TabPFN runs.** TabPFN returns quantiles on each axis for every person and horizon in one batched call. In the split setup the bank and scene models' quantiles are averaged per axis; the bank model runs alone below 20 recent rows (`foresight/core/models.py`).
-5. **Calibration (S5).** An online offset widens or narrows the box from completed rows (adaptive conformal, Gibbs and Candès 2021). In the T5 loop it is on, updated once per 2 s batch; a per-row update made the box oscillate and froze the robot (T4 addendum part 4). Results pending: T5 (`foresight/core/conformal.py`).
+5. **Calibration (S5).** An online offset widens or narrows the box from completed rows (adaptive conformal, Gibbs and Candès 2021). In the T5 loop it is on, updated once per 2 s batch; a per-row update made the box oscillate and froze the robot (T4 addendum part 4). In T5 the split model's boxes stayed better calibrated than the frozen model's after the behaviour change (result 3b) (`foresight/core/conformal.py`).
 6. **Occupancy map (S6).** The same quantiles become a grid of where people may be, used for drawing and for an occupancy metric (metric pending) (`foresight/core/occupancy.py`).
 7. **Planner (S7).** Candidate moves that come within a margin of any predicted box at +1 or +2 s, or fail a 0.4 s constant-velocity check, are rejected. Of the rest, the one with the most progress wins. The box quantile (`box_q`, 0.10 to 0.20) is the caution dial (`foresight/core/planner.py`).
 
@@ -85,17 +85,44 @@ TabPFN on 2,000 rows is about level with LightGBM on 20,000. Choosing rows by si
 | Box coverage | +12.6 points [+9.0, +16.3] |
 | Median error | −0.057 m [−0.092, −0.021] |
 
-Limits: no variant reaches the 80–90% target after the switch (best 68%). The split setup was chosen on this same data (D-30), so this is a selection-stage result; the in-loop check is pending: T5. Split costs about 3 s per moment offline against 0.27 s for frozen (emulated CPU). On real data (Hotel → ETH, 137 query rows over 44 moments, 83 people) no variant was distinguishable from constant velocity (split vs CV −0.015 m, paired person bootstrap 95% interval [−0.041, +0.010]).
+Limits: no variant reaches the 80–90% target after the switch (best 68%). The split setup was chosen on this same data (D-30), so this is a selection-stage result; the in-loop check (3b) reproduces it on fresh seeds. Split costs about 3 s per moment offline against 0.27 s for frozen (emulated CPU). On real data (Hotel → ETH, 137 query rows over 44 moments, 83 people) no variant was distinguishable from constant velocity (split vs CV −0.015 m, paired person bootstrap 95% interval [−0.041, +0.010]). Real-data check of claim B (`tools/realdata_claimb.py`): result to be added.
 
-**4. Claim C: reported as a stress test, as pre-registered.** In the crowd cell picked from baseline runs alone, by a rule written before any learned planner ran there (some baseline cells were seen before the rule; disclosed in amendment 1), the open-loop oracle (true future positions under the current command) had to beat every baseline by 2 s at matched safety. It did not: against constant velocity at margin 0.2 m it was 1.59 s faster [0.86, 2.39], and velocity obstacles at weight 0.5 was faster than every oracle point. The scene leaves little room: the straight-line time floor averages 17.74 s over the 20 seeds, and velocity obstacles runs only 1.50 s above it. By the pre-registered rule, a failed gate means the closed loop is reported as a stress test, not as evidence for claim C. The oracle plans under the current command while people react to the actual one, so it is not a strict upper bound. Sources: `results/oracle_gate_cross.csv`, `tools/curve_compare.py --a oracle`, D-33, `RESULTS.md` amendment 2.
+**3b. Claim B in the closed loop** (T5 exploratory b: crossing crowd, every seed switches into erratic at 5 s, 20 paired seeds 3000–3019, box q 0.15, +2 s against true positions). Source: `results/inloop_claimb.csv`, written by `tools/inloop_claimb.py`; `RESULTS.md`, "Closed loop T5 results". Split minus other, 95% paired-seed intervals:
 
-**5. Pending (placeholders, not results)**
+| After the switch | Split | Frozen TabPFN | LightGBM, all rows | Split minus frozen | Split minus LightGBM |
+|---|---|---|---|---|---|
+| 5–95 box coverage | 59.3% | 49.3% | 41.3% | +10.0 pts [+8.4, +11.6] | +18.0 pts [+16.7, +19.3] |
+| Interval score | 5.03 | 6.34 | 7.03 | −1.31 [−1.55, −1.08] | −2.00 [−2.20, −1.80] |
+| Median error | 1.016 m | 1.073 m | 1.036 m | −0.057 m [−0.094, −0.021] | −0.020 m [−0.051, +0.010] |
+
+Limits: no model reaches the 80% target after the switch. Before the switch split is slightly worse (interval score +0.18 [+0.10, +0.27] against frozen). So claim B holds offline and in the closed loop, in simulation only.
+
+**4. Claim C: not supported in the closed loop (run as a stress test, as pre-registered).** In the crowd cell picked from baseline runs alone, by a rule written before any learned planner ran there (some baseline cells were seen before the rule; disclosed in amendment 1), the open-loop oracle (true future positions under the current command) had to beat every baseline by 2 s at matched safety. It did not: against constant velocity at margin 0.2 m it was 1.59 s faster [0.86, 2.39], and velocity obstacles at weight 0.5 was faster than every oracle point. The scene leaves little room: the straight-line time floor averages 17.74 s over the 20 seeds, and velocity obstacles runs only 1.50 s above it. By the pre-registered rule, a failed gate means the closed loop is reported as a stress test, not as evidence for claim C. The oracle plans under the current command while people react to the actual one, so it is not a strict upper bound. Sources: `results/oracle_gate_cross.csv`, `tools/curve_compare.py --a oracle`, D-33, `RESULTS.md` amendment 2.
+
+T5 then ran the primary test on 20 paired seeds (3000–3019). Source: `results/t5_primary.csv`, `tools/curve_compare.py`; `RESULTS.md`, "Closed loop T5 results".
+- **The TabPFN planner (tabpfn_split) beats no baseline:** all four fail Holm–Bonferroni (p = 1.0).
+- **It is slower at comparable safety:** 4.3 s slower than constant velocity at margin 0.4 at equal minimum gap, 3.0 s at equal collision rate. Constant velocity at margin 0.2 and velocity obstacles at every weight are 3.9–6.2 s faster, so it does not beat them either.
+- **Why:** after the switch its boxes are better calibrated and wider (3b), and the planner turns that into caution.
+- **Exploratory (a), safety at matched time** (`results/t5_oracle_matchedtime.csv`): the open-loop oracle beats no baseline on every point and both axes. It buys clearance (minimum gap 0.22 m against 0.09 m for constant velocity at margin 0.2), but collision-rate gains mostly stay below the pre-set margin at 20 seeds.
+
+A 40-seed extension (same arms and rules) was declared after this analysis and before any of its results; the 20-seed analysis above stays the confirmatory result. Showcase seed 3013, picked by the rule in `RESULTS.md`; demo render: `media/demo/seed3013.gif`.
+
+**5. Intent chain: TabPFN at two chained layers, offline.** A TabPFN classifier predicts each person's next manoeuvre (straight, stop, turn left, turn right). Per-manoeuvre TabPFN range models then give the 2 s range, mixed by the classifier's probabilities. The pass/fail gate was fixed in the script before any result. Source: `results/intent_layer.log` / `.csv`, written by `tools/intent_layer.py`; `media/fig_intent_layer.png`.
+
+| Setting | Balanced accuracy (chance 0.25) | Turning people: interval score, chain minus single | Overall interval score | Verdict |
+|---|---|---|---|---|
+| Real, Hotel → ETH | 0.49 | 3.59 → 3.33, −0.263 [−0.481, −0.075] (73 rows, 37 people) | level, −0.022 [−0.057, +0.009] | adopted |
+| Simulated crossing crowd | 0.30 | — | worse | not adopted |
+
+On real data the chain adds 5.0 points of joint coverage overall and 16.9 on turns; median error is 0.007 m worse. Simulated people pick turns at random, so intent is barely predictable there. TabPFN's class probabilities are better calibrated than LightGBM's (log loss 0.24 against 0.71 real, 0.81 against 1.53 simulated). **What the gain is, and is not:** neither classifier ever calls a turn outright on real data (turn recall 0; only 58-63 turn rows in each 2,000-row Hotel context, so turn_right gets no model of its own). The 0.49 balanced accuracy comes from straight (0.99) and stop (0.97). The gain on turning people comes from the classifier's small, well-calibrated probability on turn modes widening those people's ranges (joint coverage 45.7% to 62.6%), not from a sharper turn forecast. In simulation the chain also helps on turn rows (−0.143 [−0.275, −0.005]) but widens everyone else's ranges too much (overall +0.229 [+0.175, +0.287]). Limits: 37 turning people, 3 context seeds, offline only (not in the closed loop).
+
+**6. Pending (placeholders, not results)**
 
 | Result | Status |
 |---|---|
-| T5 closed loop, 40 fresh seeds: time to goal, minimum gap, moving-collision rate per planner, 95% paired-seed intervals | pending: T5 |
-| T5 exploratory: safety at matched time; in-loop claim B (split vs frozen vs LightGBM, before and after the switch; secondary arms on seeds 3000–3019) | pending: T5 |
-| T5 latency arm (predictions 0.4 s stale) and fast-replan baselines | pending: T5 |
+| T5 latency arm (predictions 0.4 s stale) | not run (compute; `RESULTS.md` addendum part 5) |
+| T5 fast-replan baselines (0.2 s) | reactive m0.4 finished 20 seeds, not yet reported; the other three were stopped (addendum part 5) |
+| Claim B on real data (`tools/realdata_claimb.py`) | result to be added |
 | Calibration on arrival and after 20 s in the scene (`tools/conformal_eval.py`) | pending: f4 rerun (the existing table is f1) |
 | Time per plan on target hardware (Apple GPU, `tools/latency.py`) | pending: not measured |
 
@@ -105,8 +132,9 @@ Limits: no variant reaches the 80–90% target after the switch (best 68%). The 
 
 - **No safety guarantee.** Calibrated ranges are for efficiency; a worst-case floor is for safety (RSS; ISO/IEC TR 5469, see `docs/INDUSTRY.md`). What exists is the 0.4 s constant-velocity check; a takeover when the predictor is late is designed, not built. Online conformal gives long-run average coverage, not a per-step bound, and conformal safe-planning guarantees assume people who do not react to the robot (Lindemann et al. 2023, Assumption 1).
 - **Claim A is direction-dependent:** honest going to Hotel, under-covering (but closest) going to ETH. Two real scenes only, no robot in the real data.
-- **Claim B is simulation-only and offline.** Real data showed no gain over constant velocity.
-- **Claim C is not shown.** The closed loop is a demonstration and a stress test.
+- **Claim B is simulation-only** (offline and in the closed loop), and no model reaches the 80% target after the switch. Real data showed no gain over constant velocity; real-data check: result to be added.
+- **Claim C is not supported.** In T5 the TabPFN planner beat no baseline and was slower at comparable safety. The closed loop is a demonstration and a stress test.
+- **The intent chain is offline only,** on 37 turning people and 3 context seeds.
 - **Simulated people turn far more than real ones:** calm and hurried people in the crossing crowd turn in 8.5–13% of 2 s windows, against 2–3% on ETH and Hotel (D-24, `docs/DATA.md`).
 - **Latency:** our timings come from x64 Python emulated on an ARM laptop CPU, a worst case. The simulator runs in virtual time. "Real-time" is not claimed.
 - **Licence:** the TabPFN code is Apache 2.0. The TabPFN-3.5 and 3.5-Fast weights we use are non-commercial; the TabPFN-2 weights are Apache 2.0. This is a research prototype; a product would need Prior Labs' commercial licence or the v2 weights. Sizes: 219 M parameters (3.5), 83.5 M (3.5-Fast) (`docs/DEPLOYMENT.md`).
@@ -116,7 +144,7 @@ Limits: no variant reaches the 80–90% target after the switch (best 68%). The 
 - **Pre-registration with dated amendments.** The closed-loop analysis rule was written before the run (Sat ~20:30). Amendment 1 (commit `0d5d335`), amendment 2 (`889bc36`) and the T4 addendum (`bec10b7`, `6517981`, `722e1bd`, `3df14bf`) were committed before any learned planner ran on the seeds they govern. What was seen first is disclosed: the move to the crossing crowd after T1, baseline cells visible before the picker was written, and exploratory analyses added after the oracle gate (`RESULTS.md`, DEFENSE attack 3).
 - **Gates before big runs.** Each stage has a pass/fail check written first (`docs/GATES.md`, tests T1–T5 in `docs/DECISIONS.md`). Failed gates stopped work: T1 (the default plaza could not separate planners, D-19) and the oracle gate (claim C, D-33).
 - **Every value has a decision row** (`docs/DECISIONS.md`): backed, assumed or pending.
-- **Paired seeds and person bootstrap.** Every planner runs on the same fresh seeds (40, from a power calculation, D-14); intervals are paired-seed bootstrap, Holm–Bonferroni across the four baselines. Offline intervals resample whole people.
+- **Paired seeds and person bootstrap.** Every planner runs on the same fresh seeds (40 planned from a power calculation, D-14; the learned arms were cut to 20 before any result, addendum part 5, so T5 is analysed on seeds 3000–3019); intervals are paired-seed bootstrap, Holm–Bonferroni across the four baselines. Offline intervals resample whole people.
 - **Baseline checked against the literature.** Our constant velocity at 4.8 s is 1.12 m (ETH) and 0.46 m (Hotel), close to the published 1.15 and 0.51 m (Schöller et al. 2020; D-26). Tuning the filter made constant velocity 24–30% stronger, so we reran everything against it (features f4).
 - **Leaks found and fixed.** Features f1 leaked world heading: "no obstacle" padding was rotated into the person's frame, and standing people were oriented on the world x-axis (D-20). Earlier, a "distance to the area's edge" feature used the camera's field of view, computed from future positions. Both are gone; f1 results are superseded.
 - **Pilot withdrawn.** An early "first 5 s" adaptation result rested on 10 rows in 4 episodes, and its early bin measured retrieved rows, not this scene's rows (DEFENSE attack 4). It is withdrawn (`PLAN.md`).

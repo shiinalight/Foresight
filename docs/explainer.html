@@ -127,9 +127,10 @@ footer li { margin-bottom: 3px }
   <p class="tagline">Where will everyone be in two seconds, and how sure are we?</p>
   <div class="cards">
     <div class="card"><span class="pill warn">Direction-dependent</span><h3>A · Honest ranges in a new place</h3><p>Real pedestrians: on target going to Hotel (86%), short but closest going to ETH (75%).</p></div>
-    <div class="card"><span class="pill part">Simulation only</span><h3>B · Adapts by reading the scene</h3><p>Helped offline in simulation; not shown on real data.</p></div>
-    <div class="card"><span class="pill no">Stress test</span><h3>C · Beats standard navigation?</h3><p>Reported as a stress test, as pre-registered.</p></div>
+    <div class="card"><span class="pill part">Simulation only</span><h3>B · Adapts by reading the scene</h3><p>Helped offline and in the robot loop, in simulation: 10 points more people inside the box after a behaviour change. No gain on real data so far; a new real-data check: result to be added.</p></div>
+    <div class="card"><span class="pill no">Not supported</span><h3>C · Beats standard navigation?</h3><p>No. The robot was slower than standard planners at similar safety: its more honest, wider ranges made it cautious.</p></div>
     <div class="card"><span class="pill part">Partly</span><h3>D · Deployable</h3><p>Model tier proposed; hardware timing pending.</p></div>
+    <div class="card"><span class="pill warn">Real data, offline</span><h3>Intent, then ranges</h3><p>TabPFN used twice in a chain: it guesses each person's next move, then gives a range per move. Its ranges catch more of the real people who turn (37 people); no help in our simulator, where turns are random.</p></div>
   </div>
 </header>
 
@@ -331,7 +332,7 @@ footer li { margin-bottom: 3px }
         <g class="t-m" text-anchor="middle"><text x="40" y="246">−2</text><text x="160.8" y="246">−1</text><text x="281.7" y="246">0</text></g>
       </svg>
       <figcaption><b>3 · Adapts by reading the scene.</b> After an unseen behaviour, adding the scene's recent rows improves on frozen examples. Dot = difference, line = 95% interval.</figcaption>
-      <p class="src">Simulation, offline. Interval score = width plus miss penalty. Best coverage after the switch: 68%. Setup chosen on this same data; in-loop check pending (T5). results/live_variants_cp.csv</p>
+      <p class="src">Simulation, offline. Interval score = width plus miss penalty. Best coverage after the switch: 68%. Setup chosen on this same data. In the robot loop (20 fresh crowds) it held: coverage +10.0 pts (59% vs 49%), interval score −1.31, still short of 80%. results/live_variants_cp.csv, results/inloop_claimb.csv</p>
     </figure>
   </div>
 </section>
@@ -376,7 +377,7 @@ footer li { margin-bottom: 3px }
     <figcaption><b>Closed loop: a stress test.</b> Even an open-loop oracle (true futures under its current move) could not clear the pre-set 2 s bar: the fastest baseline is only 1.5 s above the robot's minimum time.</figcaption>
     <p class="src">20 crowds. results/oracle_gate_cross.csv</p>
   </figure>
-  <div class="pending"><b>[Final robot runs: results pending]</b><p>Fresh crowds that turn erratic mid-run (40 for baselines, 20 for the learned planners), judged by a rule written in advance. The main question: does reading the scene keep the robot's boxes honest after the change?</p></div>
+  <div class="pending"><b>[Final robot runs: done]</b><p>20 fresh crowds that turn erratic after 5 s, judged by a rule written in advance. The TabPFN robot beat none of the four standard planners: at similar safety it was slower, for example 4.3 s slower than walk-straight with a 0.4 m margin at equal clearance. Its boxes were more honest after the change (59% of people inside against 49% for the frozen model, still short of 80%), and wider boxes made it cautious. A robot given people's true future paths (under its current move) kept more clearance (0.22 m against 0.09 m) but mostly did not clearly cut collisions in 20 crowds. Showcase crowd 3013: media/demo/seed3013.gif. results/t5_primary.csv, results/inloop_claimb.csv</p></div>
 </section>
 
 <!-- 8. How we kept it honest -->
@@ -401,7 +402,7 @@ footer li { margin-bottom: 3px }
     <div class="check lim"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="veto-fill" opacity=".15"/><path d="M14 7 v9 M14 20 v1" class="veto-solid" stroke-linecap="round"/></svg><div><h3>No safety guarantee</h3><p>Ranges buy efficiency; safety needs a worst-case floor.</p></div></div>
     <div class="check lim"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="veto-fill" opacity=".15"/><path d="M14 7 v9 M14 20 v1" class="veto-solid" stroke-linecap="round"/></svg><div><h3>Speed not proven</h3><p>About 3 s per moment on an emulated laptop CPU; no robot-hardware timing.</p></div></div>
     <div class="check lim"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="veto-fill" opacity=".15"/><path d="M14 7 v9 M14 20 v1" class="veto-solid" stroke-linecap="round"/></svg><div><h3>Research licence</h3><p>TabPFN-3.5 weights are non-commercial; v2 weights are Apache 2.0.</p></div></div>
-    <div class="check nxt"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M9 14 h10 M15 10 l4 4 l-4 4" class="ok-st"/></svg><div><h3>Next</h3><p>40-crowd analysis, robot-hardware timing, a fallback when TabPFN is late, real robot data.</p></div></div>
+    <div class="check nxt"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M9 14 h10 M15 10 l4 4 l-4 4" class="ok-st"/></svg><div><h3>Next</h3><p>A planner that uses the range's shape, not only its width; robot-hardware timing, a fallback when TabPFN is late, real robot data.</p></div></div>
   </div>
 </section>
 
@@ -422,6 +423,6 @@ footer li { margin-bottom: 3px }
     <li>Ettinger et al. 2021, Waymo Open Motion Dataset</li>
     <li>Nav2 documentation, 2026</li>
   </ol>
-  <p>Sun 22 Nov 2026, 01:21 Berlin. Full references: docs/REFERENCES.md.</p>
+  <p>Sun 22 Nov 2026, 02:20 Berlin. Full references: docs/REFERENCES.md.</p>
 </footer>
 </div>

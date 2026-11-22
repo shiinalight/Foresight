@@ -2,6 +2,8 @@
 
 Written Sat 21 Nov, about 23:50 Berlin (adversarial review, read-only). It sequences events by git commit times and the corrected DECISIONS timestamps (commit `adc7dc1`), not by the older labels that ran about an hour ahead.
 
+**Update Sun 22 Nov, 02:20 Berlin:** T5 is done (`RESULTS.md`, "Closed loop T5 results"; 20 paired seeds, 3000–3019). The primary test failed against all four baselines, and claim B held in the loop. Q0, Q12, Q21, Q32, the claim C row of "Claims we must not make", and the new Q37 (TabPFN planner slower) and Q38 (intent chain) reflect this. The ten attacks are the Sat 23:50 review, kept as written.
+
 **How to read the numbers.** Every number carries its feature version:
 - **f1:** the original features. The main real-data table, the calibration table, the tier grid, the adaptation pilot and T1 are all f1.
 - **f2–f3:** the heading-leak fix (D-20) and the "unknown" mode label (D-22).
@@ -120,7 +122,7 @@ Further exposure:
 - No learned planner has run in the crossing crowd. Checked over every file in `results/closed/`: the only `goal_mode == cross` rows are cv (214), reactive (185), stop_go (240) and vo (180).
 - The switch was argued from realism, and that evidence was committed before the switch: `docs/DATA.md`, commit `8d6635a` at 22:53, shows turns in 36% of 2 s windows against 2–3% on ETH/Hotel. D-24 cites prediction statistics, not planner outcomes.
 - D-23's reason (a person who ignores the robot can walk into a stopped robot) does not depend on any result.
-- T5 uses fresh seeds 3000–3039 under a dated amendment.
+- T5 uses fresh seeds 3000–3039 under a dated amendment (learned arms 3000–3019 after addendum part 5).
 - Everything before T5 is exploratory and labelled so.
 
 **Fix (no compute, about 20 min, before any learned planner runs in cross).** A dated pre-registration amendment that:
@@ -303,7 +305,10 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
    - In the chosen cell (repulsion 2, ignore 0.2, 24 people) the open-loop oracle beats stop_go but is only 1.59 s faster than constant velocity at margin 0.2 [0.86, 2.39], short of the 2 s margin. vo w0.5 is faster than every oracle point.
    - **The gate was hardly passable.** The time floor (straight start-to-goal distance minus the 0.5 m arrive radius, at the 1.0 m/s top speed) averages **17.74 s** over the 20 seeds. vo w0.5 runs at 19.24 s, **only 1.50 s above the floor**, so no planner could be 2 s faster than it.
    - D-14's 2 s was a detectability margin (from the pilot's paired spread), not an estimate of the headroom.
-   - What T5 still tests: in-loop calibration (claim B in the loop, before and after a switch into an unseen regime) and, as exploratory analysis, safety at matched time. Both were added after the gate was seen, and say so.
+   - What T5 then tested, both added after the gate was seen (and labelled so):
+     - in-loop claim B, which held: after the switch, split against frozen TabPFN, coverage +10.0 pts [+8.4, +11.6], interval score −1.31 [−1.55, −1.08] (Q37);
+     - safety at matched time, where the open-loop oracle beat no baseline on every point and both axes: clear clearance gains, collision-rate gains mostly below the margin at 20 seeds.
+   - The primary test failed against all four baselines, as the gate predicted (Q32).
 
 **Framing and novelty**
 
@@ -369,7 +374,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 12. **Q: Are the closed-loop comparisons paired?**
     - Yes: same seeds, same crowd, start and goal for every planner (`run_closed.py`, seed outer loop).
     - The T1 intervals (`tools/t1_gate.py`) are marginal bootstraps per configuration, not paired differences. That is conservative.
-    - T5 should report paired differences.
+    - T5 reports paired-seed differences (`results/t5_primary.csv`, `results/inloop_claimb.csv`).
 
 13. **Q: Do all planners get the same safety check and action set?**
     - No:
@@ -423,6 +428,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 21. **Q: How many seeds, and why?**
     - Forty fresh confirmatory seeds (D-14), from a power calculation on pilot paired standard deviations: 80% power, 5% two-sided.
     - That covers 2 s of time and 1 s of intrusion, and 0.5 s of intrusion for most pairs.
+    - The learned T5 arms were cut to 20 seeds (3000–3019) before any learned result, for compute (addendum part 5). The detectable time difference at 20 seeds is about 2.6 s, against 1.84 s at 40.
     - The real-data tables are single-seed (f1). The claim A rerun uses 5 context seeds.
 
 22. **Q: Are the intervals by person?**
@@ -473,7 +479,10 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 
 32. **Q: Is the robot safer with TabPFN?**
     - Not shown. T1: no learned planner beats the baseline frontier in the plaza (D-19).
-    - The crossing-crowd test (T5) is the only confirmatory test. T5 is running (pruned to 20 seeds for the learned arms, addendum part 5).
+    - The crossing-crowd test (T5) was the only confirmatory test, and it is done: the TabPFN planner (tabpfn_split) beats no baseline. All four fail Holm–Bonferroni (p = 1.0), on 20 paired seeds.
+    - It is slower at comparable safety: 4.3 s slower than cv m0.4 at equal minimum gap, 3.0 s at equal collision rate. cv m0.2 and vo w0.5/w1/w2 are 3.9–6.2 s faster, so it does not beat them either.
+    - It was already a stress test after the oracle gate (D-33, Q0). Report it as a failed primary test, not as a near miss.
+    - A 40-seed extension (same arms and rules) was declared before any of its results; the 20-seed analysis stays the confirmatory one (`RESULTS.md`).
 
 **Deployment**
 
@@ -494,6 +503,21 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 36. **Q: Is the API in the loop?**
     - No. The API is used for offline evaluation only, and the cloud is never in the control loop (DEPLOYMENT.md section 3).
 
+**After T5 (Sun 22 Nov)**
+
+37. **Q: Your TabPFN planner is slower than the baselines, so what does TabPFN buy?**
+    - Calibrated ranges that adapt in the loop after a regime shift. After the crowd turns erratic, the split model (frozen bank plus this scene's recent rows) against frozen TabPFN: coverage 59.3% vs 49.3% (+10.0 pts [+8.4, +11.6]), interval score 5.03 vs 6.34 (−1.31 [−1.55, −1.08]), median error −0.057 m [−0.094, −0.021]. Against LightGBM on all rows: +18.0 pts, interval score −2.00 (`results/inloop_claimb.csv`, 20 paired seeds).
+    - Limits: no model reaches 80% after the switch, and before it split is slightly worse (interval score +0.18). Simulation only; the real-data check is still to be added.
+    - Why it is slower: the planner turns calibration into caution. It uses only box width, so honest, wider boxes veto more moves.
+    - Next work, not done: a planner that uses the shape of the range, not only its width, for example a chance-constrained cost.
+
+38. **Q: Do you use TabPFN for anything beyond one range model?**
+    - Yes, offline: an intent chain. A TabPFN classifier predicts each person's next manoeuvre (straight / stop / turn left / turn right), and per-manoeuvre TabPFN range models give the 2 s range, mixed by the classifier's probabilities. The gate was fixed in `tools/intent_layer.py` before any result (`results/intent_layer.log`).
+    - Real pedestrians (Hotel → ETH): balanced accuracy 0.49 (chance 0.25). Adopted: on turning people interval score 3.59 → 3.33 (−0.263 [−0.481, −0.075]; 73 rows, 37 people); overall level (−0.022 [−0.057, +0.009]); joint coverage +5.0 pts overall, +16.9 on turns; median error +0.007 m (slightly worse).
+    - Simulated crowd: balanced accuracy 0.30, because simulated people pick turns at random. Not adopted: overall interval score worse.
+    - TabPFN's class probabilities are much better calibrated than LightGBM's (log loss 0.24 vs 0.71 real, 0.81 vs 1.53 sim).
+    - Caveats: 37 turning people, 3 context seeds, offline only. On real data the classifier names no turn outright (TabPFN's turn recall is 0, LightGBM's at most 0.01).
+
 ---
 
 ## Claims we must not make (and what to say instead)
@@ -505,7 +529,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 | "TabPFN is more accurate" / "beats constant velocity" (any f1 error) | f4 CV on the same rows is at or below f1 learned errors on both scenes (attack 1) | "Point error comparable to LightGBM; [after the f4 rerun: X% / no gain] against a well-filtered constant velocity" |
 | "Only calibrated model" (RESULTS.md:127) | The 10–90% box has a 60–80% nominal range, not 80%; one seed | "Before any calibration data, TabPFN's raw box was within its nominal range in both directions; LightGBM's was far below it (32–37% against a 60% floor)" |
 | "Adapts in seconds" / "cut error by about a fifth" (explainer.html:351) | n = 10 rows in 4 episodes; f1; the early bin is retrieval, not this scene's rows | "Context can be swapped in seconds without retraining. Whether that improves accuracy is being measured (pilot too small to quote)" |
-| "Prediction-aware planning beats standard navigation" | T1 failed; T5 not run | "In the default plaza a learned planner landed on the same time-versus-closeness curve as constant velocity with a larger margin" |
+| "Prediction-aware planning beats standard navigation" | T1 failed; the oracle gate failed; T5's primary test failed against all four baselines | "In a crossing crowd our TabPFN planner beat no standard planner: it was slower at comparable safety, because its better-calibrated boxes made it more cautious" |
 | "Guaranteed coverage" / "keeps 80% of truths inside" (explainer.html:141) | Adaptive conformal gives long-run average coverage only, and it is not in the loop | "An online offset keeps long-run box coverage near 80% in offline replays" |
 | "Our baseline matches the published one" (explainer.html:454) | REFERENCES.md:91, GATES.md:77; depends on the window rule | "Our constant velocity is within 3–10% of the published CVM on comparable windows" |
 | "Oracle = perfect prediction / upper bound" (D-21) | Rolled out under the current command, while people react to the actual one | "Open-loop oracle: true futures under the current command" |
