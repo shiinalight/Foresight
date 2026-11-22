@@ -457,6 +457,57 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
   - Baseline and oracle seeds beyond 3019 were stopped (`tools/seed_cap.ps1 -PythonOnly`). Arms that had already run 40 seeds keep those rows.
   - Neither set is used in any analysis: smoothing is OFF by the T4 gate, and the primary test runs on the common seeds 3000–3019.
 
+## Closed loop T5 results (Sun 22 Nov, seeds 3000–3019, analysed by the pre-registered rules)
+
+**Setup:**
+- Chosen cell (repulsion 2, ignore 0.2, 24 people, crossing crowd), every seed switching into erratic at 5 s, f4.
+- Learned arms carry the batch offset, smoothing OFF, latency 0, replan 0.4 s.
+- 20 paired seeds (addendum part 5).
+- Files: `results/t5_primary.csv`, `results/inloop_claimb.csv`, `results/t5_oracle_matchedtime.csv`. Scripts: `tools/curve_compare.py`, `tools/inloop_claimb.py`.
+
+**Points** (mean time_capped s / mean min_gap m / moving-collision rate):
+
+| Planner | Dial | Time | Min gap | Collision rate |
+|---|---|---|---|---|
+| tabpfn_split (primary) | q 0.10 | 28.64 | 0.232 | 15% |
+| tabpfn_split (primary) | q 0.15 | 26.23 | 0.158 | 15% |
+| constant velocity | m 0.2 / 0.4 / 0.6 / 0.8 | 21.36 / 23.23 / 25.83 / 28.92 | 0.089 / 0.199 / 0.323 / 0.254 | 25 / 15 / 5 / 15% |
+| reactive | m 0.2 / 0.4 / 0.6 / 0.8 | 23.27 / 24.99 / 26.60 / 30.89 | −0.120 / 0.086 / 0.127 / 0.125 | 50 / 10 / 15 / 10% |
+| velocity obstacles | w 0.5 / 1 / 2 | 20.08 / 21.32 / 22.31 | −0.038 / 0.064 / 0.053 | 40 / 20 / 30% |
+| stop_go | — | 31.38 | −0.174 | 10% |
+| open-loop oracle | m 0.2 / 0.4 / 0.6 | 20.37 / 22.69 / 25.68 | 0.221 / 0.385 / 0.388 | 0 / 0 / 10% |
+
+**Primary test (claim C, already a stress test after the oracle gate): tabpfn_split beats no baseline.**
+- All four fail Holm–Bonferroni (p = 1.0).
+- The split planner is more cautious and slower at comparable safety. At cv m0.4's safety it is 4.3 s slower on the min_gap axis and 3.0 s slower on the collision axis.
+- Against vo w0.5, w1 and w2, and cv m0.2, it is dominated (slower and no safer).
+- Claim C is not supported in this crowd.
+
+**Exploratory (a), safety at matched time:** the open-loop oracle beats no baseline on every point and both axes, so the primary was not tested there (rule written before the result).
+- Per point, perfect prediction buys clear clearance (min_gap) at matched time against cv m0.2/m0.4, every reactive dial, vo w1/w2 and stop_go.
+- Collision-rate gains mostly stay below the 0.244 margin at 20 seeds.
+- vo w0.5 is faster than every oracle point, so not comparable.
+
+**Exploratory (b), in-loop claim B** (q 0.15; +2 s against true positions; split minus other, 95% paired-seed intervals):
+
+| | tabpfn_split | frozen tabpfn | lgbm_all | split − tabpfn | split − lgbm_all |
+|---|---|---|---|---|---|
+| After switch: 5–95 coverage | 59.3% | 49.3% | 41.3% | +10.0 pts [+8.4, +11.6] | +18.0 pts [+16.7, +19.3] |
+| After switch: interval score | 5.03 | 6.34 | 7.03 | −1.31 [−1.55, −1.08] | −2.00 [−2.20, −1.80] |
+| After switch: width | 2.11 m | 1.85 m | 1.47 m | +0.26 m | +0.63 m |
+| After switch: median error | 1.016 m | 1.073 m | 1.036 m | −0.057 [−0.094, −0.021] | −0.020 [−0.051, +0.010] |
+| After switch: coverage with offset | 60.8% | 51.3% | 44.6% | +9.5 pts | +16.2 pts |
+| Before switch: interval score | 2.70 | 2.52 | 2.46 | +0.18 [+0.10, +0.27] | +0.24 [+0.17, +0.32] |
+| Before switch: median error | 0.514 m | 0.499 m | 0.476 m | +0.015 [+0.006, +0.025] | +0.037 [+0.026, +0.048] |
+
+**What this says:**
+- **In the loop, the scene model buys calibration after an unseen regime arrives:** +10 points coverage, a better interval score and lower error than the frozen model. It costs a little before the switch, while the scene model sees only calm or hurried rows the bank already covers.
+- **No model reaches the 80% target after the switch**, with or without the offset. The batch offset adds ~1.5 points.
+- **This reproduces WP-J2's offline Setting B result in closed loop** (simulated crowd only).
+- **The wider boxes are also why the split planner is slower:** better-calibrated ranges made the robot more cautious, not faster, in this crowd.
+
+**Showcase seed** (CTO's rule): **3013**, a seed on which every primary-test planner reached the goal and tabpfn_split q0.15's time (25.8 s) is closest to its median (26.40 s).
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):
