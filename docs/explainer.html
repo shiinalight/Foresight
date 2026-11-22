@@ -240,11 +240,11 @@ footer li { margin-bottom: 3px }
     <div class="step"><span class="k">STEP 3 · ONE TABLE ROW</span>
       <table class="row" aria-label="Six of P's 39 row values">
         <tr><td>Look-ahead</td><td>2 s</td></tr>
-        <tr><td>P's speed</td><td>1.56 m/s</td></tr>
-        <tr><td>Turning rate</td><td>0.00 rad/s</td></tr>
-        <tr><td>Where P was 1 s ago</td><td>1.61 m behind</td></tr>
-        <tr><td>Nearest person</td><td>3.22 m</td></tr>
-        <tr><td>Robot</td><td>2.59 m, closing 0.93 m/s</td></tr>
+        <tr><td>P's speed</td><td>1.02 m/s</td></tr>
+        <tr><td>Turning rate</td><td>−0.50 rad/s (right)</td></tr>
+        <tr><td>Where P was 1 s ago</td><td>1.17 m behind</td></tr>
+        <tr><td>Nearest person</td><td>1.78 m</td></tr>
+        <tr><td>Robot</td><td>1.69 m, closing 0.97 m/s</td></tr>
         <tr class="ans"><td colspan="2">To predict: offset from walking straight → ?</td></tr>
       </table>
       <p>P becomes one row of 39 numbers, from P's point of view; six shown.</p></div>
@@ -254,7 +254,7 @@ footer li { margin-bottom: 3px }
     <div class="step"><span class="k">STEP 7 · CHOOSE A MOVE</span><img class="shot" src="walkthrough/s8_planner.png" alt="Candidate moves around the robot; vetoed moves red, allowed moves green, chosen move thick." loading="lazy"><p>Candidate moves that enter a box are rejected (red); the clear one with most progress wins.</p></div>
     <div class="step"><span class="k">STEP 8 · REPEAT</span><img class="shot" src="walkthrough/s9_ego_path.png" alt="The robot's full path through the crowd to its goal." loading="lazy"><p>Repeat every 0.4 s: the robot's whole path.</p></div>
   </div>
-  <p class="note">Figures and values are being regenerated on the final planner and will be refreshed.</p>
+  <p class="note">Final planner (frozen bank + recent scene rows, online offset), seed 6001, 7.2 s: two seconds after the crowd turned erratic. Full tables in the internal reference.</p>
 </section>
 
 <!-- 6. Why TabPFN -->
