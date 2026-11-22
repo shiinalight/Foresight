@@ -1,5 +1,7 @@
 # CEO review and handover to the CTO session
 
+> **Superseded for the story (22 Nov, 09:00 Berlin):** sections 3 and 5 are folded into [`docs/STORY.md`](STORY.md), which now holds the claims ledger, the video script v3 and the deck list. This page stays as history.
+
 Written Sun 22 Nov 2026, 03:55 Berlin (checked against network time, not the prose times in other docs). Submission closes 16:30; we submit by 16:00. Based on `darshak/core` at `0269ef9`.
 
 This page sets the goal, the story, the order of work and the stop list for the last 12 hours. `PLAN.md` stays the living plan; fold sections 3 to 6 into it and then treat this page as history.

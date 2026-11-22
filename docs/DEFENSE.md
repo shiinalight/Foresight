@@ -541,6 +541,8 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 
 ## Claims we can make (exact wording)
 
+> **Superseded by docs/STORY.md section 2 (22 Nov, 09:00 Berlin).** The list below predates the f4 reruns, LOSO5, the highway tests and the policy arm. Present from the STORY.md ledger and its section 7 answers.
+
 1. **Only after the f4 claim A rerun confirms it, and with the f4 numbers:** "On two real pedestrian scenes, trained on one and tested on the other, TabPFN read 1,500 example rows and needed no training. Its 2D box held the truth close to its nominal rate, while an untuned LightGBM on the same rows covered 46% going to ETH." (These numbers are f1 and single seed. Do not quote them as they stand.)
 2. "With 1,000–2,000 example rows TabPFN had a lower pinball loss than LightGBM on the same rows (0.111 against 0.120–0.131 at 1,000; 0.106 against 0.116–0.121 at 2,000). On 2,000 rows it tied LightGBM trained on 20,000 (0.106); LightGBM on all 73,000 rows was still more accurate (0.606 against 0.646 m)." (crowd_cross simulator, f4, 3 context seeds, one test set of 2,000 rows; `results/context_size.csv`; recheck at the final version of the file.)
 3. "Once about 20 s of outcomes exist in the new scene, an online conformal offset brings every model to about 80% box coverage, and conformal LightGBM does so with narrower boxes than TabPFN." (f1, RESULTS.md:129. This is a concession, safe to say now. Restate the numbers after the rerun.)

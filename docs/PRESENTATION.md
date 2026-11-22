@@ -1,5 +1,7 @@
 # Presentation plan: video, README, live deck
 
+> **Superseded for the story (22 Nov, 09:00 Berlin):** the narrative, the video script and the 10-slide deck plan below were written around claim A and before the LOSO5, highway and policy results. The current story, script and deck list are in [`docs/STORY.md`](STORY.md). This page stays as history and for its recording rules and risk list.
+
 Written Sat 21 Nov, 23:40 (Berlin), while the overnight runs are going. **Status of every open result is as of 23:35.** Freeze Sun 12:30; submit by 16:00 (hard deadline 16:30).
 
 **Update Sun 22 Nov, 02:20 (Berlin): how claims B and C landed.** T5 is done (`RESULTS.md`, "Closed loop T5 results"; 20 paired seeds, 3000–3019). Claim C landed as C3 (the oracle gate had already made T5 a stress test, D-33), and the run then showed the TabPFN planner slower than the baselines, not on their curve. A 40-seed extension (same arms and rules) was declared at 02:20 (3226e4f); the 20-seed analysis stays the confirmatory result, so quote 20 seeds. The lines below that waited for T5 are updated in place; the rest of the page is the Sat 23:40 plan.
