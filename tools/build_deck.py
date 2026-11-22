@@ -187,7 +187,8 @@ def build():
                     "every 2 s, off the control path; the frozen fit is 490 ms once; the real loop is 225 ms per plan on "
                     "3 T5 seeds; GPU and CPU quantiles agree within 0.021 m. So 71 ms TabPFN and a 225 ms full loop fit the "
                     "0.4 s replan period; 10 Hz needs the background rebuild, which is designed but not built. No Jetson "
-                    "was measured. TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are "
+                    "was measured. Apple M3 Pro (MPS): live TabPFN 287–321 ms, frozen 130–135 ms per plan, MPS = CPU within "
+                    "1.3 cm (Nooshin, tabpfn 10.2; docs/runs/mac_smoke.md). TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are "
                     "non-commercial: research prototype; a product needs the commercial licence or the Apache v2 weights.")
     _text(s, "TabPFN step 71 ms per replan on an NVIDIA L4 · full loop 225 ms · inside the 0.4 s replan period", Inches(0.6), Inches(6.35), Inches(12.1),
           Inches(0.5), 14, color=MUTED)
