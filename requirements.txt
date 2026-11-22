@@ -8,3 +8,4 @@ highway-env>=1.12
 matplotlib
 python-pptx
 pytest
+tabpfn-client   # only for --api runs on the hosted TabPFN
