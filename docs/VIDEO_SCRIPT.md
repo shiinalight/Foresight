@@ -16,7 +16,7 @@ Every number comes from `RESULTS.md` and the docs it points to. Recording rules 
 | 0:15–0:30 | `media/diagrams/01_problem.png` | "Most robots assume people keep walking straight, or add one fixed margin. Learned models do better, but they learn one place. In a new place, their confidence can be badly wrong." (31) |
 | 0:30–0:55 | `media/diagrams/02_pipeline.png`, then one table row (`docs/walkthrough.html`, stage 3) | "So we turned the scene into a table. One row is one person, at one moment, for one look-ahead: their motion, their neighbours, the robot. TabPFN reads rows like these as examples, with no training. The robot's knowledge is the table." (41) |
 | 0:55–1:20 | `media/demo/seed3013.gif`. Caption: "crowd chosen by a fixed rule (median), not cherry-picked" | "Here is the full loop in a simulated crowd. Same crowd for every robot: stop-and-go, reactive, velocity obstacles, and ours, with the ranges it planned around. Five seconds in, the crowd turns erratic, a behaviour none of the models has seen." (42) |
-| 1:20–1:50 | **Proof 1.** `media/demo/calibration_seed3013.gif`, caption "this crowd: 60% vs 45%" (its own counters; never caption it 59/41). Then `media/demo/policy_seed3403.gif` for the last sentence | "When the crowd changed, reading the scene's last seconds kept the ranges honest: ten points more coverage than the same model without it, and more than LightGBM in all three crowds we tried. And a second TabPFN can pick the robot's move: it matched the planner it learned from on twenty new crowds." (53) |
+| 1:20–1:50 | **Proof 1.** `media/demo/calibration_seed3013.gif`, caption "this crowd: 60% vs 45%" (its own counters; never caption it 59/41). Then `media/demo/policy_seed3403.gif` for the last sentence | "When the crowd changed, reading the scene's last seconds kept the ranges honest: eighteen points more coverage than LightGBM, and ahead of it in all three crowds we tried. And a second TabPFN can pick the robot's move: it matched the planner it learned from on twenty new crowds." (48) |
 | 1:50–2:15 | **Proof 2.** `media/fig_highway.png` | "Second proof: the same code, unchanged, on simulated highway traffic. With fifteen hundred rows it matches LightGBM trained on sixty-seven times more, with more honest ranges. When traffic turns aggressive, reading the scene adds fourteen points of coverage." (37) |
 | 2:15–2:30 | **Proof 3.** `media/fig_loso5.png` | "Third: on five real pedestrian scenes, TabPFN beats LightGBM on the same rows, and ties one trained on fifteen times more." (21) |
 | 2:30–2:48 | "Where it breaks" card, `media/v_limits.png` | "Where it breaks. Our robot was slower than standard planners: better ranges didn't change how this planner drives. Pedestrian examples don't carry over to cars. The robot loop and the cars are simulated, and the weights are non-commercial." (37) |
@@ -25,8 +25,9 @@ Every number comes from `RESULTS.md` and the docs it points to. Recording rules 
 Beats: 15 + 15 + 25 + 25 + 30 + 25 + 15 + 18 + 12 = 180 s. The fastest beat is "where it breaks" at 2.1 words per second.
 
 **Sources for each spoken claim:**
-- **"ten points more coverage than the same model without it":** T5 exploratory (b), after the switch, split against frozen TabPFN: +10.0 points [+8.4, +11.6] (20 confirmatory crowds; +10.2 [+9.3, +11.2] over 40) (`results/inloop_claimb.csv`).
-- **"more than LightGBM in all three crowds we tried":** split against lgbm_all after the switch, in points:
+- **"eighteen points more coverage than LightGBM":** T5 exploratory (b), after the switch, split against lgbm_all: +18.0 points [+16.7, +19.3] (59.3% against 41.3%, 20 confirmatory crowds) (`results/inloop_claimb.csv`). This matches the GIF's comparison.
+  - Of that, reading the scene alone adds ten points over the same TabPFN without it: split against frozen TabPFN, +10.0 [+8.4, +11.6]. That goes in the deck notes, not the voice-over.
+- **"ahead of it in all three crowds we tried":** split against lgbm_all after the switch, in points:
   - open plaza +6.6 [+5.7, +7.5];
   - crossing +18.0 [+16.7, +19.3];
   - dense crossing +19.7 [+18.7, +20.8].
