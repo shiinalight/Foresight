@@ -14,7 +14,7 @@ HackLab Berlin 2026, Prior Labs track. Foresight is a sense-predict-plan layer f
 |---|---|---|---|
 | 1 | **Adapts when behaviour changes, no retraining** | After the crowd turns erratic, the scene-reading TabPFN keeps 59% of people inside its 2 s range against 41% for LightGBM (+18.0 pts [+16.7, +19.3]). Reading the scene alone adds 10 of those points over the same TabPFN without it. Ahead of LightGBM in all three simulated crowds (+6.6, +18.0, +19.7 pts) | Simulated crowds; still short of the 81% target; small on real pedestrians, who have no sudden switch |
 | 2 | **Same core, another body** | Highway cars through the unchanged core: TabPFN on 1,500 rows matches LightGBM trained on 67 times more, with more honest ranges (86% inside against 69–82%). After traffic turns aggressive, reading the scene adds 14 pts of coverage (76.7% vs 62.5%) | Simulated traffic, offline, no closed loop for cars; most of the gain in the first 6 s after the switch |
-| 3 | **Learns more per example** | Five real pedestrian scenes, each held out once: TabPFN beats LightGBM on the same 1,500 rows (interval score −0.130 [−0.154, −0.107]) and ties LightGBM trained on about 15 times more | Ties, not wins, against the bigger model; Zara1 and Zara2 share a camera |
+| 3 | **Learns more per example** | Five real pedestrian scenes, each held out once: TabPFN beats constant velocity plus a fixed band in every scene (interval score −0.365 [−0.405, −0.328] pooled), beats LightGBM on the same 1,500 rows (−0.130 [−0.154, −0.107]) and ties LightGBM trained on about 15 times more | Ties, not wins, against the bigger model; Zara1 and Zara2 share a camera |
 | + | **TabPFN at every step of the loop** | TabPFN predicts the ranges, adapts them from the scene, and a second TabPFN picks the robot's move: it matched the planner it learned from on 20 new crowds (goal 100% vs 100%, time 24.65 vs 24.10 s); safety checks override it at 0.9% | Shows TabPFN can be the controller, not a better one; the collision interval is too wide at 20 crowds to rule out a 25-pt worse rate |
 | ✗ | **What failed** | The robot beat no standard navigation planner under the pre-set test, in any of three crowds; it was 3–4 s slower at equal safety. Better ranges did not change how the box planner drives; its caution setting did | At a lower caution setting, and in the densest crowd, it is roughly level with the baselines (exploratory) |
 
@@ -28,6 +28,7 @@ Video: [link: confirm] · Repository: `shiinalight/Robodetect`
 
 | Read | What it gives you |
 |---|---|
+| [`final/00_START_HERE.md`](final/00_START_HERE.md) | The short reference set: eight pages (story and claims, video, deck, the two proof write-ups, questions and answers) with an index to everything else |
 | [`docs/VIDEO_BRIEF.md`](docs/VIDEO_BRIEF.md) | The 3-minute video plan: the story on one card, the timed script, and why we chose our data, step size, horizons and baselines, with references |
 | Branch `nooshin/dev` | The 3D street and doorway scenes behind the video (`media/street3d_demo.html`, `media/demo_full.mp4`). They use their own simulator setup and are not merged into this branch |
 | [`docs/STORY.md`](docs/STORY.md) | The story in one page: every claim with its status, number, source and exact wording; what exists; the video script; the hard questions |
@@ -39,7 +40,7 @@ Video: [link: confirm] · Repository: `shiinalight/Robodetect`
 
 ## The problem
 
-A robot crossing a station has to plan around where people will be in the next two seconds. The plan is only as good as the uncertainty it is given. An overconfident range tells the robot a path is clear when it is not, and this is hardest to trust in a place the robot has never seen. A common approach assumes people keep walking straight, or adds one fixed margin. Learned forecasters do better, but they learn one place. Constant velocity is a strong baseline on real pedestrians (Schöller et al. 2020); the hard part is knowing how wrong it might be.
+A robot crossing a station has to plan around where people will be in the next two seconds. The plan is only as good as the uncertainty it is given. An overconfident range tells the robot a path is clear when it is not, and this is hardest to trust in a place the robot has never seen. A common approach assumes people keep walking straight, or adds one fixed margin. Learned forecasters do better, but once trained they are frozen: a new site or a change in behaviour means training again. Constant velocity is a strong baseline on real pedestrians (Schöller et al. 2020); the hard part is knowing how wrong it might be.
 
 ## How it works
 

@@ -1,0 +1,58 @@
+{
+ "what": "illustration of docs/LOSO5.md's setup; not a result",
+ "model": "TabPFN-3.5 default, local",
+ "context": "1,500 rows from the other four scenes, context seed 0, as tools/loso5.py",
+ "window_rule": "16 s from the scene's median (episode, t) row; fixed before looking at outcomes",
+ "box": "5-95% on each axis (joint target about 81%)",
+ "fps": 5,
+ "speed": "2x real time",
+ "grey": "a person gets a first forecast after 2 s of track, and it comes due 2 s later",
+ "sim_step_s": 0.4,
+ "scenes": {
+  "eth": {
+   "episode": 7,
+   "t_from": 41.6,
+   "t_to": 57.6,
+   "rows": 112,
+   "people": 9,
+   "inside_all_rows": 0.902,
+   "inside_drawn": 0.917
+  },
+  "hotel": {
+   "episode": 6,
+   "t_from": 42.0,
+   "t_to": 57.6,
+   "rows": 177,
+   "people": 16,
+   "inside_all_rows": 0.898,
+   "inside_drawn": 0.898
+  },
+  "zara1": {
+   "episode": 3,
+   "t_from": 3.2,
+   "t_to": 19.200000000000003,
+   "rows": 93,
+   "people": 7,
+   "inside_all_rows": 0.946,
+   "inside_drawn": 0.951
+  },
+  "zara2": {
+   "episode": 3,
+   "t_from": 32.0,
+   "t_to": 48.0,
+   "rows": 406,
+   "people": 22,
+   "inside_all_rows": 0.837,
+   "inside_drawn": 0.842
+  },
+  "univ": {
+   "episode": 1,
+   "t_from": 41.6,
+   "t_to": 57.6,
+   "rows": 1459,
+   "people": 59,
+   "inside_all_rows": 0.779,
+   "inside_drawn": 0.787
+  }
+ }
+}

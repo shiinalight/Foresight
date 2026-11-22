@@ -21,7 +21,7 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 - **Headline:** Robots guess with a straight line and a fixed margin.
 - **Layout:** headline on top; two images side by side at equal size; one line under them with the 0.93 m number.
 - **Visuals:** `media/stills/3d_problem_093m.jpg` (the 0.93 m card) on the left; `media/diagrams/01_problem.png` (straight-line guess against where the person goes) on the right.
-- **Say:** today's options: assume everyone walks straight, add one margin, or stop when someone is close. Stock ROS 2 Nav2 plans around where people are now. Learned forecasters do better but learn one place. Too narrow a margin and the robot hits someone; too wide and it freezes.
+- **Say:** today's options: assume everyone walks straight, add one margin, or stop when someone is close. Stock ROS 2 Nav2 plans around where people are now. Learned forecasters do better, but once trained they are frozen. Too narrow a margin and the robot hits someone; too wide and it freezes.
 - **Number:** walking-straight is off by 0.93 m after 2 s in our crowd, 0.25–0.43 m on real Zurich pedestrians.
 
 ### 3 · The idea (30 s)
@@ -31,7 +31,7 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 - **Say:** each person, at each moment, is one row: their motion, neighbours, the robot, obstacles. TabPFN reads a few thousand example rows and answers in one pass, with no training. To adapt to a new place, a new behaviour or a new body, change the rows.
 - **On slide:** "No training step. Adapting = swapping rows."
 
-### 4 · How it reads one person (30 s) · Nooshin
+### 4 · How it reads one person (15 s) · Nooshin
 - **Headline:** From sensor dots to a range, in four steps.
 - **Layout:** headline on top; four stills in one row, left to right in step order, each with a two-word label underneath (Watch · Row · TabPFN · Size).
 - **Visuals:** a strip of four stills: `3d_step1_watching.jpg` → `3d_step2_row.jpg` → `3d_step4_tabpfn.jpg` → `3d_step5_sizing.jpg`.
@@ -39,7 +39,8 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 - **Alternative:** play this part of the 3D video (about 40 s) and drop slide 5's clip.
 
 ### 5 · Watch it on a street (35 s) · Nooshin
-- **Headline:** A street the model has never seen.
+- **Headline:** A street run the model has never seen.
+- **Why "run":** it is a held-out episode of the same simulated street, and its ranges use a fixed example set. Do not say the model adapts here; proof 1 shows that.
 - **Layout:** the clip as large as the slide allows, headline above; the caption in small type under it. With stills: three in a row.
 - **Visual:** the 3D street clip from the video (about 30 s, sudden stop → zebra braking → jaywalker → rush hour). Fallback stills: `3d_street_sudden_stop.jpg`, `3d_street_zebra_brake.jpg`, `3d_street_rush_hour.jpg`.
 - **Say:** narrate the events: someone stops dead, a car brakes for the zebra, a jaywalker leaves every path, rush hour changes the crowd.
@@ -49,22 +50,22 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 - **Headline:** When the crowd changed, reading the scene kept more people inside their ranges.
 - **Layout:** headline on top (two lines is fine); the GIF on the left, the coverage chart on the right; one bold line of numbers under them.
 - **Visuals:** `media/demo/seed3013.gif` (four robots in the same crowd, crowd turns erratic at 5 s) for 5 s, then `media/demo/calibration_seed3013_strip.png` or the right panel of `media/fig_t5.png` (coverage before and after the switch).
-- **Say:** in our robot loop the crowd turns erratic five seconds in. The TabPFN that reads the last seconds kept 59% of people inside their 2 s range; LightGBM kept 41%. Ten of those points come from reading the scene alone. Same result in all three crowds.
+- **Say:** in our robot loop the crowd turns erratic five seconds in. The TabPFN that reads the last seconds kept 59% of people inside their 2 s range; LightGBM kept 41%. Ten of those points come from reading the scene alone. Ahead in all three crowds.
 - **Numbers:** 59% vs 41% (+18 pts), +10 from the scene, ahead in 3 of 3 crowds (+6.6, +18.0, +19.7).
 
 ### 7 · Proof 2: same core, another body (30 s)
 - **Headline:** The same core predicts highway traffic.
 - **Layout:** headline on top; the highway figure across the full width (it is wide); one bold line of numbers under it.
-- **Visual:** `media/fig_highway.png` (car ranges at +2 s, 8 s after traffic turns aggressive).
+- **Visual:** `media/demo/highway.gif` (the same road twice: frozen bank on top, bank plus this road's last seconds below; a box is where the model expects a car in 2 s and turns green or red when the car gets there). Caption it "this road: 77 vs 67 of 100; all five roads: 77% vs 63%". Still alternative: `media/fig_highway.png`.
 - **Say:** we pointed the same core, same features and same models, at simulated highway traffic, with a small adapter for the cars. 1,500 example rows match LightGBM trained on 67 times more, and our ranges held the truth 86% of the time against 69–82%. When drivers turn aggressive, reading the scene adds 14 points.
 - **Numbers:** 1,500 vs 100,440 rows; 86% vs 69–82%; +14 pts after the switch.
 
 ### 8 · Proof 3: more from each example (30 s)
 - **Headline:** On five real scenes, TabPFN gets more from each example.
 - **Layout:** headline on top; the five-scene chart across the full width; one bold line of numbers under it.
-- **Visual:** `media/fig_loso5.png` (each real scene held out once).
-- **Say:** ETH, Hotel, Zara 1 and 2, Univ: train on four, test on the fifth. On the same 1,500 rows TabPFN beats LightGBM in four scenes and ties on Hotel. LightGBM catches up only with about 15 times the data.
-- **Numbers:** interval score −0.130 pooled at equal rows; tie at 15×; coverage 78–87% against LightGBM's 64–79% on the same rows.
+- **Visual:** `media/demo/scenes5.gif` (the five scenes side by side, people and TabPFN's boxes; caption "one 16 s window per scene", because its counters are for these windows, not the test) for a few seconds, then `media/fig_loso5.png` (each real scene held out once).
+- **Say:** ETH, Hotel, Zara 1 and 2, Univ: train on four, test on the fifth. TabPFN beats the fixed-margin guess from slide 2 in all five scenes. On the same 1,500 rows it beats LightGBM in four scenes and ties on Hotel. LightGBM catches up only with about 15 times the data.
+- **Numbers:** against the fixed margin −0.365 [−0.405, −0.328] pooled; interval score −0.130 pooled at equal rows; tie at 15×; coverage 78–87% against LightGBM's 64–79% on the same rows.
 
 ### 9 · Where it breaks (30 s)
 - **Headline:** Better forecasts didn't make our robot faster.
@@ -74,7 +75,7 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
   - New place: holds on two real scenes, a tie on five
   - Each body needs its own example bank
   - Robot loop and cars are simulated
-- **Say:** the planner throws away the shape of the range and keeps a yes/no box. Its caution setting decided the speed, not the forecast. That is the next thing to build.
+- **Say:** the forecast is better than a fixed margin, yet the constant-velocity planner out-drove our robot. The planner throws away the shape of the range and keeps a yes/no box. Its caution setting decided the speed, not the forecast. That is the next thing to build.
 
 ### 10 · What it's for (35 s)
 - **Headline:** A forecasting layer you re-target by swapping rows.
@@ -114,6 +115,7 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 - **"Where it breaks" text card** (slide 9). Plain text, four lines.
 - **`media/diagrams/12_deployment.png`** is out of date: it says "size decided at 02:00" and "takes over if late" (that takeover is designed, not built). Edit it to read "2,000-row bank + 250 scene rows, every 0.4 s" and "safety check: 0.4 s straight-line veto", or draw the simple stack instead.
 - **Don't use** `media/diagrams/08_coverage.png` (the old claim A numbers), `media/diagrams/11_tests.png` (shows T2/T3 as running) or `media/diagrams/10_t1_curve.png` (the first plaza test). Their replacements are B5, B2 and B7.
+- **Two clips made on 22 Nov, 11:45:** `media/demo/highway.gif` (slide 7) and `media/demo/scenes5.gif` (slide 8). Each has a `_stats.json` next to it that says what is drawn and how the episode or window was picked.
 - **The 3D clip for slide 5:** cut from `media/demo_full.mp4` on `nooshin/dev` from about 1:03 to 1:43; it has no voice track.
 - **Starting file:** `deck/Foresight_finalist.pptx` (built by `tools/build_outline_deck.py`) has every slide below with its headline, its pictures placed and the spoken text in the speaker notes, on a plain white 16:9 page. Each picture's file name sits under it; delete those captions when done.
 - **Build the deck by hand in PowerPoint**, 16:9, one plain template: one heading font, one text font, our orange (#C24E1C, the 3D video's accent) as the only accent colour. The script-built `deck/Foresight.pptx` can be a source for images only.

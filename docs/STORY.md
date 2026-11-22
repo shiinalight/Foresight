@@ -49,7 +49,7 @@ Status: **holds** (passed its pre-written rule), **narrowed** (holds only in a w
 | P1 | **Adapts when behaviour changes, no retraining** (in the robot loop) | holds, exploratory (b) of the T5 amendment; simulated | After the crowd turns erratic, split TabPFN 59.3% inside its 2 s box vs LightGBM 41.3%: +18.0 pts [+16.7, +19.3]. Reading the scene alone adds +10.0 [+8.4, +11.6] over the same TabPFN without it. Ahead of LightGBM in all three crowds: +6.6, +18.0, +19.7 pts | `results/inloop_claimb.csv`, `docs/GENERALISATION.md`, `media/fig_t5.png` | "Reading the scene's last seconds brought the ranges closer to their promise: 18 points more coverage than LightGBM, 10 of them from the scene alone. Still short of the target." | "Kept the ranges honest", "calibrated" (59% against an 81% target is not calibrated); crediting all 18 points to scene reading |
 | P1-fair | **Is it just because LightGBM never saw the scene?** | exploratory, offline, post-hoc check run today | LightGBM refit on rows that include this scene (`lgbm` variant, the full-mix rows): split TabPFN still +12.3 pts 80% coverage [+7.7, +17.0], pinball −0.015 [−0.022, −0.009], error level (+0.021 m [−0.009, +0.048]), simulated, after the switch, 166 people. On real ETH (Hotel bank): +10.2 pts [+2.5, +18.0], pinball level | `results/live_variants.csv` (Setting B t ≥ 20 s; Setting A), person bootstrap; script in this session's scratchpad, not in the repo | Q&A only: "Offline, a LightGBM refit on rows from the same scene still covered about 12 points less." | Putting it in the video; calling it pre-registered. In the loop, `lgbm_live` was dropped from T5 for cost (D-30) |
 | P2 | **Same core, another body: cars** | holds by its rule (H1, H2), narrowed in wording; simulated, offline | H1: TabPFN on 1,500 rows covers 85.6% (interval score 3.57) vs LightGBM on 100,440 rows: pre-set setting −0.49 [−0.66, −0.34]; well-fitted settings −0.18 [−0.36, −0.01] and −0.18 [−0.37, +0.00], covering 69–72%. H2: after traffic turns aggressive, scene rows add +14.2 pts coverage (76.7% vs 62.5%), interval score −0.98 [−1.41, −0.56] | `docs/HIGHWAY.md`, `results/highway_h1.csv`, `results/highway_h2.csv`, `media/fig_highway.png` | "The same core on simulated highway traffic: 1,500 rows match a LightGBM trained on 67 times more, with more honest ranges. When traffic turns aggressive, reading the scene adds 14 points of coverage." | "Beats LightGBM on 100,000 rows"; "same code, unchanged" (an adapter was added: say "same core"); "drives a car"; "any robot" |
-| P3 | **Learns more per example** (real pedestrians) | holds against equal rows; tie against 15x rows | Five real scenes (ETH, Hotel, Zara1, Zara2, Univ), each held out once: vs LightGBM on the same 1,500 rows, interval score −0.130 [−0.154, −0.107]; vs LightGBM on all rows of the other four scenes (~15x), −0.008 [−0.023, +0.007], a tie | `docs/LOSO5.md`, `results/loso5_rows.csv`, `media/fig_loso5.png` | "On five real pedestrian scenes, TabPFN beats LightGBM on the same rows and ties one trained on fifteen times more." | "Better calibrated in a new place" (that was claim A; see 2b) |
+| P3 | **Learns more per example** (real pedestrians) | holds against equal rows; tie against 15x rows | Five real scenes (ETH, Hotel, Zara1, Zara2, Univ), each held out once: vs LightGBM on the same 1,500 rows, interval score −0.130 [−0.154, −0.107]; vs LightGBM on all rows of the other four scenes (~15x), −0.008 [−0.023, +0.007], a tie; vs constant velocity plus a fixed band, −0.365 [−0.405, −0.328] pooled, lower in every scene | `docs/LOSO5.md`, `results/loso5_rows.csv`, `media/fig_loso5.png`, clip `media/demo/scenes5.gif` | "On five real pedestrian scenes, TabPFN beats the fixed-margin guess, beats LightGBM on the same rows and ties one trained on fifteen times more." (forecast quality only: the constant-velocity planner still out-drove our robot) | "Better calibrated in a new place" (that was claim A; see 2b) |
 | + | **TabPFN at every learned step** (ranges, scene adaptation, the move) | exploratory; passed its pre-written rule on point estimates | Second TabPFN picks the move, 20 fresh crowds vs the planner it learned from: goal 100% vs 100%; time 24.65 vs 24.10 s (+0.55 [−0.34, +1.65]); collision crowds 45% vs 40% (+5 [−15, +25]); safety checks overrode it at 0.94% of replans; 333 ms per plan on the L4 | `docs/TABPFN_POLICY.md`, `RESULTS.md` "TabPFN picks the move", `results/policy_parity.csv`, `media/demo/policy_seed3403.gif` | "On average, a second TabPFN drove like the planner it learned from." | "No classical parts" (tracker, offset and hard checks are classical); "TabPFN at every step" without "learned"; "better planner"; "as safe" (the collision interval's upper end, +0.25, exceeds the 0.244 margin) |
 
 ### 2b. Narrowed, failed and smaller findings
@@ -96,7 +96,7 @@ Status: **holds** (passed its pre-written rule), **narrowed** (holds only in a w
 
 ## 4. The narrative arc (all surfaces)
 
-1. **Problem.** A robot crossing a station has to guess where everyone will be in two seconds, and how sure it is. An overconfident guess is how robots walk into people. Most stacks assume people walk straight or add one margin; learned models learn one place.
+1. **Problem.** A robot crossing a station has to guess where everyone will be in two seconds, and how sure it is. An overconfident guess is how robots walk into people. Most stacks assume people walk straight or add one margin; learned models are frozen once trained. (Not "they learn one place": that sets up the new-place claim, which is a tie on five scenes.)
 2. **Insight.** Turn the scene into a table. TabPFN reads rows as examples, with no training, so the robot's knowledge is the table, and adapting is swapping rows.
 3. **Demo.** The full loop in a simulated crowd that turns erratic five seconds in.
 4. **Proof 1.** Adapts when behaviour changes (in the loop).
@@ -109,33 +109,9 @@ The TabPFN policy rides on proof 1 as one sentence, the first thing cut if the v
 
 ---
 
-## 5. Video, version 3 (180 s)
+## 5. Video
 
-> **Superseded for recording by [`docs/VIDEO_BRIEF.md`](VIDEO_BRIEF.md) section 3** (22 Nov, about 10:30 Berlin). That cut uses Nooshin's 3D street video for the problem, the five steps and the street, and these proofs and wording after it. The wording rules below still apply.
-
-Changes from version 2 (`docs/archive/VIDEO_SCRIPT.md`), each from section 2:
-- 1:20 beat: "kept the ranges honest" becomes "closer to their promise", the 10-point scene share is said, and "still short of the target" is added. The policy sentence says "on average".
-- 1:50 beat: "the same code, unchanged" becomes "the same core".
-- 2:48 close: one line of what it is for.
-
-| Time | On screen | Said (words) |
-|---|---|---|
-| **0:00–0:15** | **On camera:** Darshak. Lower third "Foresight · Prior Labs track" | "A robot crossing a station has to guess where everyone will be two seconds from now, and how sure it is. An overconfident guess is how robots walk into people." (30) |
-| 0:15–0:30 | `media/diagrams/01_problem.png` | "Most robots assume people keep walking straight, or add one fixed margin. Learned models do better, but they learn one place. In a new place, their confidence can be badly wrong." (31) |
-| 0:30–0:55 | `media/diagrams/02_pipeline.png`, then one table row (`docs/walkthrough.html`, stage 3) | "So we turned the scene into a table. One row is one person, at one moment, for one look-ahead: their motion, their neighbours, the robot. TabPFN reads rows like these as examples, with no training. The robot's knowledge is the table." (41) |
-| 0:55–1:20 | `media/demo/seed3013.gif`. Caption "crowd chosen by a fixed rule (median), not cherry-picked" | "Here is the full loop in a simulated crowd. Same crowd for every robot: stop-and-go, reactive, velocity obstacles, and ours, with the ranges it planned around. Five seconds in, the crowd turns erratic, a behaviour none of the models has seen." (42) |
-| 1:20–1:50 | **Proof 1.** `media/demo/calibration_seed3013.gif`, caption "this crowd: 60% vs 45%" (its own counters; never caption it 59/41). Then `media/demo/policy_seed3403.gif` | "When the crowd changed, reading its last seconds brought the ranges closer to their promise: eighteen points more coverage than LightGBM, ten from the scene alone, and ahead in all three crowds we tried. And on average, a second TabPFN drove like the planner it learned from." (46) |
-| 1:50–2:15 | **Proof 2.** `media/fig_highway.png` | "Second proof: the same core on simulated highway traffic. With fifteen hundred rows it matches LightGBM trained on sixty-seven times more, with more honest ranges. When traffic turns aggressive, reading the scene adds fourteen points of coverage." (36) |
-| 2:15–2:30 | **Proof 3.** `media/fig_loso5.png` | "Third: on five real pedestrian scenes, TabPFN beats LightGBM on the same rows, and ties one trained on fifteen times more." (21) |
-| 2:30–2:48 | "Where it breaks" text card (to make in the editor: four lines, the four limits below) | "Where it breaks. Our robot was slower than standard planners: better ranges didn't change how this planner drives. Each body needs its own examples. The robot loop and the cars are simulated, and the weights are non-commercial." (36) |
-| **2:48–3:00** | **On camera:** Nooshin and Darshak. End card: repo URL, "every number comes from a script in the repo" | "Foresight lets a robot adapt its forecasts by swapping examples, not retraining. It's open source; every number here comes from a script. Thank you, Prior Labs." (26) |
-
-Beats: 15 + 15 + 25 + 25 + 30 + 25 + 15 + 18 + 12 = 180 s. Fastest beat: the close, 26 words in 12 s (2.2 per second).
-
-- "Still short of the target" goes in the 1:20 caption ("this crowd: 60% vs 45%, target 81%"); add it to the voice-over if there is room (the beat is at 1.5 words per second).
-- The close states the product promise as adaptation by swapping examples, not as "honest ranges in a new place": that would be claim A, a tie on five scenes.
-- **Cut order if long:** the policy sentence first, then the table-row shot in the 0:30 beat. Never cut the open, the close, the demo, the three proofs or "where it breaks".
-- **Recording rules** (unchanged): no numbers on camera, numbers in voice-over only, captions burned in, at most about 2.3 spoken words per second.
+The script to record is `docs/VIDEO_BRIEF.md` section 3 (built around Nooshin's 3D street video, 176 s). The earlier version 3 table that stood here is removed; it is in git history. The wording rules in section 2 apply to every line.
 
 ---
 
@@ -161,7 +137,7 @@ The 10-slide plan in `docs/archive/PRESENTATION.md` section 3 was built around c
 ## 7. The hardest questions, with the answer
 
 1. **"LightGBM never saw the scene. Isn't proof 1 unfair?"** The clean adaptation number is TabPFN against itself: the scene rows add 10 points over the same TabPFN without them. Offline, a LightGBM refit on rows from the same scene still covered about 12 points less, with a worse pinball loss (P1-fair). We dropped LightGBM-in-the-loop with scene rows from T5 for cost, and we say so.
-2. **"Your robot was slower than the baselines. So what is the product?"** The forecaster. Better ranges did not change how a box-veto planner drives; its caution setting did. The forecast held up on its own tests: adaptation, data efficiency, a second body. The planner that uses the range's shape is the next step.
+2. **"Your robot was slower than the baselines. So what is the product?"** The forecaster. On five real scenes its ranges beat a fixed margin in every scene (−0.365 [−0.405, −0.328]), and still the constant-velocity planner out-drove our robot: say both in one breath. Better ranges did not change how a box-veto planner drives; its caution setting did. The forecast held up on its own tests: adaptation, data efficiency, a second body. The planner that uses the range's shape is the next step.
 3. **"With enough data LightGBM catches up. Why TabPFN?"** It does, and we say when to use which. The product case is the first hours at a new site and the moments after behaviour changes, when rows are few. On five real scenes TabPFN on 1,500 rows ties LightGBM on 15 times more.
 4. **"Swapping rows means you need that body's rows."** Yes (H2b): pedestrian examples on cars give useless boxes. The code carries over; each body needs its own bank, and the scene's own rows bridge the gap until one exists.
 5. **"Is it real-time? Can it run on a robot?"** 71 ms per replan on an NVIDIA L4, inside the 0.4 s replan period; a scene rebuild takes 318 ms. 10 Hz needs the background rebuild, designed and not built. No embedded timing yet.
@@ -185,9 +161,12 @@ From the wording audit on 22 Nov at about 09:15 Berlin. Section 2 of this page i
 - `deck/Foresight.pptx`: reordered to section 6 with 12 main slides plus 4 backup; "when to use which" no longer says "safer" (b4c00ed, 402ac6f; RoboDetect).
 
 **Open, owner a person:**
+- **No LICENSE file**, while the video close and the README say "open source". Add a licence before the freeze or say "the code is public". [Darshak, shiinalight]
 - `README.md`: 9 `[confirm]` items (video link, artifact sharing, roles, AI-assistant line, pre-event code). [Darshak]
 - `PLAN.md`: the "second account" line (F9). [Darshak]
 - `media/v_limits.png` does not exist. The "where it breaks" card is a text card made in the video editor. [whoever cuts the video]
+
+**Added 22 Nov, about 11:50 (CEO check; full list in `final/CTO_CHANGES.md`):** `docs/VIDEO_BRIEF.md` section 3 and `docs/DECK_OUTLINE.md` carry seven wording and edit fixes; two clips were made, `media/demo/highway.gif` and `media/demo/scenes5.gif`; `final/` holds the short reference set.
 
 **Known small inconsistencies, not on the video path:**
 - The constant-velocity error on the problem slide: 0.37/0.25 m (`docs/DATA.md`) against 0.428/0.254 m in the f4 claim A rows. These come from different windows; the deck should cite the f4 rows.
