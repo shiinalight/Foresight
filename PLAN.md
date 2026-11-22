@@ -25,7 +25,7 @@ Times are Berlin. Freeze Sun 12:30; submit by 16:00 (hard deadline 16:30).
 **Changes since the plan was written:**
 - **T5 is done and analysed** (20 paired seeds, 3000–3019; `RESULTS.md`, "Closed loop T5 results"). It launched at 01:12, not 03:30, so the T5 rows of the schedule above are history. A 40-seed extension (same arms and rules, `tools/t5_extend.py`) was declared at 02:20 (3226e4f), before any of its results; the 20-seed analysis stays the confirmatory result. Showcase seed 3013; demo render: `media/demo/seed3013.gif`.
 - **TabPFN API credits are monthly, not daily.** About 15M remain until 1 Dec. The budget is in DECISIONS: context size 0.3M, calibration ≤1.5M, real-data in-context ≤4M, the tier repeats dropped, ≥5M in reserve.
-- **On-camera recording moves to 11:00–11:30, before the freeze** (`docs/PRESENTATION.md`). Numbers go only in the voice-over, so a late result means re-cutting the video, not re-filming.
+- **On-camera recording moves to 11:00–11:30, before the freeze** (`docs/archive/PRESENTATION.md`). Numbers go only in the voice-over, so a late result means re-cutting the video, not re-filming.
 - **The Mac kit** (`docs/MAC_SETUP.md`, `scripts/mac/`) lets Nooshin rebuild the data, check that it matches ours, and measure TabPFN on her M3's GPU. Her smoke-test numbers decide which runs move to the Mac.
 
 **Standing rules for the orchestration:**
@@ -108,14 +108,18 @@ Rule: small tests with gates written in advance come first; the big run comes af
 | Document | What it holds |
 |---|---|
 | `PLAN.md` (this page) | Current strategy, roadmap, framework, rules |
-| `docs/PRESENTATION.md` | Story, timed video script with variants for each result, slide plan, README structure, list of visuals |
+| `docs/STORY.md` | The story we submit: claims ledger with exact wording, product angle, feature inventory, deck list, hard questions |
+| `docs/VIDEO_BRIEF.md` | The 3-minute video plan and the literature behind our choices |
+| `docs/archive/` | Superseded plans, reviews and scripts (index in `docs/archive/README.md`) |
+| `docs/archive/PRESENTATION.md` | Saturday-night presentation plan (history) |
 | `docs/MAC_SETUP.md` | Running everything on an Apple-silicon Mac (setup, smoke test, runs) |
 | `docs/explainer.html` | Picture-first explainer for a third person: problem, pipeline, where TabPFN works, planner, comparisons, results, testing, deployment. Open it in a browser |
 | `docs/DECISIONS.md` | Every chosen value, its evidence, the small tests T1–T5 |
 | `docs/GATES.md` | Pass/fail check per stage, fair-comparison protocol |
 | `docs/DEPLOYMENT.md` | Refits, compute, model tiers, licence, Mac |
-| `docs/VISUALS.md` | Trace format and what gets drawn |
+| `docs/archive/VISUALS.md` | Trace format and what gets drawn |
 | `RESULTS.md` | Numbers and figures (current only, per `media/MANIFEST.csv`) |
-| `docs/CTO-REVIEW.md` | The first review (commit 708c573, 18:47 Berlin). Partly superseded by the pages above |
-| `SCENARIOS.md`, `INTERFACE.md` | Scene catalogue; data format |
-| `TEAM-PLAN.md` | The original Saturday plan, kept for history |
+| `docs/archive/CTO-REVIEW.md` | The first review (commit 708c573, 18:47 Berlin). Partly superseded by the pages above |
+| `INTERFACE.md` | Data format |
+| `docs/archive/SCENARIOS.md` | Saturday scene catalogue (history) |
+| `docs/archive/TEAM-PLAN.md` | The original Saturday plan, kept for history |

@@ -32,7 +32,7 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 
 **Our assets** (`darshak/core`): `media/demo/seed3013.gif` (robot loop, crowd turns erratic at 5 s), `media/demo/calibration_seed3013.gif` (coverage counters, this crowd 60% vs 45%), `media/fig_t5.png`, `media/fig_highway.png` (titled "same core"), `media/fig_loso5.png`, `media/demo/policy_seed3403.gif` and `.mp4`, `media/diagrams/01_problem.png` and `02_pipeline.png`.
 
-**Explainers we planned, and what became of them** (`docs/VISUALS.md`, `docs/PRESENTATION.md` section 5, `TEAM-PLAN.md`):
+**Explainers we planned, and what became of them** (`docs/archive/VISUALS.md`, `docs/archive/PRESENTATION.md` section 5, `docs/archive/TEAM-PLAN.md`):
 
 | Planned | Status | Where |
 |---|---|---|
@@ -43,7 +43,7 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 | Calibration and policy clips | **Made** | `media/demo/calibration_seed3013.gif`, `media/demo/policy_seed3403.gif` |
 | Occupancy overlay with its metric | **Not made** (the grid is drawn; its metric was never reported) | — |
 | Live camera demo (webcam, YOLO, ranges drawn live) | **Not made** | — |
-| Side-by-side constant velocity against ours (`TEAM-PLAN.md`) | **Superseded** by the four-panel video | — |
+| Side-by-side constant velocity against ours (`docs/archive/TEAM-PLAN.md`) | **Superseded** by the four-panel video | — |
 
 **Fixes needed in the 3D video's text** (Nooshin; template `tools/street3d_template.html` on `nooshin/dev`):
 1. **The outro's "Honest limits" panel is out of date.** It says "the final pre-registered test is running" and "honest ranges for real people in a new place: being re-checked". Both have finished: the planner test failed (slower than standard planners) and the new-place claim ties on five scenes. Replace the panel with our "where it breaks" card, or cut the outro.

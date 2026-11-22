@@ -242,9 +242,9 @@ Key references; the full list (36 entries, with how far each was checked) is in 
 
 ## Prepared before the event
 
-Generic utilities only: a Kalman filter, a constant-velocity baseline and timing code (`tools/check_tabpfn.py`). Everything else was written at the event. [confirm: the filter and baseline now live in `foresight/core/features.py` and `foresight/core/models.py`; confirm they descend from the pre-event `traj_kit.py` named in `TEAM-PLAN.md`, which is no longer in the repo.]
+Generic utilities only: a Kalman filter, a constant-velocity baseline and timing code (`tools/check_tabpfn.py`). Everything else was written at the event. [confirm: the filter and baseline now live in `foresight/core/features.py` and `foresight/core/models.py`; confirm they descend from the pre-event `traj_kit.py` named in `docs/archive/TEAM-PLAN.md`, which is no longer in the repo.]
 
-The reference note `docs/tabpfn-hackathon-strategies.md` was in the first commit (`58f96f8`, Sat 21 Nov 16:35 Berlin). [confirm: whether it was written before the event started.]
+The reference note `docs/archive/tabpfn-hackathon-strategies.md` was in the first commit (`58f96f8`, Sat 21 Nov 16:35 Berlin). [confirm: whether it was written before the event started.]
 
 [confirm: one line on how AI coding assistants were used.]
 

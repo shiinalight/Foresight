@@ -1,22 +1,22 @@
 figure,script,input,commit,status,note
-demo_hotel_tabpfn.gif,demo.py,data/hotel + data/eth (bounds leak),ae4b169,superseded,made before the field-of-view fix (B9); re-render
-demo_hotel_tabpfn.png,demo.py,data/hotel + data/eth (bounds leak),ae4b169,superseded,made before B9; re-render
-compare_hotel.png,compare.py,data/hotel + data/eth (bounds leak),dec878a,superseded,made before B9; re-render
-closed_crowd_1001_cv_vs_tabpfn.gif,render_closed.py,v2 closed loop (before train/serve parity),708c573,superseded,replace from a v4 trace
-closed_crowd_1001_cv_vs_tabpfn.png,render_closed.py,v2 closed loop (before train/serve parity),708c573,superseded,replace from a v4 trace
-fig_error_by_horizon.png,evaluate.py,results/eval.json (after B9),aea8af6,superseded,; pre-f4 features (f1 leak / untuned filter): rerun
-fig_calibration.png,evaluate.py,results/eval.json (after B9),aea8af6,superseded,per-axis intervals; pre-f4 features (f1 leak / untuned filter): rerun
-fig_data_efficiency.png,evaluate.py,results/eval.json (after B9),aea8af6,superseded,one seed: indicative; pre-f4 features (f1 leak / untuned filter): rerun
-fig_rows_place.png,tools/check_efficiency.py,data/eth + data/hotel (after B9),aea8af6,superseded,LightGBM 5 seeds; pre-f4 features (f1 leak / untuned filter): rerun
-fig_conformal_hotel_to_eth.png,tools/conformal_eval.py,API TabPFN default,4bd3d2f,superseded,; pre-f4 features (f1 leak / untuned filter): rerun
-fig_conformal_eth_to_hotel.png,tools/conformal_eval.py,API TabPFN default,4bd3d2f,superseded,; pre-f4 features (f1 leak / untuned filter): rerun
-fig_failure_hotel_to_eth.png,tools/failure_modes.py,data/hotel -> data/eth,aea8af6,superseded,person-bootstrap intervals; pre-f4 features (f1 leak / untuned filter): rerun
-fig_failure_crowd_to_crowd.png,tools/failure_modes.py,data/crowd,aea8af6,superseded,person-bootstrap intervals; pre-f4 features (f1 leak / untuned filter): rerun
-fig_adapt_hotel_to_eth.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6,superseded,replaced by the rerun with intervals
-fig_adapt.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6,superseded,replaced by the rerun with intervals
-fig_incontext_hotel_to_eth.png,tools/incontext_eval.py,pilot (98 rows),aea8af6,superseded,dense rerun running
-fig_incontext_eth_to_hotel.png,tools/incontext_eval.py,pilot (73 rows),aea8af6,superseded,dense rerun running
-fig_tier_grid.png,tools/tier_grid.py,API v3.5 / v3.5-fast / v2; hotel->eth and crowd,67d7b3d,superseded,ETH->Hotel direction not yet in the grid; pre-f4 features (f1 leak / untuned filter): rerun
+demo_hotel_tabpfn.gif,demo.py,data/hotel + data/eth (bounds leak),ae4b169,removed,made before the field-of-view fix (B9); re-render
+demo_hotel_tabpfn.png,demo.py,data/hotel + data/eth (bounds leak),ae4b169,removed,made before B9; re-render
+compare_hotel.png,compare.py,data/hotel + data/eth (bounds leak),dec878a,removed,made before B9; re-render
+closed_crowd_1001_cv_vs_tabpfn.gif,render_closed.py,v2 closed loop (before train/serve parity),708c573,removed,replace from a v4 trace
+closed_crowd_1001_cv_vs_tabpfn.png,render_closed.py,v2 closed loop (before train/serve parity),708c573,removed,replace from a v4 trace
+fig_error_by_horizon.png,evaluate.py,results/eval.json (after B9),aea8af6,removed,; pre-f4 features (f1 leak / untuned filter): rerun
+fig_calibration.png,evaluate.py,results/eval.json (after B9),aea8af6,removed,per-axis intervals; pre-f4 features (f1 leak / untuned filter): rerun
+fig_data_efficiency.png,evaluate.py,results/eval.json (after B9),aea8af6,removed,one seed: indicative; pre-f4 features (f1 leak / untuned filter): rerun
+fig_rows_place.png,tools/check_efficiency.py,data/eth + data/hotel (after B9),aea8af6,removed,LightGBM 5 seeds; pre-f4 features (f1 leak / untuned filter): rerun
+fig_conformal_hotel_to_eth.png,tools/conformal_eval.py,API TabPFN default,4bd3d2f,removed,; pre-f4 features (f1 leak / untuned filter): rerun
+fig_conformal_eth_to_hotel.png,tools/conformal_eval.py,API TabPFN default,4bd3d2f,removed,; pre-f4 features (f1 leak / untuned filter): rerun
+fig_failure_hotel_to_eth.png,tools/failure_modes.py,data/hotel -> data/eth,aea8af6,removed,person-bootstrap intervals; pre-f4 features (f1 leak / untuned filter): rerun
+fig_failure_crowd_to_crowd.png,tools/failure_modes.py,data/crowd,aea8af6,removed,person-bootstrap intervals; pre-f4 features (f1 leak / untuned filter): rerun
+fig_adapt_hotel_to_eth.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6,removed,replaced by the rerun with intervals
+fig_adapt.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6,removed,replaced by the rerun with intervals
+fig_incontext_hotel_to_eth.png,tools/incontext_eval.py,pilot (98 rows),aea8af6,removed,dense rerun running
+fig_incontext_eth_to_hotel.png,tools/incontext_eval.py,pilot (73 rows),aea8af6,removed,dense rerun running
+fig_tier_grid.png,tools/tier_grid.py,API v3.5 / v3.5-fast / v2; hotel->eth and crowd,67d7b3d,removed,ETH->Hotel direction not yet in the grid; pre-f4 features (f1 leak / untuned filter): rerun
 sample_3d_crowd_1001.json,tools/export_3d.py,results/trace/crowd_lgbm_all_1001 (v4 trace),33a445d,current,3D viewer sample (lgbm_all planner; not a showcase seed)
 fig_data_overview.png,tools/data_cards.py,data/* (crowd, eth, hotel, crowd_c2e),8d6635a,current,docs/DATA.md
 fig_data_scenes.png,tools/data_cards.py,data/*,8d6635a,current,docs/DATA.md

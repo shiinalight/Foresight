@@ -17,7 +17,7 @@ At the time of writing, `results/` holds **no real-data result on f2, f3 or f4**
 
 **Scope.**
 - Read line by line: PLAN, DECISIONS, GATES, RESULTS, REFERENCES, DATA, DEPLOYMENT, VISUALS, CTO-REVIEW, README, the explainer, `foresight/core/*.py`, `run_closed.py`, `run_adapt.py`, `evaluate.py`, and the relevant tools and result files.
-- Not reviewed line by line: `docs/walkthrough.html` and its folder, the deck slides themselves (only `tools/build_deck.py`), `SCENARIOS.md`, `INTERFACE.md`, `TEAM-PLAN.md`.
+- Not reviewed line by line: `docs/walkthrough.html` and its folder, the deck slides themselves (only `tools/build_deck.py`), `docs/archive/SCENARIOS.md`, `INTERFACE.md`, `docs/archive/TEAM-PLAN.md`.
 - `results/context_size.csv` was still being written when read; recheck its numbers before quoting them.
 
 ---
@@ -572,7 +572,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 | PLAN.md:49 | "Plaza passes the prediction check" | "Plaza passed S0 on the untuned filter (D-12); cross scene passes narrowly on f4 (D-27)" |
 | PLAN.md:50 | "Works. Velocity error not yet reported" | "Tuned per dataset (D-26); S1 gate passed" |
 | PLAN.md:70 | "Cross sweep running from Sun 00:20" | "Cross sweep running from Sat 23:28 (f4)"; add "default-scene T2 cells had qualified before the switch (see DEFENSE attack 3)" |
-| README.md:12 | "`docs/CTO-REVIEW.md`: direction, architecture…" | "`PLAN.md`: current strategy and claims (CTO-REVIEW is the first, partly superseded review)" |
+| README.md:12 | "`docs/archive/CTO-REVIEW.md`: direction, architecture…" | "`PLAN.md`: current strategy and claims (CTO-REVIEW is the first, partly superseded review)" |
 | README.md:65–66 | "observed positions with noise…; the agent's own last 1 s" | "simulator: positions with 0.1 m noise; real data: annotated positions (no added noise); the agent's last 1 s (simulator) or 2 s (ETH/Hotel)" |
 | docs/REFERENCES.md:51 | "f2: 5 samples at 0.2 s, about 1 s" | "5 samples at 0.4 s on ETH/Hotel, 2 s (0.2 s steps in the simulator)" |
 | docs/REFERENCES.md:81–91 | "Our CV against the published CVM (open issue)… gap is unexplained" | "Resolved by D-26: with the tuned filter, CV FDE at 4.8 s on gap-free windows is 1.12 m (ETH) and 0.46 m (Hotel) against 1.15 and 0.51 published; on our evaluation rows 1.13 and 0.58 m" |

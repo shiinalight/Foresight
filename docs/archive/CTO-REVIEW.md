@@ -2,7 +2,7 @@
 
 > **Partly superseded.** This is the first review (Sat 18:30). The current strategy, roadmap and framework are in `PLAN.md`; chosen values and small tests in `docs/DECISIONS.md`. Where they differ, those win.
 
-Written Sat 21 Nov, about 18:30 (laptop clock). Code freeze is Sun 12:30. Based on the repo at `3c1afc5` (branch `darshak/core`): `TEAM-PLAN.md`, `RESULTS.md`, `SCENARIOS.md`, `INTERFACE.md`, `foresight/`, `run_closed.py`, `results/`.
+Written Sat 21 Nov, about 18:30 (laptop clock). Code freeze is Sun 12:30. Based on the repo at `3c1afc5` (branch `darshak/core`): `docs/archive/TEAM-PLAN.md`, `RESULTS.md`, `docs/archive/SCENARIOS.md`, `INTERFACE.md`, `foresight/`, `run_closed.py`, `results/`.
 
 Each finding is marked **[verified]** (checked in the code or result files) or **[judgment]** (opinion).
 

@@ -1,5 +1,5 @@
 """Write one trace per (scene, planner, seed): every stage of the pipeline as its own table
-(docs/VISUALS.md). Renderers read only these files.
+(docs/archive/VISUALS.md). Renderers read only these files.
 
 results/trace/<sim>_<planner>_<seed>/
   meta.json          run settings, model config, commit, episode result

@@ -1,6 +1,6 @@
 # CEO review and handover to the CTO session
 
-> **Superseded for the story (22 Nov, 09:00 Berlin):** sections 3 and 5 are folded into [`docs/STORY.md`](STORY.md), which now holds the claims ledger, the video script v3 and the deck list. This page stays as history.
+> **Superseded for the story (22 Nov, 09:00 Berlin):** sections 3 and 5 are folded into [`docs/STORY.md`](../STORY.md), which now holds the claims ledger, the video script v3 and the deck list. This page stays as history.
 
 Written Sun 22 Nov 2026, 03:55 Berlin (checked against network time, not the prose times in other docs). Submission closes 16:30; we submit by 16:00. Based on `darshak/core` at `0269ef9`.
 
@@ -48,7 +48,7 @@ Two smaller findings worth one line each in the README, not the video:
 | F6 | **H1 baseline strength.** `lgbm_all` on about 100,000 car rows uses the small-data setting (100 trees, min 50 per leaf), chosen before the run. A judge will ask whether it is underfit | `tools/highway_tests.py` line 186 | Robustness check run by the CEO session (stronger LightGBM settings on all rows, same test rows, paired vehicle bootstrap). Result in section 4a: the win shrinks to a tie against a well-fitted LightGBM. Report it next to H1 as a disclosed post-hoc check, and wherever H1 is quoted (`docs/HIGHWAY.md`, README, deck, explainer) say "matches with 67 times fewer rows, with more honest ranges", not "beats" |
 | F7 | **Fresh-clone run.** `results/` and `data/` are git-ignored and only part of the cited result files are force-added | `.gitignore`, `git ls-files results/` | One fresh clone on a second machine or folder: `pip install`, `pytest`, one figure script. Tests pass here (126 passed, 1 xfailed, project venv) |
 | F9 | **`PLAN.md` section 5 says "a second account was added" for the TabPFN API.** Prior Labs judges will read a public repo | `PLAN.md` line 100 | Darshak decides before F1 whether that line stays, and whether the arrangement is within the hackathon's terms. Not a session's call |
-| F8 | **Video headline contradicts our own verdict.** The 1:40 beat says 75% against 58% (claim A, two scenes); `LOSO5.md` says claim A is not supported on five | `docs/VIDEO_SCRIPT.md` | Replace with proofs 2 and 3 (section 5) |
+| F8 | **Video headline contradicts our own verdict.** The 1:40 beat says 75% against 58% (claim A, two scenes); `LOSO5.md` says claim A is not supported on five | `docs/archive/VIDEO_SCRIPT.md` | Replace with proofs 2 and 3 (section 5) |
 
 ### 4a. H1 robustness check (post-hoc, disclosed)
 

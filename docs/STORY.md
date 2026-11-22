@@ -2,7 +2,7 @@
 
 Written Sun 22 Nov 2026, about 09:00 Berlin, on `darshak/core` at `2ab7e46`. Freeze 12:30, submit by 16:00.
 
-This page settles what we claim, what we sell, and from what angle. The video, the README top, the deck and the Q&A take their wording from here. It supersedes the narrative parts of `docs/PRESENTATION.md` (sections 1, 2 and 3), `docs/CEO-HANDOVER.md` (sections 3 and 5) and the "Claims we can make" list in `docs/DEFENSE.md`. Those pages stay as history. Every number here names its source; `RESULTS.md` holds the full tables.
+This page settles what we claim, what we sell, and from what angle. The video, the README top, the deck and the Q&A take their wording from here. It supersedes the narrative parts of `docs/archive/PRESENTATION.md` (sections 1, 2 and 3), `docs/archive/CEO-HANDOVER.md` (sections 3 and 5) and the "Claims we can make" list in `docs/DEFENSE.md`. Those pages stay as history. Every number here names its source; `RESULTS.md` holds the full tables.
 
 ---
 
@@ -34,7 +34,7 @@ This page settles what we claim, what we sell, and from what angle. The video, t
 
 **Three limits that travel with every claim.** The robot loop and the cars are simulated (the pedestrian forecasts are also tested on five real scenes). Cars are offline, with no closed loop. TabPFN-3.5 weights are non-commercial; a product needs the commercial licence or the Apache-licensed v2 weights.
 
-**Fallback (held, not triggered).** If a review finds an error in proof 1 or proof 2, the same material is told as a case study ("we put a tabular foundation model into a robot loop, under rules written first; here is where it helps"). Nothing so far has triggered it (`docs/CEO-HANDOVER.md`, section 5a).
+**Fallback (held, not triggered).** If a review finds an error in proof 1 or proof 2, the same material is told as a case study ("we put a tabular foundation model into a robot loop, under rules written first; here is where it helps"). Nothing so far has triggered it (`docs/archive/CEO-HANDOVER.md`, section 5a).
 
 ---
 
@@ -113,7 +113,7 @@ The TabPFN policy rides on proof 1 as one sentence, the first thing cut if the v
 
 > **Superseded for recording by [`docs/VIDEO_BRIEF.md`](VIDEO_BRIEF.md) section 3** (22 Nov, about 10:30 Berlin). That cut uses Nooshin's 3D street video for the problem, the five steps and the street, and these proofs and wording after it. The wording rules below still apply.
 
-Changes from version 2 (`docs/VIDEO_SCRIPT.md`), each from section 2:
+Changes from version 2 (`docs/archive/VIDEO_SCRIPT.md`), each from section 2:
 - 1:20 beat: "kept the ranges honest" becomes "closer to their promise", the 10-point scene share is said, and "still short of the target" is added. The policy sentence says "on average".
 - 1:50 beat: "the same code, unchanged" becomes "the same core".
 - 2:48 close: one line of what it is for.
@@ -141,7 +141,7 @@ Beats: 15 + 15 + 25 + 25 + 30 + 25 + 15 + 18 + 12 = 180 s. Fastest beat: the clo
 
 ## 6. Deck, five minutes (only if we win the track)
 
-The 10-slide plan in `docs/PRESENTATION.md` section 3 was built around claim A and says cars were cut. Replace it with this list. Owner: RoboDetect (`tools/build_deck.py`). About 30 s per slide.
+The 10-slide plan in `docs/archive/PRESENTATION.md` section 3 was built around claim A and says cars were cut. Replace it with this list. Owner: RoboDetect (`tools/build_deck.py`). About 30 s per slide.
 
 | # | Title | Visual | Number in the notes |
 |---|---|---|---|
@@ -179,7 +179,7 @@ From the wording audit on 22 Nov at about 09:15 Berlin. Section 2 of this page i
 - `PLAN.md` and `RESULTS.md`: each top now points to this page. PLAN section 0 is marked as history, PLAN's data-efficiency row adds LOSO5, and the MPS timing is filled in.
 - `docs/INDUSTRY.md`, `docs/DEPLOYMENT.md`: no "2.5–10 Hz"; the shipped setup is stated; "calibrated ranges make the robot efficient" is narrowed.
 - `docs/DEFENSE.md`: "the caution setting, not calibration, set the pace"; "Claims we can make" carries a superseded banner. Section 7 of this page holds the new Q&A.
-- `docs/PRESENTATION.md`, `docs/CEO-HANDOVER.md`, `docs/VIDEO_SCRIPT.md`: superseded banners.
+- `docs/archive/PRESENTATION.md`, `docs/archive/CEO-HANDOVER.md`, `docs/archive/VIDEO_SCRIPT.md`: superseded banners.
 
 - `docs/explainer.html`, the published Overview (version 11): it now leads with the sentence and the three proofs, has sections for cars and the five scenes, and the old limits box is fixed (226bddc). `media/fig_highway.png` is retitled "same core".
 - `deck/Foresight.pptx`: reordered to section 6 with 12 main slides plus 4 backup; "when to use which" no longer says "safer" (b4c00ed, 402ac6f; RoboDetect).

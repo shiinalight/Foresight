@@ -1,8 +1,8 @@
 # Foresight: three-minute video script, version 2 (CEO handover section 5)
 
-> **Superseded (22 Nov, about 10:30 Berlin): record from [`docs/VIDEO_BRIEF.md`](VIDEO_BRIEF.md) section 3.** That cut is built around Nooshin's 3D street video and fitted to its clip lengths. Version 3 in `docs/STORY.md` section 5 is superseded too. This page stays as history.
+> **Superseded (22 Nov, about 10:30 Berlin): record from [`docs/VIDEO_BRIEF.md`](../VIDEO_BRIEF.md) section 3.** That cut is built around Nooshin's 3D street video and fitted to its clip lengths. Version 3 in `docs/STORY.md` section 5 is superseded too. This page stays as history.
 
-Every number comes from `RESULTS.md` and the docs it points to. Recording rules (`docs/PRESENTATION.md` section 2):
+Every number comes from `RESULTS.md` and the docs it points to. Recording rules (`docs/archive/PRESENTATION.md` section 2):
 - no numbers on camera;
 - numbers in voice-over only;
 - captions burned in;

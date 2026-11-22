@@ -1,4 +1,4 @@
-"""Export one trace folder to a single JSON file for the three.js viewer (docs/VISUALS.md).
+"""Export one trace folder to a single JSON file for the three.js viewer (docs/archive/VISUALS.md).
 
     python tools/export_3d.py results/trace/crowd_lgbm_all_1001 media/sample_3d.json
 

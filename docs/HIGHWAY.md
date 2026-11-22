@@ -154,7 +154,7 @@ Paired vehicle bootstrap, TabPFN minus rival, with 95% intervals:
 - Its coverage is 84–87% in every regime, slightly above the 81% target, while its boxes are the narrowest of the calibrated models.
 - On five pedestrian scenes (`docs/LOSO5.md`) TabPFN only tied lgbm_all. On cars it beats the pre-set lgbm_all (67x more rows, same simulator) by the H1 rule, but against a well-fitted LightGBM the gain shrinks to a tie (robustness check below). lgbm_all uses LightGBM m50:n100 (100 trees), the `loso5.py` setting. `realdata_claimb.py` used the 300-tree default; that was not rerun here.
 
-### H1 robustness check (post-hoc, disclosed; run by the CEO review, `docs/CEO-HANDOVER.md` section 4a)
+### H1 robustness check (post-hoc, disclosed; run by the CEO review, `docs/archive/CEO-HANDOVER.md` section 4a)
 
 The pre-set `lgbm_all` used LightGBM's small-data setting (min 50 rows per leaf, 100 trees) on 100,440 rows. That setting was chosen before the run, but a judge may ask whether it is underfit. Same split, same 1,500 test rows, same paired vehicle bootstrap (355 vehicles); the first row reproduces the stored `lgbm_all` rows exactly.
 

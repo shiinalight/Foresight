@@ -2,7 +2,7 @@
 
 Written Sat 21 Nov, about 19:00. Code freeze is Sun 12:30. Goal: a complete product within the hackathon, with nothing left for later. Every part has to pass its gate before the next part builds on it.
 
-This file sits alongside `docs/CTO-REVIEW.md`, which explains the reasoning. This one is the checklist the builder works from.
+This file sits alongside `docs/archive/CTO-REVIEW.md`, which explains the reasoning. This one is the checklist the builder works from.
 
 ## 0. Blocking: fix before any long run
 

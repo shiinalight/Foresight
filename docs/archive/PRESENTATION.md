@@ -1,6 +1,6 @@
 # Presentation plan: video, README, live deck
 
-> **Superseded for the story (22 Nov, 09:00 Berlin):** the narrative, the video script and the 10-slide deck plan below were written around claim A and before the LOSO5, highway and policy results. The current story, script and deck list are in [`docs/STORY.md`](STORY.md). This page stays as history and for its recording rules and risk list.
+> **Superseded for the story (22 Nov, 09:00 Berlin):** the narrative, the video script and the 10-slide deck plan below were written around claim A and before the LOSO5, highway and policy results. The current story, script and deck list are in [`docs/STORY.md`](../STORY.md). This page stays as history and for its recording rules and risk list.
 
 Written Sat 21 Nov, 23:40 (Berlin), while the overnight runs are going. **Status of every open result is as of 23:35.** Freeze Sun 12:30; submit by 16:00 (hard deadline 16:30).
 
@@ -188,11 +188,11 @@ GitHub doesn't render `.html` files, so the README embeds PNGs and links to the 
 Also show the baseline-matches-published table (D-26). Drop single-seed rows, or label them "one seed, indicative".
 
 **Prepared-before-the-event disclosure** (organisers asked for it):
-- Keep the current README wording: "Generic utilities only: a Kalman filter, a constant-velocity baseline and timing code (`tools/check_tabpfn.py`)." **Confirm** which files hold that code now. `TEAM-PLAN.md` names `traj_kit.py`, which is no longer in the repo.
-- Name the reference note `docs/tabpfn-hackathon-strategies.md` if it was written before the event start (and `av-tabpfn-brainstorm.md`, which `TEAM-PLAN.md` mentions but which is not in the repo). **Check the dates: `TEAM-PLAN.md` says the notes were copied in at setup.**
+- Keep the current README wording: "Generic utilities only: a Kalman filter, a constant-velocity baseline and timing code (`tools/check_tabpfn.py`)." **Confirm** which files hold that code now. `docs/archive/TEAM-PLAN.md` names `traj_kit.py`, which is no longer in the repo.
+- Name the reference note `docs/archive/tabpfn-hackathon-strategies.md` if it was written before the event start (and `av-tabpfn-brainstorm.md`, which `docs/archive/TEAM-PLAN.md` mentions but which is not in the repo). **Check the dates: `docs/archive/TEAM-PLAN.md` says the notes were copied in at setup.**
 - Optionally, state how AI coding assistants were used.
 
-**Start here path** (replaces the current one, which points to the partly superseded `docs/CTO-REVIEW.md`):
+**Start here path** (replaces the current one, which points to the partly superseded `docs/archive/CTO-REVIEW.md`):
 1. The video (link).
 2. `docs/explainer.html`: picture-first explainer, about 5 minutes.
 3. `docs/walkthrough.html`: one real decision, stage by stage, with the actual values.
@@ -232,7 +232,7 @@ Deadlines are relative to the 12:30 freeze (F); F−2h is 10:30.
 | 6 | "On a real robot" | deck 10, README | explainer §"On a real robot" → `media/v_on_robot.png` | to make | CTO | F−3h |
 | 7 | Walkthrough stages s1–s9 | video 0:30–1:20, deck 1 and 4, README | `tools/walkthrough.py` → `docs/walkthrough/*.png`, `docs/walkthrough.html` | current (f4, seed 6001), but built from a dirty tree at `d25281a`. Rerun once on a clean commit, and again if T2 changes the crowd settings the walkthrough uses | CTO | F−2h |
 | 8 | Walkthrough strip (s4 + s5 + s8) | deck 4 | compose from #7 → `media/v_walkthrough_strip.png` | to make | CTO | F−1h |
-| 9 | **Four-panel bird's-eye video** (stop-and-go, reactive, VO, TabPFN live; switch into erratic at 5 s; live counters) | video 1:20 (the demo), deck 8 still, README still | traces of the T5 showcase seed 3013 (`docs/VISUALS.md` §2; `render_closed.py` extended) → `media/demo/seed3013.gif` | rendered (c241ffe) | builder | F−2h |
+| 9 | **Four-panel bird's-eye video** (stop-and-go, reactive, VO, TabPFN live; switch into erratic at 5 s; live counters) | video 1:20 (the demo), deck 8 still, README still | traces of the T5 showcase seed 3013 (`docs/archive/VISUALS.md` §2; `render_closed.py` extended) → `media/demo/seed3013.gif` | rendered (c241ffe) | builder | F−2h |
 | 10 | Claim A chart: joint coverage, both directions, 5 seeds, moving vs standing | video 1:45, deck 6, README | plot from `results/claim_a_f4.csv` (`tools/claim_a.py` writes the CSV only) → `media/fig_claim_a_f4.png` | to make | builder (or a CTO subagent, plot only) | F−3h |
 | 11 | Calibration on arrival / in the scene | video 1:45, deck 7, README | `tools/conformal_eval.py` (API) → `media/fig_conformal_{hotel_to_eth,eth_to_hotel}.png` | regenerate on f4 | builder | F−3h |
 | 12 | Adaptation with person-level intervals (claim B) | video 2:10 (B1/C3), README | `tools/incontext_eval.py` + `tools/adapt_ci.py` → `media/fig_incontext_*.png`, `media/fig_*_ci.png` | regenerate on f4 (pilot figures are superseded) | builder | F−3h |

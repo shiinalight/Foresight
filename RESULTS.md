@@ -54,6 +54,8 @@ Positions are annotated in metres every 0.4 s. Each recording is cut into 60 s w
 
 ## How to read the figures
 
+> The figures named in this section and in "rows from the same place" below were made on features before f4 and have been removed from `media/` (status `removed` in `media/MANIFEST.csv`); they remain in git history.
+
 - **Demo (`media/demo_hotel_tabpfn.gif`):**
   - **Blue dot:** a person now; the grey line is their last 2 s.
   - **Orange dot:** the predicted position 2 s ahead (median).
@@ -723,7 +725,7 @@ Plan, rules and results: `docs/HIGHWAY.md` (plan 34f1954, results 06d8d93). Figu
 - TabPFN is also lowest in every regime.
 - **Say "matches LightGBM trained on 67 times more rows, with more honest ranges", never "beats".** H1's verdict stands by its pre-set rule, but the post-hoc check below shrinks the margin to a tie against a well-fitted LightGBM.
 
-**H1 robustness check (post-hoc, disclosed; CEO review, `docs/CEO-HANDOVER.md` section 4a).** Same split, same 1,500 test rows, same paired vehicle bootstrap (355 vehicles). LightGBM is fitted on all 100,440 training rows; the first row reproduces the stored `lgbm_all` rows exactly.
+**H1 robustness check (post-hoc, disclosed; CEO review, `docs/archive/CEO-HANDOVER.md` section 4a).** Same split, same 1,500 test rows, same paired vehicle bootstrap (355 vehicles). LightGBM is fitted on all 100,440 training rows; the first row reproduces the stored `lgbm_all` rows exactly.
 
 | LightGBM on all rows | Coverage | Interval score | Error | TabPFN − LightGBM: interval score | Coverage | Error |
 |---|---|---|---|---|---|---|
