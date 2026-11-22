@@ -1,6 +1,6 @@
 # Foresight: three-minute video script, version 2 (CEO handover section 5)
 
-> **Superseded (22 Nov, 09:00 Berlin):** version 3 is in [`docs/STORY.md`](STORY.md) section 5 (fixes: "closer to their promise" instead of "kept the ranges honest", the 10-point scene share, "same core" instead of "same code, unchanged", the policy line "on average", a product close). Record from that one.
+> **Superseded (22 Nov, about 10:30 Berlin): record from [`docs/VIDEO_BRIEF.md`](VIDEO_BRIEF.md) section 3.** That cut is built around Nooshin's 3D street video and fitted to its clip lengths. Version 3 in `docs/STORY.md` section 5 is superseded too. This page stays as history.
 
 Every number comes from `RESULTS.md` and the docs it points to. Recording rules (`docs/PRESENTATION.md` section 2):
 - no numbers on camera;

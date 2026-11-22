@@ -111,6 +111,8 @@ The TabPFN policy rides on proof 1 as one sentence, the first thing cut if the v
 
 ## 5. Video, version 3 (180 s)
 
+> **Superseded for recording by [`docs/VIDEO_BRIEF.md`](VIDEO_BRIEF.md) section 3** (22 Nov, about 10:30 Berlin). That cut uses Nooshin's 3D street video for the problem, the five steps and the street, and these proofs and wording after it. The wording rules below still apply.
+
 Changes from version 2 (`docs/VIDEO_SCRIPT.md`), each from section 2:
 - 1:20 beat: "kept the ranges honest" becomes "closer to their promise", the 10-point scene share is said, and "still short of the target" is added. The policy sentence says "on average".
 - 1:50 beat: "the same code, unchanged" becomes "the same core".
