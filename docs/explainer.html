@@ -348,12 +348,14 @@ dt { font-weight: 600 } dd { margin: 0 }
         <line x1="60" y1="219.7" x2="380" y2="219.7" class="st-thin dash"/><text x="378" y="240" class="t-s" text-anchor="end">LightGBM, all 73k rows: 0.606</text>
         <polyline points="60,50.5 120.1,75 180.3,103 259.8,134.5 319.9,167.2 380,187" class="person-st"/>
         <g class="person"><circle cx="60" cy="50.5" r="3.5"/><circle cx="120.1" cy="75" r="3.5"/><circle cx="180.3" cy="103" r="3.5"/><circle cx="259.8" cy="134.5" r="3.5"/><circle cx="319.9" cy="167.2" r="3.5"/><circle cx="380" cy="187" r="3.5"/></g>
-        <polyline points="60,89 120.1,127.5 180.3,173" class="pred-line" stroke-width="2.4"/>
-        <g class="pred-fill"><circle cx="60" cy="89" r="4.5"/><circle cx="120.1" cy="127.5" r="4.5"/><circle cx="180.3" cy="173" r="4.5"/></g>
-        <text x="190" y="188" class="t-pred">TabPFN</text><text x="300" y="148" class="t-person">LightGBM, same rows</text>
+        <polyline points="60,89 120.1,127.5 180.3,173" class="pred-line" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <g class="pred-fill" opacity=".6"><circle cx="60" cy="89" r="3.5"/><circle cx="120.1" cy="127.5" r="3.5"/><circle cx="180.3" cy="173" r="3.5"/></g>
+        <polyline points="120.1,139.2 259.8,204.5 319.9,222 380,234.8" class="pred-line" stroke-width="2.6"/>
+        <g class="pred-fill"><circle cx="120.1" cy="139.2" r="4.5"/><circle cx="259.8" cy="204.5" r="4.5"/><circle cx="319.9" cy="222" r="4.5"/><circle cx="380" cy="234.8" r="4.5"/></g>
+        <text x="190" y="186" class="t-s">TabPFN-Fast, laptop</text><text x="262" y="226" class="t-pred">TabPFN-3.5</text><text x="300" y="148" class="t-person">LightGBM, same rows</text>
         <text x="60" y="290" class="t-s">Crossing crowd, +2 s, f4 features, mean of 3 seeds</text>
       </svg>
-      <figcaption><b>TabPFN learns more per example row:</b> on 2,000 rows it is about as accurate as LightGBM on 20,000. LightGBM on all 73,000 rows is still the most accurate. Larger contexts on the hosted model are being measured.</figcaption>
+      <figcaption><b>TabPFN learns more per example row:</b> at every size it is 0.04–0.06 m more accurate than LightGBM on the same rows. TabPFN-3.5 on 20,000 rows (0.593 m) beats LightGBM trained on all 73,000 (0.606 m), with boxes that hold the truth 87% of the time against 83% at about the same width. Choosing rows by similarity added nothing. One simulated scene; 3 seeds.</figcaption>
     </figure>
   </div>
   <figure>
