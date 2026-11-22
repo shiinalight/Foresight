@@ -22,6 +22,10 @@ Planners (same seeds = same crowd, start and goal for all):
                known (t + h <= now) are scored against OBSERVED (filtered) positions, in order of t_known. As
                offline (conformal_eval.py): the score is on the RAW 5-95% box, target miss alpha = 0.2. The box the
                planner reads ([box_q, 1 - box_q]) is widened by the same d, so the caution dial keeps its meaning.
+tabpfn_policy  TabPFN picks the move (docs/TABPFN_POLICY.md): tabpfn_split's ranges, then a TabPFN classifier over the
+               candidate rows (foresight/core/policy.py), fitted once on --policy-ctx teacher rows; hard checks kept,
+               their overrides counted (policy_override_rate). --log-cands FILE appends every replan's candidate rows
+               with the teacher's (choose()) pick, for teacher data and DAgger.
 --latency L:   virtual-time latency: a command planned at t applies at t + L; the robot keeps its previous
                command meanwhile.
 Short 0.4 s check: constant velocity from the filtered state for cv, cv_band, lgbm* and tabpfn*; people frozen for
@@ -46,6 +50,7 @@ from foresight.core import context as C
 from foresight.core import features as F
 from foresight.core import models as M
 from foresight.core import planner as P
+from foresight.core import policy as POL
 from foresight.domains.toy_crowd import BOUND, CrowdSim
 from run_offline import rows_for
 
@@ -53,12 +58,12 @@ HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
        "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode", "smooth",
-       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t", "offset", "offset_alpha", "offset_eta", "offset_rule", "offset_eta_b", "latency", "replan"]
+       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t", "offset", "offset_alpha", "offset_eta", "offset_rule", "offset_eta_b", "latency", "replan", "policy_ctx"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
             "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere", "smooth": False,
             "frozen_ctx": "random", "bank_exclude": "-", "switch_to": "-", "switch_all": False, "switch_t": -1.0,
-            "offset": False, "offset_alpha": -1.0, "offset_eta": 0.02, "offset_rule": "row", "offset_eta_b": -1.0, "latency": 0.0, "replan": 0.4}
+            "offset": False, "offset_alpha": -1.0, "offset_eta": 0.02, "offset_rule": "row", "offset_eta_b": -1.0, "latency": 0.0, "replan": 0.4, "policy_ctx": "-"}
 SPLIT_REC, SPLIT_THIN = 250, 20   # tabpfn_split: scene-model rows (most recent); fewer than SPLIT_THIN = frozen alone
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
@@ -82,8 +87,9 @@ class Predictor:
     def __init__(self, kind, bank, bank_obj, args):
         self.kind, self.args, self.bank_obj = kind, args, bank_obj
         self.live = kind.endswith("_live")
-        self.split = kind.endswith("_split")
-        self.base = kind.replace("_live", "").replace("_all", "").replace("_split", "")
+        self.split = kind.endswith("_split") or kind == "tabpfn_policy"      # the policy reads split's ranges
+        self.base = kind.replace("_live", "").replace("_all", "").replace("_split", "").replace("_policy", "")
+        self.policy = None
         self.frozen_model, self.n_rec = None, 0
         self.agg = []                                            # boxes served this episode (in-loop aggregates)
         self.offset = bool(getattr(args, "offset", False)) and kind.startswith(("lgbm", "tabpfn", "cv_band"))
@@ -349,6 +355,8 @@ def run_episode(pred, seed, args, log=False):
     frames, plans, robotfeat = [], [], []
     collided_steps, moving_collisions, min_gap, t_goal, t_pred = 0, 0, np.inf, None, 0.0
     n_plans, n_fallback, k = 0, 0, 0
+    n_override, n_agree, cand_log = 0, 0, []                 # tabpfn_policy counters; --log-cands rows
+    log_cands = getattr(args, "log_cands", None)
     path_len, stopped_steps, intrusion_steps, decels = 0.0, 0, 0, []
     start = np.array([state[0]["x"], state[0]["y"]]); goal0 = np.array([state[0]["goal_x"], state[0]["goal_y"]])
     speeds = tuple(s * args.max_speed for s in (0.0, 1 / 3, 2 / 3, 1.0))   # one top speed for every planner
@@ -387,6 +395,21 @@ def run_episode(pred, seed, args, log=False):
                 cmd, info = P.choose(p_robot, goal, pr, margin=args.margin, bounds=meta["bounds"],
                                      obstacles=obstacles, horizons=args.hz, speeds=speeds,
                                      prev_cmd=cmd if smooth else None, smooth=smooth)
+                if pred.kind == "tabpfn_policy" or log_cands:
+                    ct = info["candidates"]
+                    cands_xy = np.column_stack([ct["vx"], ct["vy"]])
+                    teacher = int(np.argmax(ct["chosen"]))
+                    v_robot = np.array([state[0]["vx"], state[0]["vy"]])
+                    crow = POL.candidate_rows(p_robot, v_robot, goal, cands_xy, pr, meta["bounds"], horizons=args.hz)
+                    pick = teacher
+                    if pred.kind == "tabpfn_policy":
+                        pick, over, top = pred.policy.choose(crow)
+                        cmd = cands_xy[pick]
+                        n_override += int(over); n_agree += int(pick == teacher)
+                    if log_cands:
+                        cand_log.append(crow.assign(seed=seed, t=round(k * dt, 6), cand=np.arange(len(crow)),
+                                                    chosen=(np.arange(len(crow)) == teacher).astype(int),
+                                                    picked=(np.arange(len(crow)) == pick).astype(int), planner=pred.kind))
             t1 = time.perf_counter()
             t_pred += t1 - t0
             n_plans += 1; n_fallback += int(info.get("fallback", False))
@@ -444,6 +467,8 @@ def run_episode(pred, seed, args, log=False):
            **zigzag(headings, path_len),
            "fallback_rate": n_fallback / max(n_plans, 1),
            "pred_seconds": t_pred, "pred_ms_per_plan": 1000 * t_pred / max(n_plans, 1),
+           "policy_override_rate": n_override / max(n_plans, 1) if pred.kind == "tabpfn_policy" else np.nan,
+           "policy_agree": n_agree / max(n_plans, 1) if pred.kind == "tabpfn_policy" else np.nan,
            **pred.offset_stats(),
            **pred.inloop_stats(hist, obst_df, meta, seed,
                                (args.duration / 2 if getattr(args, "switch_t", None) is None else args.switch_t)
@@ -452,6 +477,9 @@ def run_episode(pred, seed, args, log=False):
     if log:
         from foresight import trace
         trace.write(args, pred, seed, hist, plans, obstacles, meta, res)
+    if log_cands and cand_log:
+        out_p = Path(log_cands); out_p.parent.mkdir(parents=True, exist_ok=True)
+        pd.concat(cand_log, ignore_index=True).to_csv(out_p, mode="a", header=not out_p.exists(), index=False)
     rf = pd.concat(robotfeat) if robotfeat else pd.DataFrame()
     return res, logd, rf
 
@@ -479,6 +507,9 @@ def main():
     ap.add_argument("--offset-rule", default="row", choices=["row", "batch"],
                     help="row: d moves per scored row; batch: d += eta_b (miss rate of the refresh batch - alpha)")
     ap.add_argument("--offset-eta-b", type=float, default=0.05, help="batch rule step per refresh")
+    ap.add_argument("--log-cands", default=None, help="append every replan's candidate rows + teacher pick to this CSV")
+    ap.add_argument("--policy-ctx", nargs="*", default=None, help="teacher candidate-row CSVs for tabpfn_policy")
+    ap.add_argument("--neg-ratio", type=float, default=3.0, help="tabpfn_policy: negatives per positive in its context")
     ap.add_argument("--latency", type=float, default=0.0, help="virtual-time latency of each command, s")
     ap.add_argument("--switch-t", type=float, default=None, help="with --switch: switch time in s (default mid-episode)")
     ap.add_argument("--switch-all", action="store_true", help="with --switch: every seed switches, not only odd ones")
@@ -525,6 +556,11 @@ def main():
     Path("results/closed").mkdir(parents=True, exist_ok=True)
     csv_path = Path(f"results/closed/{run_id}.csv")
     preds = {kind: Predictor(kind, bank, bank_obj, a) for kind in a.planners}
+    if "tabpfn_policy" in preds:
+        pol = POL.Policy(a.policy_ctx, neg_ratio=a.neg_ratio)
+        preds["tabpfn_policy"].policy = pol
+        print(f"policy context: {pol.n_pos} positives + {pol.n_neg} negatives (of {pol.n_all} rows; ratio {a.neg_ratio:g})",
+              flush=True)
     # seed outer, planner inner: a run cut short still holds complete, paired seeds
     for seed in a.seeds:
         for kind, pred in preds.items():
@@ -537,6 +573,8 @@ def main():
                     "frozen_ctx": a.frozen_ctx if kind.startswith(("lgbm", "tabpfn")) and kind != "lgbm_all" else "-",
                     "bank_exclude": a.bank_exclude_regime or "-", "switch_to": a.switch_to or "-",
                     "switch_all": bool(a.switch_all), "latency": a.latency, "replan": a.replan,
+                    "policy_ctx": (";".join(Path(x).name for x in a.policy_ctx) + f"|neg{a.neg_ratio:g}")
+                    if kind == "tabpfn_policy" else "-",
                     "switch_t": (a.duration / 2 if a.switch_t is None else a.switch_t) if a.switch else -1.0,
                     "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
                     "threads": a.threads, "max_speed": a.max_speed,
