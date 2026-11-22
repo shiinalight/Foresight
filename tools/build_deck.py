@@ -158,15 +158,18 @@ def build():
     caption(s, "Showcase crowd 3013, chosen by rule (median split time): same crowd for every planner")
 
     s = slide(prs, "Why slower, and what comes next", kicker="Honest framing",
-              notes="Not because of TabPFN. At q 0.15 every learned planner drove the same (T5, 20 paired crowds): split "
-                    "26.23 s, frozen TabPFN 26.35 s, LightGBM on all rows 25.90 s; split − frozen −0.12 s [−1.35, +1.25], "
-                    "split − LightGBM +0.33 s [−1.29, +1.99], although LightGBM's boxes are 0.63 m narrower. Better "
-                    "prediction did not change how this box planner drives; its caution setting did. The planner only "
-                    "vetoes moves into a box at one caution level. Next work, not done: a planner that uses the range's "
-                    "shape, e.g. a chance-constrained cost.")
-    bullets(s, ["Every learned planner drove the same at one caution setting",
-                "Better prediction did not change how this box planner drives",
-                "Next: a planner that uses the range's shape (chance-constrained cost)", "Not claimed as done"])
+              notes="Slower, and not because of TabPFN's calibration: TabPFN with and without the scene model drove the "
+                    "same; the caution setting sets the pace. At q 0.15 (20 confirmatory crowds) split 26.23 s, frozen "
+                    "TabPFN 26.35 s (−0.12 s [−1.35, +1.25]); over 40 crowds +0.03 s [−1.08, +1.16], although split's boxes "
+                    "are 0.26 m wider after the switch. The trade-off: LightGBM's narrower boxes buy about 1.2 s (40 crowds, "
+                    "+1.24 s [+0.17, +2.34]), but after the switch they hold only 41% of people against split's 59%. "
+                    "Faster because overconfident. All learned planners stay 3–5 s slower than constant velocity and "
+                    "velocity obstacles at comparable safety: this box planner vetoes moves at one caution level. Next "
+                    "work, not done: a planner that uses the range's shape, e.g. a chance-constrained cost.")
+    bullets(s, ["TabPFN with and without the scene model drove the same",
+                "The caution setting sets the pace, not calibration",
+                "LightGBM ~1 s faster, but its boxes hold 41% of people, ours 59%",
+                "Next: use the range's shape (chance-constrained cost), not done"])
 
     s = slide(prs, "When to use which", kicker="Honest framing",
               notes="Familiar place, many rows: LightGBM is as good, with narrower boxes. New place or new behaviour, few "
