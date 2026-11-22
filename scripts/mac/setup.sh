@@ -58,6 +58,8 @@ done
 say "5/7 simulated crowd bank (crossing crowd, 80 episodes; takes a few minutes)"
 [[ -f data/crowd_cross/tracks.csv ]] || python -m foresight.domains.crowd --episodes 80 --seed 0 --switch-prob 0.5 \
     --goal-mode cross --out data/crowd_cross > /dev/null
+# plaza bank read by tools/check_mps.py and tools/latency.py (DATA.md: 80 episodes, 36 switch); found missing in Nooshin's smoke test
+[[ -f data/crowd/tracks.csv ]] || python -m foresight.domains.crowd --episodes 80 --seed 0 --switch-prob 0.5 --out data/crowd > /dev/null
 
 say "6/7 velocity-filter settings (tuned on training data only, as on the main laptop; D-26)"
 [[ -f data/eth/kalman.json ]] || python tools/tune_kalman.py data/hotel --noise 0 --apply-to data/eth

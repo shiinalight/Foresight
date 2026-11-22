@@ -124,7 +124,7 @@ On real data the chain adds 5.0 points of joint coverage overall and 16.9 on tur
 | T5 fast-replan baselines (0.2 s) | reactive m0.4 finished 20 seeds, not yet reported; the other three were stopped (addendum part 5) |
 | Claim B on real data (`tools/realdata_claimb.py`) | **done:** real pedestrians (from 5 s, split vs frozen, paired person bootstrap, `results/realdata_claimb.csv`): small gain, interval score −0.045 [−0.080, −0.009] pooled (1,540 rows, 544 people), coverage level (+1.3 pts [−0.5, +3.1]), level with the offset on both; direction-dependent (ETH→Hotel −0.046 [−0.086, −0.005], narrower boxes at equal coverage; Hotel→ETH −0.045 [−0.093, +0.007], level). Against LightGBM: +17.1 pts coverage, interval score −0.254. The real scenes have no sudden behaviour switch, which is where the simulator's +10 pts came from |
 | Calibration on arrival and after 20 s in the scene (`tools/conformal_eval.py`) | pending: f4 rerun (the existing table is f1) |
-| Time per plan on a GPU (`tools/latency_gpu.py`) | **measured, NVIDIA L4:** TabPFN 71 ms per replan (split design, 48 query rows), scene rebuild 318 ms every 2 s; real loop 225 ms per plan; see `docs/DEPLOYMENT.md` |
+| Time per plan on a GPU (`tools/latency_gpu.py`) | **measured, NVIDIA L4:** TabPFN 71 ms per replan (split design, 48 query rows), scene rebuild 318 ms every 2 s; real loop 225 ms per plan; see `docs/DEPLOYMENT.md`; **Apple M3 Pro (MPS, Nooshin):** live TabPFN 287–321 ms and frozen 130–135 ms per plan in the robot loop (`docs/runs/mac_smoke.md`) |
 
 **When to use which, so far:** with many familiar rows, LightGBM is as good or better. With few rows or in a new place, TabPFN's ranges are better calibrated. Both under-cover turns.
 
