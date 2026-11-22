@@ -1,0 +1,11 @@
+{
+  "device": "cuda",
+  "gpu": "NVIDIA L4",
+  "torch": "2.8.0+cu129",
+  "tabpfn": "9.2.0",
+  "python": "3.12.3",
+  "machine": "x86_64",
+  "reps": 30,
+  "threads": 24,
+  "peak_mem_mb": 6218
+}

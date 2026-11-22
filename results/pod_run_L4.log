@@ -1,0 +1,34 @@
+name, memory.total [MiB], driver_version
+NVIDIA L4, 23034 MiB, 595.112.07
+torch 2.8.0+cu129 cuda 12.9 tabpfn 9.2.0
+48
+{'device': 'cuda', 'gpu': 'NVIDIA L4', 'torch': '2.8.0+cu129', 'tabpfn': '9.2.0', 'python': '3.12.3', 'machine': 'x86_64', 'reps': 30, 'threads': 24}
+cuda  3.5-Fast, 1 est (shipped)  frozen_fit     rows  2000 query   0  median    490.4 ms  p90    520.3 ms
+cuda  3.5-Fast, 1 est (shipped)  predict        rows  2000 query  16  median     35.1 ms  p90     35.5 ms
+cuda  3.5-Fast, 1 est (shipped)  predict        rows  2000 query  48  median     36.0 ms  p90     36.3 ms
+cuda  3.5-Fast, 1 est (shipped)  predict        rows  2000 query  96  median     36.2 ms  p90     36.6 ms
+cuda  3.5-Fast, 1 est (shipped)  scene_refit    rows    50 query   0  median    300.0 ms  p90    371.9 ms
+cuda  3.5-Fast, 1 est (shipped)  scene_refit    rows   150 query   0  median    301.8 ms  p90    387.4 ms
+cuda  3.5-Fast, 1 est (shipped)  scene_refit    rows   250 query   0  median    318.2 ms  p90    370.9 ms
+cuda  3.5-Fast, 1 est (shipped)  split_predict  rows  2250 query  48  median     70.8 ms  p90     71.0 ms
+cuda  3.5, 1 est                 frozen_fit     rows  2000 query   0  median    997.9 ms  p90   1071.2 ms
+cuda  3.5, 1 est                 predict        rows  2000 query  16  median     56.4 ms  p90     57.5 ms
+cuda  3.5, 1 est                 predict        rows  2000 query  48  median     55.9 ms  p90     60.0 ms
+cuda  3.5, 1 est                 predict        rows  2000 query  96  median     55.9 ms  p90     57.2 ms
+cuda  3.5, 1 est                 scene_refit    rows    50 query   0  median    745.2 ms  p90    825.3 ms
+cuda  3.5, 1 est                 scene_refit    rows   150 query   0  median    693.5 ms  p90    795.0 ms
+cuda  3.5, 1 est                 scene_refit    rows   250 query   0  median    799.1 ms  p90    812.5 ms
+cuda  3.5, 1 est                 split_predict  rows  2250 query  48  median    111.1 ms  p90    111.9 ms
+wrote results/latency_cuda_NVIDIA_L4.csv
+parity 3.5-Fast, 1 est (shipped): max |diff| 0.0214 m, median 0.00102 m (vs results/latency_parity_cpu.npz)
+bank: 62 episodes, 244757 rows without 'erratic'
+tabpfn_split seed 3013  reached True  t_goal 25.400000000000002  collisions 0 (moving 0)  min gap 0.47 m  freeze 2%  fallback 3%  230 ms/plan  (18 s)
+tabpfn_split seed 3001  reached True  t_goal 25.0  collisions 0 (moving 0)  min gap 0.30 m  freeze 0%  fallback 5%  210 ms/plan  (16 s)
+tabpfn_split seed 3002  reached True  t_goal 33.0  collisions 0 (moving 0)  min gap 0.24 m  freeze 6%  fallback 11%  234 ms/plan  (24 s)
+              reached  time_to_goal  ...  fallback_rate  pred_ms_per_plan
+planner                              ...                                 
+tabpfn_split      1.0          27.8  ...          0.062           224.618
+
+[1 rows x 9 columns]
+wrote results/closed/20261122-012646-gpu-split.csv
+DONE

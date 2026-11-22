@@ -50,6 +50,22 @@ They are not deployment evidence. Target-class hardware is a CUDA GPU or an Appl
 
 **Against industry [judgment].** Robots and cars run their prediction networks on embedded GPUs at about 10 Hz. A model of 80–220 M parameters with a cached context of about 1,000 rows plausibly fits that envelope on a GPU. We will not quote industry figures until we measure ours on a GPU or MPS.
 
+**Measured on a GPU (Sun 22 Nov, 02:50) [checked: `results/latency_cuda_NVIDIA_L4.csv`, `results/pod_run_L4.log`; `tools/latency_gpu.py`, `scripts/gpu/pod_run.sh`].** Rented NVIDIA L4 (24 GB, a 72 W inference card), torch 2.8 + CUDA 12.9, tabpfn 9.2.0, the laptop's own weight files. Median of 30 repeats after a discarded warm-up; one call covers both axes and the 5 planner quantiles.
+
+| Step (shipped design: 3.5-Fast, 1 estimator) | L4 GPU | Laptop CPU (emulated x64) |
+|---|---|---|
+| Predict on the cached 2,000-row bank, 48 query rows (24 people x 2 horizons) | 36 ms | 244 ms |
+| **Split predict per replan** (bank + scene model, averaged) | **71 ms** | 452 ms |
+| Scene-model rebuild, 250 rows (every 2 s, can run in the background) | 318 ms | 897 ms |
+| Frozen-bank fit, 2,000 rows (once per episode) | 490 ms | 4.7 s |
+
+- Query size barely matters on the GPU (16 to 96 rows: 35 to 36 ms), so larger crowds cost almost nothing extra.
+- TabPFN-3.5 with 1 estimator (the larger model): split predict 111 ms, scene rebuild 799 ms.
+- **What this means:** TabPFN's part of a replan (71 ms) fits a 10 Hz loop on an L4-class GPU, and well inside our 0.4 s replan period. The 2 s scene rebuild (318 ms) has to run off the control path, as section 1 already plans. An embedded robot GPU (Jetson class) is slower than an L4; we have not measured one, so we make no claim for it.
+- **Full real loop on the pod** (T5 config, tabpfn_split q 0.15, seeds 3013, 3001, 3002): 225 ms per plan on average, including the rebuilds inside the loop and the CPU feature building. All three reached the goal with 0 contacts.
+- **Parity:** the same context and query on GPU and laptop CPU give quantiles within 0.021 m at most (median 0.001 m).
+- **Closed loop is sensitive to tiny numeric differences:** seed 3013 on the GPU took 25.4 s with a 0.47 m closest gap, against 25.8 s and 0.01 m on the laptop. A 1 mm difference can flip which way the robot passes someone. This is why every paired comparison runs on one device (section 4, rule 4) and why we report over 20 paired seeds, not single runs.
+
 ## 3. Model tiers: the right size for each job
 
 Each tier runs where its latency fits:
