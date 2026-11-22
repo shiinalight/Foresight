@@ -35,16 +35,22 @@ D14 = 2.0
 
 
 def load(pattern, seeds, extra=None):
-    files = [f for f in sorted((ROOT / "results/closed").glob(pattern + ".csv")) if not f.name.startswith("robotfeat_")]
-    d = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
+    files = [f for f in sorted((ROOT / "results/closed").glob(pattern + ".csv"))
+             if not f.name.startswith("robotfeat_") and "-sm" not in f.stem and "-r02" not in f.stem
+             and "-lat" not in f.stem]
+    d = pd.concat([pd.read_csv(f).assign(_file=f.name) for f in files], ignore_index=True)
+    for col, keep in (("smooth", False), ("latency", 0.0), ("replan", 0.4)):     # the primary analysis set only
+        if col in d:
+            d = d[d[col].fillna(keep) == keep]
     d = d[d.seed.isin(seeds) & (d.features_version == "f4")]
     if extra:
-        d = d.query(extra)
+        d = d.query(extra, engine="python")
     d = d.copy()
     d["dial"] = [getattr(r, DIAL[r.planner]) if r.planner in DIAL else (np.nan if r.planner == "stop_go" else r.box_q)
                  for r in d.itertuples()]
     d["arm"] = d.planner + ":" + d.dial.map(lambda v: "-" if pd.isna(v) else f"{v:g}")
-    d = d.drop_duplicates(["arm", "seed"], keep="last")
+    dup = d[d.duplicated(["arm", "seed"], keep=False)]
+    assert dup.empty, f"{len(dup)} duplicate (arm, seed) rows, e.g. {dup[['arm', 'seed', '_file']].head(6).to_dict('records')}"
     common = set.intersection(*[set(g.seed) for _, g in d.groupby("arm")])
     return d[d.seed.isin(common)], sorted(common)
 

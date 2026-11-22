@@ -268,7 +268,7 @@ Written before any learned planner, the open-loop oracle included, has run in th
 
 **Settings carried in from T4, declared in amendment 2 before T5:**
 - whether smoothing is on (D-28 gate);
-- the latency budget: the virtual-time delay before a command applies, and the delay before refreshed context can be used.
+- the latency budget: the virtual-time delay before a command applies, and the delay before refreshed context can be used. *(Correction, Sun 22 Nov: the refreshed-context delay was never implemented. Refits apply immediately in every run, and only the command delay exists, as `--latency`.)*
 
 Both apply to every planner. Amendment 2 also names the 02:00 TabPFN setup and is committed before T5 launches.
 
@@ -302,14 +302,14 @@ From the learned-planner runs only ms per plan, the logging check and the offset
   - **split2k+offset vs frozen2k+offset:** interval score −1.29 [−1.70, −0.94], coverage +12.6 points [+9.0, +16.3], median error −0.057 m [−0.092, −0.021], pinball −0.034. Before the switch the two are level.
   - **split2k+offset vs lgbm_all+offset:** interval score −1.72, coverage +19.6 points, error not different.
   - **Limits:** no variant reaches 80% after the switch (best 68.4%). The offline offset barely moved (8 update rounds per episode), so whether frozen+offset could match split on sharpness stays open. Cost: split ~3.0 s per moment offline, against 0.27 s for frozen.
-  - **On real data** (Setting A, Hotel → ETH, n = 137 moments), no variant beat constant velocity.
+  - **On real data** (Setting A, Hotel → ETH: 137 query rows over 44 moments, 83 people), no variant is distinguishable from constant velocity. Split 0.303 m against CV 0.318 m: −0.015 m [−0.041, +0.010], paired person bootstrap. Frozen: −0.011 [−0.039, +0.016].
 - **T3** is live_variants Setting B: 6 episodes instead of 12 (D-30).
 - **Frozen context:** the first version of `context.frozen` forced up to half rare moves. It was corrected to natural frequency (D-31) before any learned planner ran in the cell.
 
 **Scene and data:**
 - **Cell:** robot_repulsion 2, ignore_robot 0.2, people 24, crossing crowd, features f4, top speed 1.0 m/s for every planner, duration 40 s.
 - **Bank:** `data/crowd_cross_t2`, 120 episodes generated in that cell (seed 24).
-  - The Kalman filter was retuned on its training split: q 0.01, r 0.05, at the grid edge as in D-26. CV error at +2 s is 0.827 m.
+  - The Kalman filter was retuned on its training split: q 0.01, r 0.05. r is at the grid edge (0.05 is the grid's smallest value; kalman.json grid_edge true). The crowd_cross filter of D-26 was interior. CV error at +2 s is 0.827 m.
   - Every episode with erratic behaviour before or after a switch is excluded (`--bank-exclude-regime erratic`), so erratic is new to every model.
 - **Gates rerun in the cell:**
   - **S0 passes narrowly.** On 2,000 test rows at +2 s: CV 0.848 m; LightGBM on all rows 0.712 m (16.0% better), 5–95 box 80%; TabPFN fast-1 on 1,000 rows 0.777 m (8.4%), box 82%.
@@ -390,7 +390,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 - **The same rule** applies to every secondary arm that carries the offset.
 
 **T4 addendum, part 2: how the smoothing gate is read** (written before any T4 smoothing result was read; `tools/t4_smooth.ps1`):
-- **Test:** seeds 5110–5119, T5 config, box_q 0.15, no offset; tabpfn_split, tabpfn, lgbm_all and cv m0.4, with smoothing off and on (D-28 defaults).
+- **Test:** seeds 5110–5119, T5 config except the margin, box_q 0.15, no offset; tabpfn_split, tabpfn, lgbm_all and cv m0.4, with smoothing off and on (D-28 defaults). *(Disclosure: `tools/t4_smooth.ps1` ran the learned planners at `--margin 0.4`, not T5's 0.2 (D-7). The verdict, OFF, does not change what T5 runs.)*
 - **D-28 gate, made exact:**
   - For each learned planner (tabpfn_split, tabpfn, lgbm_all), mean heading_change_per_m drops by at least 30% with smoothing.
   - Paired over the common seeds, mean time_capped is no worse by more than 2 s, and mean intrusion_s no worse by more than 1 s (the D-14 differences).

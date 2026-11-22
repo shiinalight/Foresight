@@ -53,12 +53,12 @@ HZ = (1.0, 2.0)
 VERSION = "v4"          # v4: one top speed, metrics from actual robot velocity, navigation baselines
 KEY = ["sim", "planner", "seed", "margin", "box_q", "version", "horizons", "context", "people", "bank", "refit", "switch",
        "max_speed", "vo_w", "robot_repulsion", "ignore_robot", "goal_mode", "smooth",
-       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t", "offset", "offset_alpha", "offset_eta", "offset_rule", "offset_eta_b", "latency"]
+       "tabpfn_cfg", "frozen_ctx", "bank_exclude", "switch_to", "switch_all", "switch_t", "offset", "offset_alpha", "offset_eta", "offset_rule", "offset_eta_b", "latency", "replan"]
 DEFAULTS = {"margin": 0.2, "box_q": 0.05, "version": "v1", "horizons": "1 2", "context": 1000, "people": 16,
             "bank": "data/crowd", "refit": 0.0, "tabpfn_cfg": "default", "switch": False, "threads": 0,
             "max_speed": 1.2, "vo_w": -1.0, "robot_repulsion": 2.0, "ignore_robot": 0.0, "goal_mode": "anywhere", "smooth": False,
             "frozen_ctx": "random", "bank_exclude": "-", "switch_to": "-", "switch_all": False, "switch_t": -1.0,
-            "offset": False, "offset_alpha": -1.0, "offset_eta": 0.02, "offset_rule": "row", "offset_eta_b": -1.0, "latency": 0.0}
+            "offset": False, "offset_alpha": -1.0, "offset_eta": 0.02, "offset_rule": "row", "offset_eta_b": -1.0, "latency": 0.0, "replan": 0.4}
 SPLIT_REC, SPLIT_THIN = 250, 20   # tabpfn_split: scene-model rows (most recent); fewer than SPLIT_THIN = frozen alone
 LIVE_WINDOW = 25.0      # seconds of episode history used to label live rows
 
@@ -536,7 +536,7 @@ def main():
                     "refit": a.refit if kind.endswith(("_live", "_split")) else 0.0, "switch": a.switch, "run_id": run_id,
                     "frozen_ctx": a.frozen_ctx if kind.startswith(("lgbm", "tabpfn")) and kind != "lgbm_all" else "-",
                     "bank_exclude": a.bank_exclude_regime or "-", "switch_to": a.switch_to or "-",
-                    "switch_all": bool(a.switch_all), "latency": a.latency,
+                    "switch_all": bool(a.switch_all), "latency": a.latency, "replan": a.replan,
                     "switch_t": (a.duration / 2 if a.switch_t is None else a.switch_t) if a.switch else -1.0,
                     "tabpfn_cfg": (f"fast{a.tabpfn_fast}-est{a.tabpfn_est}" if "tabpfn" in kind else "-"),
                     "threads": a.threads, "max_speed": a.max_speed,
