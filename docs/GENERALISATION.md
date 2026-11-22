@@ -30,3 +30,6 @@ TabPFN arms and baselines run on the L4 pod. Batch offset on the learned arms, s
 - The oracle's points.
 
 **Reporting rule:** report every scenario and arm. A finding counts as "holds across crowds" only if it has the same direction in T5, G1 and G2.
+
+## Amendment (~04:45 Berlin, before any result was read; only episode counts seen)
+The pod's 5-core CPU quota made the TabPFN arms crawl (0–1 of 20 episodes after 12 min). The G2 baselines (stop_go excepted, done) and G2 oracle move to the laptop (numpy only, no TabPFN), restarted from scratch there. G1 baselines stay on the pod. Tables disclose the device per arm.
