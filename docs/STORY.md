@@ -170,6 +170,26 @@ The 10-slide plan in `docs/PRESENTATION.md` section 3 was built around claim A a
 
 ## 8. Surface fixes before the freeze
 
-Filled from the wording audit (section 2 is the reference). Owner in brackets.
+From the wording audit on 22 Nov at about 09:15 Berlin. Section 2 of this page is the reference.
 
-_Pending the audit result._
+**Done:**
+- `README.md`: the intro no longer leads with claim A; the claim A section says "two scenes, not five". Also fixed: the start-here row for this page, the walkthrough description, the intent wording, when to use which, and the latency limit (L4 measured, 10 Hz not claimed). Commits 59d5565 and dde784a.
+- `PLAN.md` and `RESULTS.md`: each top now points to this page. PLAN section 0 is marked as history, PLAN's data-efficiency row adds LOSO5, and the MPS timing is filled in.
+- `docs/INDUSTRY.md`, `docs/DEPLOYMENT.md`: no "2.5–10 Hz"; the shipped setup is stated; "calibrated ranges make the robot efficient" is narrowed.
+- `docs/DEFENSE.md`: "the caution setting, not calibration, set the pace"; "Claims we can make" carries a superseded banner. Section 7 of this page holds the new Q&A.
+- `docs/PRESENTATION.md`, `docs/CEO-HANDOVER.md`, `docs/VIDEO_SCRIPT.md`: superseded banners.
+
+**In progress:**
+- `docs/explainer.html` (the published Overview page): lead with the sentence and the three proofs, add sections for cars and the five scenes, and fix the old limits box. [CTO subagent; republished after review]
+- `tools/build_deck.py` and `deck/Foresight.pptx`: the deck order in section 6, and the "when to use which" slide without "safer". [RoboDetect]
+
+**Open, owner a person:**
+- `README.md`: 9 `[confirm]` items (video link, artifact sharing, roles, AI-assistant line, pre-event code). [Darshak]
+- `PLAN.md`: the "second account" line (F9). [Darshak]
+- `media/v_limits.png` does not exist. The "where it breaks" card is a text card made in the video editor. [whoever cuts the video]
+
+**Known small inconsistencies, not on the video path:**
+- The constant-velocity error on the problem slide: 0.37/0.25 m (`docs/DATA.md`) against 0.428/0.254 m in the f4 claim A rows. These come from different windows; the deck should cite the f4 rows.
+- The baseline against the published one: "within 3–14%" (PLAN, PRESENTATION) against "3–10%" (DEFENSE). Say "within 3–14%" only with its source, or leave it out.
+- PLAN gives an interval as [−0.43, −0.18] and README as [−0.42, −0.18]; the source is −0.425. Not quoted in the video.
+- Older pages say "80% target". The box target is 81% if the axes are independent (honest joint coverage 80–90%). The video and deck say 81%.
