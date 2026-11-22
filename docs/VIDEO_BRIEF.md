@@ -2,6 +2,72 @@
 
 Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submission video. **Revised 11:50** after the CEO check (`final/CTO_CHANGES.md`): seven wording and edit fixes in section 3, two new clips (`media/demo/highway.gif`, `media/demo/scenes5.gif`), and the "open source" line. It condenses `docs/STORY.md` (claims, numbers, wording) and plans the cut around Nooshin's 3D street video (`media/demo_full.mp4` on `nooshin/dev`, commit 28a6b13, 2:29). Every number below comes from STORY.md, which names its source file.
 
+
+**Revised 12:45 (Nooshin):** the 3D video was re-rendered as one finished file that already contains the proofs and the limits, so the editor only adds the voice-over and the on-camera shots. Section 0 below is its current state and why each change was made; where section 0 and sections 2–3 differ, section 0 is what the video shows.
+
+---
+
+## 0. The 3D video as it is now (2:46)
+
+**File:** 1920×1080, 30 fps, 2:46 (4,985 frames), silent. Rendered by `python tools/record_clip.py --video --fps 30` from `tools/street3d_template.html` on `nooshin/dev`; the street's ranges are the same stored TabPFN predictions as before (no numbers in the scene changed). It replaces the 2:29 cut (`media/demo_full.mp4`, commit 28a6b13).
+
+| Time | On screen | Voice-over cue |
+|---|---|---|
+| 0:00–0:11 | Title card "Foresight · Prior Labs track" over the street | Open (or cut to the on-camera shot) |
+| 0:11–0:26 | The challenge: three cards | As section 3 |
+| 0:26–1:04 | How it works: steps 1–5 only (no title or "every agent" card) | One sentence per step, as section 3 |
+| 1:04–1:39 | The street: four events, each with a plain-language card | As section 3 |
+| 1:39–1:49 | Proof 1 clip: `calibration_seed3013.gif`, "60% vs 45%, target 81%" | Proof 1 sentence starts here |
+| 1:49–2:17 | **"Three proofs"**: one frame, three columns appear in turn (at 1:49, 1:58, 2:08); the column being talked about is outlined | One proof sentence per column |
+| 2:17–2:37 | **"Where it breaks"**: one frame, two columns (at 2:17, 2:27) and a footer | One limit sentence per column |
+| 2:37–2:46 | End card: Foresight, repo link, "Every number comes from a script in the repo", names, "Thank you, Prior Labs" | Close |
+
+**What changed against sections 2–3, and why:**
+
+1. **The caption fixes (section 2, fixes 1–6) are done in the render:**
+   - "every half second" became "every 0.4 seconds": the street pipeline predicts every 2 × 0.2 s.
+   - "Shown 5,000 example rows" became "thousands of example rows".
+   - The problem card now cites 0.25–0.43 m, the f4 rows.
+   - The street tests and the old "Honest limits" panel are gone; that is where the three proofs now sit.
+   - The street's live "inside its range so far: X%" counter is removed, since no street number goes on screen.
+2. **The street's honesty caption sits inside the info card**, as its subtitle: "Simulated street, never seen by the model · robot route scripted". It is not a bar across the top: as a bar it covered the rush-hour card.
+3. **The event cards are in plain words, and "zebra" became "crossing":**
+
+   | Event | Card title | Why it matters |
+   |---|---|---|
+   | Sudden stop | A person stops suddenly | A "keep walking" guess would put them metres ahead. Their range has to stay with them. |
+   | Steps onto the crossing | A person steps onto the crossing | The robot's way across is blocked. It can't cross until it's clear. |
+   | Hard braking | A car brakes hard for them | It slows fast, so where it will be in 2 seconds changes fast too. |
+   | Jaywalker | Someone crosses away from the crossing | No usual path predicts this. A range covers what a single guess misses. |
+   | Rush hour | Rush hour: more people, more cars | Everyone hurries. The ranges have to keep up with the new pace. |
+
+   The first version was hard to read for someone new to the project, and "zebra" is not a word everyone knows.
+4. **The proofs are drawn as simple bar charts in the video's own style** instead of `fig_t5.png`, `fig_highway.png` and `fig_loso5.png`. Those figures are dense research plots: unreadable at video size, and the left panel of `fig_t5.png` shows the planner result. Each column has one chart, one verdict line and a short source line. The numbers come from the STORY.md ledger:
+   - **Proof 1:** 59% vs 41% inside the range after the crowd changes (crossing crowd), +18 points, ahead in all three crowds.
+   - **Proof 2:** cars, interval score 3.57 for TabPFN on 1,500 rows against 3.74 for the best-fitted LightGBM on 100,440; 86% vs 72% inside.
+   - **Proof 3:** five real scenes, 1.36 for TabPFN on 1,500 rows, 1.49 for LightGBM on the same rows, 1.37 for LightGBM on about 22,000 (15×).
+   - The CEO-check clips (`highway.gif`, `scenes5.gif`) are not in this render. The editor can lay them over the proof 2 and 3 columns, or show them in the deck.
+5. **Proofs and limits are one steady frame each, not a card per point.** Nine full-screen cards in about 77 s changed every 7–11 s and were tiring to watch. Each frame now builds up column by column in time with the voice-over.
+6. **"Where it breaks" has two limits, not four lines:**
+   - **The robot wasn't faster:** +4.3 s at the same closest gap, +3.0 s at the same collision rate. Why: the planner only checks whether a move enters a box, so it ignores the range's shape.
+   - **Each body needs its own examples:** predicting cars from pedestrian rows scores 51.7, against 13.0 for car rows. Why: people and cars move differently; the code carries over, the examples don't.
+   - **Footer:** the robot loop and the cars are simulated (real data: pedestrians only) · TabPFN-3.5 weights are non-commercial.
+   - **The new-place tie is no longer listed as a limit.** On five scenes TabPFN on 1,500 rows ties a LightGBM given 15× more data, which is the data-efficiency result of proof 3, not a failure. Proof 3 says it: "Same quality from 15× fewer rows". The honest wording stays in STORY.md: claim A ("honest ranges in a new place") held on two scenes and tied on five. Say so if asked; don't call it a win in calibration.
+   - The planner result is a limit both here and in STORY.md, and the bodies result is the per-body bank point.
+7. **The length is 2:46**, under 3:00.
+
+**Voice-over for the two frames** (a sentence each, about 9–10 s):
+- Proof 1 (over the clip and the first column): as section 3.
+- Proof 2: "It works across modalities: on cars it matches LightGBM with 67 times less data."
+- Proof 3: "It works with very little data: on five real scenes, the same result as LightGBM given 15 times more."
+- Limit 1: "The robot wasn't faster. Our planner only checks whether a move enters a box, so it ignores the range's shape."
+- Limit 2: "Each body needs its own examples. People and cars move differently; the code carries over, the examples don't."
+
+**Prepared, not yet rendered:** shorter proof titles, approved in a still frame. Re-render to include them; it takes about 10 min.
+- "Adapts to dynamic environments", "Works across modalities", "Works with very little data".
+- One-line verdicts: "+18 points, no retraining", "Same result, 67× less data", "Same result, 15× less data".
+- "Mistake score (lower is better)" in place of "range score".
+
 ---
 
 ## 1. The whole story on one card
