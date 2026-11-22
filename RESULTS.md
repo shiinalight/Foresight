@@ -452,6 +452,10 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
   - **Detectable time difference at n = 20:** about 2.6 s (80% power, 5% two-sided, the cell's median paired SD of 4.16 s), against 1.84 s at 40. Claim C is a stress test anyway.
   - **Exploratory (a)** keeps its stated margins (0.158 m, 0.244), so it has less power at 20 seeds.
   - **The in-loop claim B comparison** (split vs tabpfn vs lgbm_all at q0.15, before and after the switch, paired by seed) is now the main closed-loop question.
+- **Compute, part 6** (Sun 22 Nov ~01:52):
+  - Every smoothing-ON arm was stopped: baselines, oracle and fast-replan, all tagged `-sm`. Their partial rows are in `results/closed/discarded/smoothing_on/`.
+  - Baseline and oracle seeds beyond 3019 were stopped (`tools/seed_cap.ps1 -PythonOnly`). Arms that had already run 40 seeds keep those rows.
+  - Neither set is used in any analysis: smoothing is OFF by the T4 gate, and the primary test runs on the common seeds 3000–3019.
 
 ## Deployment notes (wording rules for the deck)
 
