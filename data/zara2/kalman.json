@@ -1,0 +1,7 @@
+{
+ "kalman_q": 0.1,
+ "kalman_r": 0.1,
+ "tuned_on": "copied from data/eth and data/hotel (no tuning on this scene)",
+ "noise": 0.0,
+ "grid_edge": false
+}

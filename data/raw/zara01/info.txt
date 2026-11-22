@@ -1,0 +1,2 @@
+Source: OpenTraj (github.com/crowdbotp/OpenTraj, datasets/UCY/zara01), downloaded 2026-11-22 with user approval.
+UCY crowd data (Lerner, Chrysanthou, Lischinski 2007).
