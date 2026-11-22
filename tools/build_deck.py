@@ -185,7 +185,7 @@ def build():
                     "0.4 s replan period; 10 Hz needs the background rebuild, which is designed but not built. No Jetson "
                     "was measured. TabPFN-3.5 has 219 M parameters, 3.5-Fast 83.5 M. The 3.5 weights are "
                     "non-commercial: research prototype; a product needs the commercial licence or the Apache v2 weights.")
-    _text(s, "NVIDIA L4: TabPFN 71 ms, full loop 225 ms per plan · fits the 0.4 s replan period", Inches(0.6), Inches(6.8), Inches(12.1),
+    _text(s, "TabPFN step 71 ms per replan on an NVIDIA L4 · full loop 225 ms · inside the 0.4 s replan period", Inches(0.6), Inches(6.8), Inches(12.1),
           Inches(0.5), 14, color=MUTED)
     image(s, "diagrams/12_deployment.png")
 

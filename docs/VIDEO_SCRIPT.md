@@ -32,6 +32,6 @@ Beats: 15 + 15 + 25 + 20 + 25 + 25 + 20 + 20 + 15 = 180 s, at most 2.3 words per
 - **"not because of TabPFN: every learned planner drove the same":** T5 at q 0.15, split 26.23 s, frozen 26.35 s, LightGBM 25.90 s. Paired: split − frozen −0.12 s [−1.35, +1.25], split − LightGBM +0.33 s [−1.29, +1.99] (`RESULTS.md`, T5 "What this says").
 - **"Still short of eighty percent":** after the switch the best in-loop coverage is 59.3% (split).
 
-**If the real-data claim B result (`results/realdata_claimb.csv`) is positive,** add to the 2:05 beat: "and on real pedestrians too". Say it only if the split − frozen interval excludes 0 from 5 s on.
+**Real-data claim B** (`results/realdata_claimb.csv`) is small and direction-dependent (interval score −0.045 [−0.080, −0.009], coverage level, level with the offset), so it stays out of the video.
 
 **Cut order if long:** the intent sentence (1:40 beat), then one walkthrough stage (s5). **Never cut** the open, the close, the demo or "where it breaks".
