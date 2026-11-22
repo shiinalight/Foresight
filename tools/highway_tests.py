@@ -315,7 +315,7 @@ def figure(dry=False):
     ax.set_xlabel("x along the road (m)"); ax.set_ylabel("y across (m)\n(stretched 3x)")
     ax.set_aspect(3.0)
     em = meta["episodes"][str(ep)]
-    ax.set_title(f"Highway cars on the unchanged core: episode {ep}, t = {t:.1f} s, {t - em['regime_switch_t']:.1f} s after "
+    ax.set_title(f"Highway cars on the same core: episode {ep}, t = {t:.1f} s, {t - em['regime_switch_t']:.1f} s after "
                  f"the traffic switched {em['regime_before']} -> {em['regime_after']}. Bank never saw '{UNSEEN}'.",
                  fontsize=10, loc="left")
     ax.legend(loc="upper left", fontsize=8, frameon=False, ncol=4, bbox_to_anchor=(0, -0.22))
