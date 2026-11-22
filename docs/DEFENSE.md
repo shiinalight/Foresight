@@ -220,6 +220,8 @@ D-21 calls it "perfect prediction", and the gate reads "no learned predictor can
 
 **Answer today.** It is perfect open-loop prediction under the current command: a strong reference for what better prediction could buy, not a strict upper bound.
 
+**Result (Sun 22 Nov):** the open-loop oracle gate failed in the chosen cell; see Q&A 0 (time floor 17.74 s, vo w0.5 1.50 s above it).
+
 **Fix.** Rename it to "open-loop oracle" in D-21, RESULTS and the deck (5 min). A per-candidate oracle (one twin rollout per candidate, about 22 per replan) is about 22× the simulation cost. It is feasible on a few seeds only, so it **does not fit** as a gate; list it as a limitation.
 
 ### 8. "You starve TabPFN of data and run the wrong tier."
@@ -293,6 +295,15 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 ---
 
 ## Q&A sheet
+
+**Closed loop after the oracle gate (Sun 22 Nov, amendment 2)**
+
+0. **Q: Your own oracle failed the gate. Doesn't that sink claim C?**
+   - Yes, as pre-registered: claim C is reported as a stress test, not as evidence (D-33, amendment 2).
+   - In the chosen cell (repulsion 2, ignore 0.2, 24 people) the open-loop oracle beats stop_go but is only 1.59 s faster than constant velocity at margin 0.2 [0.86, 2.39], short of the 2 s margin. vo w0.5 is faster than every oracle point.
+   - **The gate was hardly passable.** The time floor (straight start-to-goal distance minus the 0.5 m arrive radius, at the 1.0 m/s top speed) averages **17.74 s** over the 20 seeds. vo w0.5 runs at 19.24 s, **only 1.50 s above the floor**, so no planner could be 2 s faster than it.
+   - D-14's 2 s was a detectability margin (from the pilot's paired spread), not an estimate of the headroom.
+   - What T5 still tests: in-loop calibration (claim B in the loop, before and after a switch into an unseen regime) and, as exploratory analysis, safety at matched time. Both were added after the gate was seen, and say so.
 
 **Framing and novelty**
 
