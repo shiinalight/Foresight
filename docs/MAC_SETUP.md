@@ -62,6 +62,22 @@ The main laptop runs TabPFN on CPU under x64 emulation. Live TabPFN there needs 
 | GPU check shows large differences | TabPFN on MPS doesn't match CPU | Report it; run on CPU (`TABPFN_EXCLUDE_DEVICES=mps`) |
 | TabPFN asks for a login or fails to download | Token missing or licence not accepted | Step 2 |
 | A golden-checksum test fails | Same cause as "Data DIFFERS" | Report it with the failing test's name |
+| `FileNotFoundError: data/crowd/meta.json` in the smoke test | `setup.sh` builds only `data/crowd_cross`, but `tools/check_mps.py` and `tools/latency.py` read the plaza bank `data/crowd` | Inside `.venv`: `python -m foresight.domains.crowd --episodes 80 --seed 0 --switch-prob 0.5 --out data/crowd` (matches `docs/DATA.md`: 80 episodes, 36 switch). Then re-run the smoke test |
+| `TabPFNLicenseError: ... licence for tabpfn_3_5 has not been accepted` | Local weights need the licence accepted once per account; the hosted API does not ask for it | Open https://ux.priorlabs.ai/accept-license?hf_repo_id=tabpfn_3_5 while logged in, accept, re-run |
+| `Segmentation fault: 11` when `run_closed.py` reaches `lgbm_all` | Probably LightGBM and PyTorch loading two OpenMP runtimes on macOS | Report it. The TabPFN planners run fine without it: `--planners tabpfn tabpfn_live oracle` |
+
+## Measured on an M3 Pro (Sun 22 Nov)
+
+Full numbers: `docs/runs/mac_smoke.md`. On the Apple GPU (MPS), with predictions identical to CPU (largest difference 1.3 cm):
+
+| | M3 Pro (MPS) | Main laptop (x64 emulation, CPU) |
+|---|---|---|
+| TabPFN-3.5, 1 estimator: predict 32–64 people | 0.17–0.18 s | — |
+| TabPFN-3.5-Fast, 1 estimator: predict 32–64 people | 0.09 s | — |
+| Frozen TabPFN in the robot loop | 130–135 ms per plan | ~200–500 ms |
+| Live TabPFN in the robot loop | 287–321 ms per plan (fits the 400 ms replan) | ~1,600–1,700 ms |
+
+**Disk:** about 3 GB free is needed: `.venv` 1.6 GB, TabPFN weights 1.1 GB (in `~/Library/Caches/tabpfn`, delete them afterwards to free the space), data 0.2 GB.
 
 ## Rules
 
