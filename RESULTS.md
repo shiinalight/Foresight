@@ -506,6 +506,11 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 - **This reproduces WP-J2's offline Setting B result in closed loop** (simulated crowd only).
 - **The wider boxes are also why the split planner is slower:** better-calibrated ranges made the robot more cautious, not faster, in this crowd.
 
+**Extension to 40 seeds** (started Sun 22 Nov ~02:25 Berlin, before any result from seeds 3020–3039; `tools/t5_extend.py`):
+- **Why:** spare CPU, as addendum part 5 allows.
+- **Same arms and dials:** tabpfn_split q0.15 and q0.10, frozen tabpfn q0.15, lgbm_all q0.15, vo w 0.5/1/2 and oracle m 0.2/0.4/0.6, on only the seeds not yet run.
+- **The 20-seed analysis above stays the confirmatory result.** The 40-seed tables follow as an update, computed by the same scripts and rules.
+
 **Showcase seed** (CTO's rule): **3013**, a seed on which every primary-test planner reached the goal and tabpfn_split q0.15's time (25.8 s) is closest to its median (26.40 s).
 
 ## Deployment notes (wording rules for the deck)
