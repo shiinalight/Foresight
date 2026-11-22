@@ -429,14 +429,14 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
     - Forty fresh confirmatory seeds (D-14), from a power calculation on pilot paired standard deviations: 80% power, 5% two-sided.
     - That covers 2 s of time and 1 s of intrusion, and 0.5 s of intrusion for most pairs.
     - The learned T5 arms were cut to 20 seeds (3000–3019) before any learned result, for compute (addendum part 5). The detectable time difference at 20 seeds is about 2.6 s, against 1.84 s at 40.
-    - The real-data tables are single-seed (f1). The claim A rerun uses 5 context seeds.
+    - The f1 real-data tables were single-seed. The f4 claim A rerun uses 5 context samples of 1,500 rows and a paired person bootstrap (5,000 resamples by person; `results/claim_a_boot_f4.csv`, RESULTS "Claim A on feature version f4").
 
 22. **Q: Are the intervals by person?**
     - `tools/adapt_ci.py` and `failure_modes.py` resample whole people.
     - The f1 headline table has no intervals (RESULTS.md:134–135, "single seed").
 
 23. **Q: Multiple comparisons?**
-    - Not corrected. There are many planners × dial settings × metrics.
+    - The primary T5 test is corrected: amendment 1 added Holm–Bonferroni across the four baselines at 5% (RESULTS pre-registration; `curve_compare.py --holm`). Everything else is not corrected, and there are many planners × dial settings × metrics.
     - The pre-registered rule reduces each planner to one operating point. Two claims are kept separate: navigation against baselines, and TabPFN against LightGBM (RESULTS.md:165–169).
     - Treat everything outside the pre-registered contrast as exploratory.
 
@@ -470,7 +470,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 
 30. **Q: Is the simulation real-time?**
     - No. Latency is zero (RESULTS.md:181), and measured plan times exceed the 0.4 s replan period on emulated CPU (DEPLOYMENT.md:23–25).
-    - T4 sweeps a latency budget of 0 / 0.2 / 0.5 / 1.0 s in virtual time.
+    - The planned latency sweep (0 / 0.2 / 0.5 / 1.0 s in virtual time) was replaced by a single 0.4 s latency arm, predictions one replan period stale (T4 addendum part 3). That arm was dropped from T5 for compute (addendum part 5) and is now running on the L4 pod; no result yet.
 
 31. **Q: People react to the robot. Do your boxes?**
     - Only through the robot's current relative position and closing speed in the features.
@@ -487,7 +487,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 **Deployment**
 
 33. **Q: Can this run on a robot?**
-    - Not demonstrated. All timings are x64 PyTorch emulated on an ARM laptop CPU (DEPLOYMENT.md section 2), and there are no GPU or MPS timings yet.
+    - Not demonstrated on a robot. Laptop timings are x64 PyTorch emulated on an ARM laptop CPU (DEPLOYMENT.md section 2). On a rented NVIDIA L4 GPU (DEPLOYMENT.md, "Measured on a GPU") TabPFN takes 71 ms per replan and the full loop 225 ms per plan, inside the 0.4 s replan period. No MPS (Mac) timing yet, and no embedded (Jetson-class) GPU measured.
     - The architecture batches all people and horizons into one call over a cached context (`fit_with_cache`).
     - Parameter counts: 219 M (3.5) and 83.5 M (Fast) (RESULTS.md:179).
 
@@ -508,7 +508,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 37. **Q: Your TabPFN planner is slower than the baselines, so what does TabPFN buy?**
     - Calibrated ranges that adapt in the loop after a regime shift. After the crowd turns erratic, the split model (frozen bank plus this scene's recent rows) against frozen TabPFN: coverage 59.3% vs 49.3% (+10.0 pts [+8.4, +11.6]), interval score 5.03 vs 6.34 (−1.31 [−1.55, −1.08]), median error −0.057 m [−0.094, −0.021]. Against LightGBM on all rows: +18.0 pts, interval score −2.00 (`results/inloop_claimb.csv`, 20 paired seeds).
     - Limits: no model reaches 80% after the switch, and before it split is slightly worse (interval score +0.18). On real pedestrians (from 5 s, split vs frozen, paired person bootstrap, `results/realdata_claimb.csv`): small gain, interval score −0.045 [−0.080, −0.009] pooled (1,540 rows, 544 people), coverage level (+1.3 pts [−0.5, +3.1]), level with the offset on both; direction-dependent (ETH→Hotel −0.046 [−0.086, −0.005], narrower boxes at equal coverage; Hotel→ETH −0.045 [−0.093, +0.007], level). Against LightGBM: +17.1 pts coverage, interval score −0.254. The real scenes have no sudden behaviour switch, which is where the simulator's +10 pts came from.
-    - Why it is slower: not calibration. At the same caution setting (q 0.15) the split, frozen TabPFN and LightGBM planners all take about 26 s (split − frozen −0.12 s [−1.34, +1.26]; split − LightGBM +0.33 s [−1.34, +2.02], 20 paired seeds), although LightGBM's boxes are 0.63 m narrower after the switch. 40-seed update (exploratory, `results/t5_primary_40.csv`): split and frozen TabPFN still drive the same (+0.03 s [−1.08, +1.16]), but LightGBM's narrower, less honest boxes (41% vs 59% coverage after the switch) make it 1.24 s faster [+0.17, +2.34]; every learned planner stays 3–5 s slower than cv and vo at comparable safety. Better prediction did not change how this box planner drives; its caution setting did. An exploratory dial sweep on fresh seeds tests lower settings (`docs/EXPLORATORY_DIALS.md`).
+    - Why it is slower: not calibration. At the same caution setting (q 0.15) the split, frozen TabPFN and LightGBM planners all take about 26 s (split − frozen −0.12 s [−1.35, +1.25]; split − LightGBM +0.33 s [−1.29, +1.99], 20 paired seeds), although LightGBM's boxes are 0.63 m narrower after the switch. 40-seed update (exploratory, `results/t5_primary_40.csv`): split and frozen TabPFN still drive the same (+0.03 s [−1.08, +1.16]), but LightGBM's narrower, less honest boxes (41% vs 59% coverage after the switch) make it 1.24 s faster [+0.17, +2.34]; every learned planner stays 3–5 s slower than cv and vo at comparable safety. Better prediction did not change how this box planner drives; its caution setting did. An exploratory dial sweep on fresh seeds tests lower settings (`docs/EXPLORATORY_DIALS.md`).
     - Next work, not done: a planner that uses the shape of the range, not only its width, for example a chance-constrained cost.
 
 38. **Q: Do you use TabPFN for anything beyond one range model?**
@@ -516,7 +516,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
     - Real pedestrians (Hotel → ETH): balanced accuracy 0.49 (chance 0.25). Adopted: on turning people interval score 3.59 → 3.33 (−0.263 [−0.481, −0.075]; 73 rows, 37 people); overall level (−0.022 [−0.057, +0.009]); joint coverage +5.0 pts overall, +16.9 on turns; median error +0.007 m (slightly worse).
     - Simulated crowd: balanced accuracy 0.30, because simulated people pick turns at random. Not adopted: overall interval score worse.
     - TabPFN's class probabilities are much better calibrated than LightGBM's (log loss 0.24 vs 0.71 real, 0.81 vs 1.53 sim).
-    - Caveats: 37 turning people, 3 context seeds, offline only. On real data the classifier names no turn outright (TabPFN's turn recall is 0, LightGBM's at most 0.01).
+    - Caveats: 37 turning people, 3 context seeds on real data and 2 in simulation, offline only. On real data the classifier names no turn outright (TabPFN's turn recall is 0, LightGBM's at most 0.01).
 
 ---
 

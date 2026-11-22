@@ -5,8 +5,8 @@
 **Why.**
 - In T5 the TabPFN planner ran only at q 0.10 and 0.15, which gave 26–29 s. The baselines sat at 20–26 s, so most primary rows could only be judged by dominance or were "not comparable".
 - A check on existing rows also showed that the split, frozen TabPFN and LightGBM planners all take about 26 s at q 0.15:
-  - split − frozen: −0.12 s [−1.34, +1.26];
-  - split − lgbm_all: +0.33 s [−1.34, +2.02].
+  - split − frozen: −0.12 s [−1.35, +1.25];
+  - split − lgbm_all: +0.33 s [−1.29, +1.99].
 - So the slowness comes from the box planner's caution setting, not from TabPFN's calibration.
 - This sweep asks: across the dial, does the planner's time-safety curve reach the baselines' curves, or beat them?
 

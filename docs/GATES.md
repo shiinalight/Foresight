@@ -68,6 +68,7 @@ Two consequences:
 
 **Closed loop:**
 - at least 100 paired seeds, the same crowd for every planner;
+  - replaced by the power calculation in D-14: 20 confirmatory seeds (T5, 3000–3019), 40 as an update (3000–3039);
 - sweep the caution dial: 3 to 5 levels per planner (`box_q` for learned models, margin for constant velocity);
 - plot time to goal against minimum gap and collision rate, one curve per planner;
 - report freeze rate, fallback rate, and all collisions as well as moving-robot collisions (a person walking into a stopped robot still counts in the real world);

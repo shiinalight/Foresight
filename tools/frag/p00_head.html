@@ -32,10 +32,10 @@
     <li><a href="#d-got">&nbsp;&nbsp;What we got</a></li>
     <li><a href="#d-fixes">&nbsp;&nbsp;Data issues fixed</a></li>
     <li><a href="#exp">5 Experiments</a></li>
-    {{NAVOPT:p05b_validation.html}}
+    <li><a href="#validation">5b Validation: what we tested, how, and why</a></li>
     <li><a href="#decisions">6 Decisions log</a></li>
     <li><a href="#fixes">7 Mistakes fixed</a></li>
-    <li><a href="#method">8 Validation and statistics</a></li>
+    <li><a href="#method">8 Statistics notes</a></li>
     <li><a href="#compute">9 Compute and budget</a></li>
     <li><a href="#redteam">10 Red team</a></li>
     <li><a href="#open">11 Open questions</a></li>
@@ -46,7 +46,7 @@
 
 <main>
 <header class="hero">
-  <div class="eyebrow">Internal · HackLab Berlin 2026 · Prior Labs track · status Sun 22 Nov, ~01:45 Berlin · branch darshak/core at c9823d0</div>
+  <div class="eyebrow">Internal · HackLab Berlin 2026 · Prior Labs track · status Sun 22 Nov, ~04:00 Berlin · branch darshak/core</div>
   <h1>Foresight <span>internal reference</span></h1>
   <p class="lede">Everything the team needs to understand Foresight and trace each decision: what we built, why, how, on which data, how every layer is parameterised and tested, every experiment with the gate written before it, every fix, and what is still open.</p>
   <p>Foresight predicts where each person near a robot will be 1 and 2 s ahead as a <strong>box</strong> (per-axis quantile range in the person's own frame), using TabPFN reading labelled example rows instead of being trained, and plans the robot's move around those boxes. The public-facing explainer is <code>docs/explainer.html</code>; this page is the working reference behind it.</p>
