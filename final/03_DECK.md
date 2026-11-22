@@ -1,4 +1,4 @@
-> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 14:44 (after commit `15b3ee5`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 14:58 (after commit `385fb2c`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: finalist deck outline (5 minutes)
 
@@ -6,7 +6,7 @@ The plan for the finalist deck: for each slide, the job it does, the headline, w
 
 **Arc:** problem → the idea → watch it work → three proofs → where it stops → what it's for.
 **Pace:** 10 slides at about 30 s each. One idea per slide. Numbers go on the slide only where a number is the point.
-**As built (22 Nov, 14:15).** `python tools/build_outline_deck.py` writes the finished deck, `deck/Foresight_finalist.pptx`: 10 talk slides, a closing slide and 11 backup slides, in the 3D video's look (warm page, white cards, orange #C24E1C as the only accent, Arial). Time, speaker and the spoken text are in the speaker notes. `--static` writes `deck/Foresight_finalist_static.pptx`, where each clip is replaced by its last frame; `deck/Foresight_finalist.pdf` is exported from that one. Where the built deck differs from the plan below, the "Built" line under the slide says how.
+**As built (22 Nov, 14:15).** `python tools/build_outline_deck.py` writes the finished deck, `deck/Foresight_finalist.pptx`: 10 talk slides, a closing slide, a "Backup slides" divider and 11 backup slides (23 in all), in the 3D video's look (warm page, white cards, orange #C24E1C as the only accent, Arial). Time, speaker and the spoken text are in the speaker notes. `--static` writes `deck/Foresight_finalist_static.pptx`, where each clip is replaced by its last frame; `deck/Foresight_finalist.pdf` is exported from that one. Where the built deck differs from the plan below, the "Built" line under the slide says how.
 
 **Decision (22 Nov, 14:45, Darshak): we present the local pptx, `deck/Foresight_finalist.pptx` (static copy and PDF beside it). The Canva deck is not used; the table below is kept only as a record.**
 
@@ -21,7 +21,9 @@ The plan for the finalist deck: for each slide, the job it does, the headline, w
 | 8, 9 | The numbers on 8 and the card on 9 are in a different font from the rest | Set the font by hand in Canva |
 | 10 | The close lacks the product line | Add "One example bank per body, no retraining" |
 | all but 9 | Presenter notes are empty | Paste the "Say" lines from this outline, or read them from the pptx notes |
-| — | No backup slides | Keep `deck/Foresight_finalist.pdf` (pages 12–22) open for questions |
+| — | No backup slides | Keep `deck/Foresight_finalist.pdf` (pages 13–23) open for questions |
+
+**De-slop pass (22 Nov, 15:00, on Darshak's go).** Nine changes after a self-review: slide 8 leads with "5 of 5 scenes", "4 of 5 scenes", "15× less data" and keeps the scores as small print; slide 3 draws the table; slide 4 has larger pictures and no filler line; "rows" is the one word for data; labels are sentence case with no letter-spacing and no decorative bars; the closing slide is four plain lines with the number first; slide 6's headline is one line ("Reading the scene kept more people inside their ranges"); slide 7 says what the interval score is; slide 10 says "rules out moves too close in the next 0.4 s" (the planner's short check, which assumes people keep walking straight, `foresight/core/planner.py`; a check, not a guarantee) and "New body: new bank".
 
 **Speakers:** Darshak opens and takes the idea and the proofs; Nooshin takes the 3D walkthrough and the street demo. Swap if you prefer; switch speakers at most twice.
 
@@ -50,7 +52,7 @@ The plan for the finalist deck: for each slide, the job it does, the headline, w
 - **Visuals:** `media/diagrams/03_row.png` (one person becomes one row) and `media/diagrams/05_live_context.png` (frozen bank plus the scene's newest rows, swapped every 2 s).
 - **Say:** each person, at each moment, is one row: their motion, neighbours, the robot, obstacles. TabPFN reads a few thousand example rows and answers in one pass, with no training. To adapt to a new place, a new behaviour or a new body, change the rows.
 - **On slide:** "No training step. Adapting = swapping rows."
-- **Built:** the video frame with the table on the left (`media/deck/3d_step2_row.jpg`); on the right a drawn flow: example bank (2,000 rows, frozen) plus this scene (up to 250 newest rows, swapped every 2 s) → TabPFN → a range for every agent.
+- **Built:** a drawn table on the left (four agents, the numbers of the video's step-2 card, the last column "where in 2 s?" open); on the right a drawn flow: example bank (2,000 rows, frozen) plus this scene (up to 250 newest rows, swapped every 2 s) → TabPFN → a range for every agent.
 
 ### 4 · How it reads one person (15 s) · Nooshin
 - **Headline:** From sensor dots to a range, in four steps.
@@ -58,7 +60,7 @@ The plan for the finalist deck: for each slide, the job it does, the headline, w
 - **Visuals:** a strip of four stills: `3d_step1_watching.jpg` → `3d_step2_row.jpg` → `3d_step4_tabpfn.jpg` → `3d_step5_sizing.jpg`.
 - **Say:** a filter smooths the noisy track; the moment becomes a row; TabPFN predicts the correction to walking straight as a 5–95% range; the range is sized so the truth lands inside as often as promised.
 - **Alternative:** play this part of the 3D video (about 40 s) and drop slide 5's clip.
-- **Built:** four cards from frames of the 2:46 video (`media/deck/3d_step1_watch.jpg` to `3d_step4_size.jpg`), each with a number, a word and one sentence.
+- **Built:** four pictures, two by two, from frames of the 2:46 video (`media/deck/3d_step1_watch.jpg` to `3d_step4_size.jpg`), each with a number, a word and one sentence.
 
 ### 5 · Watch it on a street (35 s) · Nooshin
 - **Headline:** A street run the model has never seen.
