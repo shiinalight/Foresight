@@ -1,7 +1,7 @@
 {
  "seed": 3013,
- "commit": "beed64b",
- "generated": "2026-11-22 03:54",
+ "commit": "e423e15",
+ "generated": "2026-11-22 03:57",
  "settings": "smoothing off, online offset batch (alpha 0.2, eta_b 0.05 per 2 s batch)",
  "switch_t": 5.0,
  "switch_to": "erratic",
@@ -9,6 +9,8 @@
  "truth": "features.build_rows(full history, h = 2 s, row_every = dt) true positions, inner-merged on (agent_id, t), as Predictor.inloop_stats",
  "post_definition": "forecast made at t >= switch_t (so the first post forecasts come due at switch_t + 2 s)",
  "nominal_joint_coverage": "a 5-95% interval on each of two axes covers ~0.9 x 0.9 = 81% jointly if calibrated and independent",
+ "box_width_and_score_post_meaning": "run_episode's in-loop aggregates after the switch: w90 = mean 5-95% width per axis (m), is90 = interval score (width + 20 x miss distance; lower is better, so wider boxes do not win it for free), err = median error of the median forecast (m)",
+ "grey_people": "not scored: a person who reaches their goal respawns under a new id; new arrivals have no forecast yet and people about to arrive have no 2 s outcome (dropped the same way in T5)",
  "planners": [
   {
    "planner": "tabpfn_split",
@@ -40,6 +42,11 @@
     "csv_seeds": 20
    },
    "matches_t5": true,
+   "box_width_and_score_post": {
+    "w90": 2.081022022562472,
+    "is90": 5.159437829434611,
+    "err": 1.0272748822693945
+   },
    "wall_s": 69.12471010000445
   },
   {
@@ -72,6 +79,11 @@
     "csv_seeds": 20
    },
    "matches_t5": true,
+   "box_width_and_score_post": {
+    "w90": 1.475235069501001,
+    "is90": 6.528187336291698,
+    "err": 0.9499812214053485
+   },
    "wall_s": 38.04881549999118
   }
  ]

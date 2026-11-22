@@ -10,8 +10,9 @@ tools/render_compare.py.
 What a frame at time T shows, per panel: the box each planner drew at its replan at T - 2 s for where each person would
 be at T (the RAW 5-95% box, q05/q95 along and across the person's heading, centred on the constant-velocity point;
 not the q15-85 box widened by the online offset that the planner steers with), and where each person actually is at T:
-green inside their box, red outside. People the planner had no forecast for are grey. Frames are 0.4 s apart (one per
-replan), so every box meets its own outcome.
+green inside their box, red outside. Grey people are not scored: in this crowd a person who reaches their goal respawns
+under a new id, so a new arrival has no track history yet (no forecast) and a person about to arrive has no 2 s outcome
+(run_closed drops both the same way). Frames are 0.4 s apart (one per replan), so every box meets its own outcome.
 
 Scoring is run_closed's in-loop claim-B rule exactly (Predictor.inloop_stats): truth rows from features.build_rows on
 the full episode history at h = 2 s, inner-merged on (agent_id, t); a forecast is "after the change" when it was MADE
@@ -128,7 +129,7 @@ def draw_panel(ax, R, T, args):
     st = state_at(R, T, args.dt)
     m = R["m"][np.isclose(R["m"].t, round(T - H, 6))]
     have = set(m.agent_id.astype(int))
-    for r in st[1:]:                                         # people with no scored forecast: grey
+    for r in st[1:]:                                         # not scored (just respawned / respawns within 2 s): grey
         if int(r["agent_id"]) not in have:
             out.append(ax.add_patch(Circle((r["x"], r["y"]), 0.2, color=C_MUTED, alpha=0.45, zorder=4)))
     for row in m.itertuples():
@@ -154,7 +155,7 @@ def legend(fig, y):
     fig.legend(handles=[Patch(facecolor=BOX_FC, edgecolor=C_PRED, label="5–95% box, drawn 2 s earlier"),
                         Line2D([], [], marker="o", ls="", color=C_GREEN, ms=12, label="person inside their box"),
                         Line2D([], [], marker="o", ls="", color=C_RED, ms=12, label="person outside"),
-                        Line2D([], [], marker="o", ls="", color=C_MUTED, alpha=0.6, ms=9, label="no forecast"),
+                        Line2D([], [], marker="o", ls="", color=C_MUTED, alpha=0.6, ms=9, label="not scored (arriving / leaving)"),
                         Line2D([], [], marker="o", ls="", color=C_ROBOT, ms=12, label="robot")],
                loc="center", bbox_to_anchor=(0.5, y), ncol=5, fontsize=12, frameon=False, handletextpad=0.3,
                columnspacing=1.4)
@@ -308,6 +309,7 @@ def main():
                      "t5_csv": t5,
                      "matches_t5": None if t5 is None else bool(abs(full - t5["inloop_cov90_post"]) < 1e-6
                                                                 and n_full == t5["inloop_n_post"]),
+                     "box_width_and_score_post": {k: float(res[f"inloop_{k}_post"]) for k in ("w90", "is90", "err")},
                      "wall_s": float(d["wall"])})
         t5s = "-" if t5 is None else f"{100 * t5['inloop_cov90_post']:.1f}% (n {t5['inloop_n_post']})"
         print(f"{label:<26} post-switch cov90: window to {a.t1:g} s {100 * win:.1f}% (n {n_win}), whole run "
@@ -325,6 +327,12 @@ def main():
              "post_definition": "forecast made at t >= switch_t (so the first post forecasts come due at switch_t + 2 s)",
              "nominal_joint_coverage": "a 5-95% interval on each of two axes covers ~0.9 x 0.9 = 81% jointly if "
                                        "calibrated and independent",
+             "box_width_and_score_post_meaning": "run_episode's in-loop aggregates after the switch: w90 = mean 5-95% "
+                                                 "width per axis (m), is90 = interval score (width + 20 x miss "
+                                                 "distance; lower is better, so wider boxes do not win it for free), "
+                                                 "err = median error of the median forecast (m)",
+             "grey_people": "not scored: a person who reaches their goal respawns under a new id; new arrivals have no "
+                            "forecast yet and people about to arrive have no 2 s outcome (dropped the same way in T5)",
              "planners": rows}
     Path(f"{out}_stats.json").write_text(json.dumps(stats, indent=1, default=str), encoding="utf-8")
     draw_strip(runs, base, f"{out}_strip.png", a.strip)
