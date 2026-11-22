@@ -152,7 +152,25 @@ Paired vehicle bootstrap, TabPFN minus rival, with 95% intervals:
 
 - TabPFN has the lowest interval score in every regime: aggressive 4.77 vs lgbm_all 4.93, defensive 3.03 vs 3.67, normal 3.10 vs 3.72.
 - Its coverage is 84–87% in every regime, slightly above the 81% target, while its boxes are the narrowest of the calibrated models.
-- On five pedestrian scenes (`docs/LOSO5.md`) TabPFN only tied lgbm_all. On cars it beats lgbm_all, which has 67x more rows, from the same simulator. lgbm_all uses LightGBM m50:n100 (100 trees), the `loso5.py` setting. `realdata_claimb.py` used the 300-tree default; that was not rerun here.
+- On five pedestrian scenes (`docs/LOSO5.md`) TabPFN only tied lgbm_all. On cars it beats the pre-set lgbm_all (67x more rows, same simulator) by the H1 rule, but against a well-fitted LightGBM the gain shrinks to a tie (robustness check below). lgbm_all uses LightGBM m50:n100 (100 trees), the `loso5.py` setting. `realdata_claimb.py` used the 300-tree default; that was not rerun here.
+
+### H1 robustness check (post-hoc, disclosed; run by the CEO review, `docs/CEO-HANDOVER.md` section 4a)
+
+The pre-set `lgbm_all` used LightGBM's small-data setting (min 50 rows per leaf, 100 trees) on 100,440 rows. That setting was chosen before the run, but a judge may ask whether it is underfit. Same split, same 1,500 test rows, same paired vehicle bootstrap (355 vehicles); the first row reproduces the stored `lgbm_all` rows exactly.
+
+| LightGBM on all rows | Box coverage | Interval score | Error | TabPFN − LightGBM, interval score | Coverage | Error |
+|---|---|---|---|---|---|---|
+| m50, 100 trees (pre-set) | 82.1% | 4.06 | 0.918 m | −0.49 [−0.66, −0.34] | +3.5 pts | −0.164 m |
+| untuned default (m10, 300 trees) | 78.9% | 3.90 | 0.854 m | −0.33 [−0.49, −0.18] | +6.7 pts | −0.100 m |
+| m20, 1,000 trees, 63 leaves | 71.6% | 3.74 | 0.741 m | −0.18 [−0.36, −0.01] | +14.0 pts | +0.013 m [−0.016, +0.044] |
+| m50, 2,000 trees, 127 leaves | 69.1% | 3.75 | 0.705 m | −0.18 [−0.37, +0.00] | +16.5 pts | +0.049 m [+0.020, +0.078] |
+| **TabPFN, 1,500 rows** | **85.6%** | **3.57** | 0.754 m | | | |
+
+**Reading:**
+- Bigger LightGBM models get sharper and more accurate at the centre, but more overconfident: coverage falls from 82% to 69% against an 81% target.
+- TabPFN keeps the best interval score at every setting. Against the largest model, though, the interval touches zero.
+- **So the honest wording for H1 is "TabPFN on 1,500 rows matches LightGBM trained on 67 times more, with more honest ranges", not "beats".** That is the same pattern as the five pedestrian scenes.
+- Limits: four settings picked after seeing H1, none tuned on a validation split, one run each.
 
 ### H2: adaptation after a switch to the unseen `aggressive` regime
 

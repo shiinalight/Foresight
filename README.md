@@ -6,6 +6,22 @@ HackLab Berlin 2026, Prior Labs track. Foresight is a sense-predict-plan layer f
 
 ![Every person's predicted 2 s box at one moment of a simulated crossing crowd](docs/walkthrough/s6_all_boxes.png)
 
+## In one screen
+
+**The robot's knowledge is a table of examples. It adapts to new behaviour, and to a new body, by swapping rows, with no training step.**
+
+| | Proof | Number | Limit |
+|---|---|---|---|
+| 1 | **Adapts when behaviour changes, no retraining** | After the crowd turns erratic, the scene-reading TabPFN keeps 59% of people inside its 2 s range against 41% for LightGBM (+18.0 pts [+16.7, +19.3]). Reading the scene alone adds 10 of those points over the same TabPFN without it. Ahead of LightGBM in all three simulated crowds (+6.6, +18.0, +19.7 pts) | Simulated crowds; still short of the 81% target; small on real pedestrians, who have no sudden switch |
+| 2 | **Same core, another body** | Highway cars through the unchanged core: TabPFN on 1,500 rows matches LightGBM trained on 67 times more, with more honest ranges (86% inside against 69–82%). After traffic turns aggressive, reading the scene adds 14 pts of coverage (76.7% vs 62.5%) | Simulated traffic, offline, no closed loop for cars; most of the gain in the first 6 s after the switch |
+| 3 | **Learns more per example** | Five real pedestrian scenes, each held out once: TabPFN beats LightGBM on the same 1,500 rows (interval score −0.130 [−0.154, −0.107]) and ties LightGBM trained on about 15 times more | Ties, not wins, against the bigger model; Zara1 and Zara2 share a camera |
+| + | **TabPFN at every step of the loop** | TabPFN predicts the ranges, adapts them from the scene, and a second TabPFN picks the robot's move: it matched the planner it learned from on 20 new crowds (goal 100% vs 100%, time 24.65 vs 24.10 s); safety checks override it at 0.9% | Shows TabPFN can be the controller, not a better one; the collision interval is too wide at 20 crowds to rule out a 25-pt worse rate |
+| ✗ | **What failed** | The robot beat no standard navigation planner under the pre-set test, in any of three crowds; it was 3–4 s slower at equal safety. Better ranges did not change how the box planner drives; its caution setting did | At a lower caution setting, and in the densest crowd, it is roughly level with the baselines (exploratory) |
+
+**When to use which:** few examples, or behaviour that just changed → TabPFN. Plenty of familiar data → a well-fitted LightGBM is as good. The next lever is the planner, not the forecaster: one that uses the full range instead of a box veto. On an NVIDIA L4 the TabPFN step takes 71 ms per replan. The TabPFN-3.5 weights are non-commercial.
+
+![Five real scenes, each held out once](media/fig_loso5.png)
+
 Video: [link: confirm] · Repository: `shiinalight/Robodetect`
 
 ## Start here
@@ -109,7 +125,7 @@ T5 then ran the primary test on 20 paired seeds (3000–3019). Source: `results/
 
 A 40-seed extension (same arms and rules) was declared after this analysis and before any of its results; the 20-seed analysis above stays the confirmatory result. Showcase seed 3013, picked by the rule in `RESULTS.md`; demo render: `media/demo/seed3013.gif`.
 
-**Second form factor: highway cars (exploratory, offline; `docs/HIGHWAY.md`, plan committed before any TabPFN run).** highway-env, 4 lanes, 20 cars at about 24 m/s, three driving styles with a sudden switch; the core (features, TabPFN quantiles) ran unchanged. **H1, same core on cars: passed.** TabPFN 85.6% joint coverage, interval score 3.57, against LightGBM on all 100k rows 82.1% / 4.06 (−0.49 [−0.66, −0.34]) and CV + band 82.9% / 7.78. **H2, adapts after cars turn aggressive (style never in the bank): passed.** Scene-reading TabPFN against frozen: coverage 76.7% vs 62.5%, interval score −0.98 [−1.41, −0.56]; about 80% of the gain is in the first 6 s after the switch (coverage 20% → 51%). A pedestrian bank predicting cars fails safe but useless (boxes about 50 m wide); adding car scene rows halves the damage but does not rescue it, so the bank must match the embodiment. ![Highway cars: TabPFN boxes at +2 s and where each car went](media/fig_highway.png)
+**Second form factor: highway cars (exploratory, offline; `docs/HIGHWAY.md`, plan commit 34f1954; the order against the first TabPFN call cannot be proven to the minute, see the doc).** highway-env, 4 lanes, 20 cars at about 24 m/s, three driving styles with a sudden switch; the core (features, TabPFN quantiles) ran unchanged. **H1, same core on cars: passed.** TabPFN 85.6% joint coverage, interval score 3.57, against the pre-set LightGBM on all 100k rows 82.1% / 4.06 (−0.49 [−0.66, −0.34]) and CV + band 82.9% / 7.78. A post-hoc check against well-fitted LightGBM (1,000–2,000 trees) shrinks this to a tie (−0.18 [−0.37, +0.00]), with LightGBM's coverage falling to 69–72%: **TabPFN on 1,500 rows matches LightGBM trained on 67 times more, with more honest ranges.** **H2, adapts after cars turn aggressive (style never in the bank): passed.** Scene-reading TabPFN against frozen: coverage 76.7% vs 62.5%, interval score −0.98 [−1.41, −0.56]; about 80% of the gain is in the first 6 s after the switch (coverage 20% → 51%). A pedestrian bank predicting cars fails safe but useless (boxes about 50 m wide); adding car scene rows halves the damage but does not rescue it, so the bank must match the embodiment. ![Highway cars: TabPFN boxes at +2 s and where each car went](media/fig_highway.png)
 
 **5. Intent chain: TabPFN at two chained layers, offline.** A TabPFN classifier predicts each person's next manoeuvre (straight, stop, turn left, turn right). Per-manoeuvre TabPFN range models then give the 2 s range, mixed by the classifier's probabilities. The pass/fail gate was fixed in the script before any result. Source: `results/intent_layer.log` / `.csv`, written by `tools/intent_layer.py`; `media/fig_intent_layer.png`.
 
