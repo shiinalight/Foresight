@@ -1,0 +1,9 @@
+tier,step,rows,query,median_ms,p90_ms,device,gpu,torch,tabpfn
+"3.5-Fast, 1 est (shipped)",frozen_fit,2000,0,4685.096800036263,6271.429739985615,cpu,"ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",2.11.0+cpu,9.2.0
+"3.5-Fast, 1 est (shipped)",predict,2000,16,163.90560002764687,177.76383998570964,cpu,"ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",2.11.0+cpu,9.2.0
+"3.5-Fast, 1 est (shipped)",predict,2000,48,243.6959000187926,245.64478000393137,cpu,"ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",2.11.0+cpu,9.2.0
+"3.5-Fast, 1 est (shipped)",predict,2000,96,289.91160000441596,299.1355199716054,cpu,"ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",2.11.0+cpu,9.2.0
+"3.5-Fast, 1 est (shipped)",scene_refit,50,0,421.7128999880515,576.4724200009368,cpu,"ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",2.11.0+cpu,9.2.0
+"3.5-Fast, 1 est (shipped)",scene_refit,150,0,709.6743000438437,712.8683800110593,cpu,"ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",2.11.0+cpu,9.2.0
+"3.5-Fast, 1 est (shipped)",scene_refit,250,0,896.4580000028946,908.0308799748309,cpu,"ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",2.11.0+cpu,9.2.0
+"3.5-Fast, 1 est (shipped)",split_predict,2250,48,451.6009999788366,460.6000400031917,cpu,"ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",2.11.0+cpu,9.2.0

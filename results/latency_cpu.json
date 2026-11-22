@@ -1,0 +1,10 @@
+{
+  "device": "cpu",
+  "gpu": "ARMv8 (64-bit) Family 8 Model 2 Revision 201, Qualcomm Technologies Inc",
+  "torch": "2.11.0+cpu",
+  "tabpfn": "9.2.0",
+  "python": "3.12.15",
+  "machine": "ARM64",
+  "reps": 3,
+  "threads": 18
+}

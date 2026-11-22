@@ -1,0 +1,16 @@
+final configuration: seed 3013, duration 40 s, people 24, switch into erratic at 5 s, replan 0.4 s, latency 0 s, smoothing off, online offset batch (alpha 0.2, eta_b 0.05 per 2 s batch)
+bank crowd_cross_t2: 62 of 120 episodes, 244757 of 467087 rows without 'erratic' (parquet cache, 0 s); Kalman q = 0.01, r = 0.05
+Stop-and-go                        goal in 28.4 s             near  2.8 s  contacts 0 (0 steps)  stopped 0.0 s  min gap 0.37 m  (0 s wall)
+Reactive  (m 0.4)                  goal in 27.4 s             near  4.6 s  contacts 0 (0 steps)  stopped 3.2 s  min gap 0.17 m  (4 s wall)
+Velocity obstacle  (w 1)           goal in 22.4 s             near  5.8 s  contacts 0 (0 steps)  stopped 0.0 s  min gap 0.02 m  (3 s wall)
+C:\Users\samco\tools\lerobot-test\.venv-x64\Lib\site-packages\tabpfn\validation.py:234: UserWarning: Running on CPU with more than 1000 samples may be slow.
+Consider using a GPU or the tabpfn-client API: https://github.com/PriorLabs/tabpfn-client
+  _validate_num_samples_for_cpu(
+C:\Users\samco\tools\lerobot-test\.venv-x64\Lib\site-packages\tabpfn\validation.py:234: UserWarning: Running on CPU with more than 1000 samples may be slow.
+Consider using a GPU or the tabpfn-client API: https://github.com/PriorLabs/tabpfn-client
+  _validate_num_samples_for_cpu(
+Foresight (TabPFN split)  (q 0.15) goal in 25.8 s             near  2.2 s  contacts 0 (0 steps)  stopped 1.2 s  min gap 0.01 m  (88 s wall)
+Oracle (true future)  (m 0.4)      goal in 21.4 s             near  2.0 s  contacts 0 (0 steps)  stopped 0.0 s  min gap 0.45 m  (4 s wall)
+wrote media\demo\seed3013_stats.json, media\demo\seed3013_paths.png
+wrote media\demo\seed3013.gif (163 frames, 4.4 MB, 36 s)
+done in 137 s; smoothing off, online offset batch (alpha 0.2, eta_b 0.05 per 2 s batch)
