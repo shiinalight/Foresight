@@ -1,4 +1,4 @@
-> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 15:07 (after commit `9398954`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 15:18 (after commit `4ca4217`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: finalist deck outline (5 minutes)
 
@@ -6,7 +6,7 @@ The plan for the finalist deck: for each slide, the job it does, the headline, w
 
 **Arc:** problem → the idea → watch it work → three proofs → where it stops → what it's for.
 **Pace:** 10 slides at about 30 s each. One idea per slide. Numbers go on the slide only where a number is the point.
-**As built (22 Nov, 14:15).** `python tools/build_outline_deck.py` writes the finished deck, `deck/Foresight_finalist.pptx`: 10 talk slides, a closing slide, a "Backup slides" divider and 11 backup slides (23 in all), in the 3D video's look (warm page, white cards, orange #C24E1C as the only accent, Arial). Time, speaker and the spoken text are in the speaker notes. `--static` writes `deck/Foresight_finalist_static.pptx`, where each clip is replaced by its last frame; `deck/Foresight_finalist.pdf` is exported from that one. Where the built deck differs from the plan below, the "Built" line under the slide says how.
+**As built (22 Nov, 14:15).** `python tools/build_outline_deck.py` writes the finished deck, `deck/Foresight_finalist.pptx`: 10 talk slides, a closing slide, a "Backup slides" divider and 12 backup slides (24 in all), in the 3D video's look (warm page, white cards, orange #C24E1C as the only accent, Arial). Time, speaker and the spoken text are in the speaker notes. `--static` writes `deck/Foresight_finalist_static.pptx`, where each clip is replaced by its last frame; `deck/Foresight_finalist.pdf` is exported from that one. Where the built deck differs from the plan below, the "Built" line under the slide says how.
 
 **Decision (22 Nov, 14:45, Darshak): we present the local pptx, `deck/Foresight_finalist.pptx` (static copy and PDF beside it). The Canva deck is not used; the table below is kept only as a record.**
 
@@ -21,9 +21,11 @@ The plan for the finalist deck: for each slide, the job it does, the headline, w
 | 8, 9 | The numbers on 8 and the card on 9 are in a different font from the rest | Set the font by hand in Canva |
 | 10 | The close lacks the product line | Add "One example bank per body, no retraining" |
 | all but 9 | Presenter notes are empty | Paste the "Say" lines from this outline, or read them from the pptx notes |
-| — | No backup slides | Keep `deck/Foresight_finalist.pdf` (pages 13–23) open for questions |
+| — | No backup slides | Keep `deck/Foresight_finalist.pdf` (pages 13–24) open for questions |
 
 **De-slop pass (22 Nov, 15:00, on Darshak's go).** Nine changes after a self-review: slide 8 leads with "5 of 5 scenes", "4 of 5 scenes", "15× less data" and keeps the scores as small print; slide 3 draws the table; slide 4 has larger pictures and no filler line; "rows" is the one word for data; labels are sentence case with no letter-spacing and no decorative bars; the closing slide is four plain lines with the number first; slide 6's headline is one line ("Reading the scene kept more people inside their ranges"); slide 7 says what the interval score is; slide 10 says "rules out moves too close in the next 0.4 s" (the planner's short check, which assumes people keep walking straight, `foresight/core/planner.py`; a check, not a guarantee) and "New body: new bank".
+
+**Polish and sources (22 Nov, 15:20, on Darshak's word).** Boxes with two lines are centred; quotes and apostrophes are typographic; the verdict pills carry no tick or cross (those glyphs fall back to another font); the file's title and author are set. Sources are shown where they back a choice: the title block of Schöller et al. 2020 on slide 2 (constant velocity as a strong baseline), of Hollmann et al. 2025 on slide 3 (TabPFN), the dataset papers named under the clip on slide 8, and a new backup B12 "What is it built on?" with those two and Gibbs and Candès 2021. Only the title and author lines of each first page are shown (`media/deck/paper_*.png`).
 
 **Speakers:** Darshak opens and takes the idea and the proofs; Nooshin takes the 3D walkthrough and the street demo. Swap if you prefer; switch speakers at most twice.
 

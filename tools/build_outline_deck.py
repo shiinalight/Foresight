@@ -7,8 +7,9 @@ the speaker are in the speaker notes. Numbers are the ones in docs/STORY.md.
                                                   # its last frame, for a PDF export or a machine that cannot play them
 
 Pictures made for the deck are in media/deck/ (frames of the 2:46 3D video, the two panels of
-fig_t5.png, the last frame of each clip, the 33 s street clip).
+fig_t5.png, the last frame of each clip, the 33 s street clip, the title blocks of three papers).
 """
+import re
 import sys
 from pathlib import Path
 
@@ -39,7 +40,15 @@ REPO = "github.com/shiinalight/Robodetect"
 
 
 # ---------------------------------------------------------------- drawing helpers
+def smart(s):
+    """Curly quotes and apostrophes: a straight quote on a slide looks typed, not set."""
+    s = re.sub(r"(?<=\w)'(?=\w)", "\u2019", s)
+    s = re.sub(r'"([^"]*)"', "\u201c\\1\u201d", s)
+    return s.replace("'", "\u2019")
+
+
 def text(slide, x, y, w, h, s, size, bold=False, color=INK, align=None, anchor=None, spc=None, gap=0):
+    s = smart(s)
     tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     tf = tb.text_frame
     tf.word_wrap = True
@@ -82,8 +91,12 @@ def box(slide, x, y, w, h, fill=CARD, line=RULE, radius=0.05, kind=MSO_SHAPE.ROU
 def label_box(slide, x, y, w, h, title, sub=None, fill=CARD, line=RULE, ink=INK, sub_ink=MUTED, size=17, sub_size=12):
     box(slide, x, y, w, h, fill=fill, line=line, radius=0.08)
     if sub:
-        text(slide, x + 0.15, y + 0.14, w - 0.3, 0.4, title, size, bold=True, color=ink, align=PP_ALIGN.CENTER)
-        text(slide, x + 0.15, y + 0.14 + size / 72 * 1.45, w - 0.3, h - 0.6, sub, sub_size, color=sub_ink, align=PP_ALIGN.CENTER)
+        per_line = max(8, int((w - 0.3) * 72 / (sub_size * 0.5)))      # rough characters per line
+        n = sum(-(-len(part) // per_line) for part in sub.split("\n"))
+        th, sh = size / 72 * 1.3, sub_size / 72 * 1.25
+        top = y + (h - (th + 0.05 + n * sh)) / 2
+        text(slide, x + 0.15, top, w - 0.3, th, title, size, bold=True, color=ink, align=PP_ALIGN.CENTER)
+        text(slide, x + 0.15, top + th + 0.05, w - 0.3, n * sh + 0.1, sub, sub_size, color=sub_ink, align=PP_ALIGN.CENTER)
     else:
         text(slide, x + 0.15, y, w - 0.3, h, title, size, bold=True, color=ink, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 
@@ -113,6 +126,16 @@ def clip(slide, name, x, y, w, h, pad=0.12):
     pic(slide, rel, x + pad, y + pad, w - 2 * pad, h - 2 * pad)
 
 
+def paper(slide, name, x, y, w, pad=0.07):
+    """The title block of a paper's first page (media/deck/paper_<name>.png) on a white card. Returns the card's height."""
+    rel = DK + f"paper_{name}.png"
+    iw, ih = Image.open(ROOT / rel).size
+    h = (w - 2 * pad) * ih / iw + 2 * pad
+    box(slide, x, y, w, h, radius=0.04)
+    pic(slide, rel, x + pad, y + pad, w - 2 * pad, h - 2 * pad)
+    return h
+
+
 def bars(slide, x, y, w, rows, vmax, label_w=1.75, pitch=0.66, bar_h=0.3):
     """Horizontal bars. rows: (label, small label, value, value text, colour)."""
     bw = w - label_w - 0.85
@@ -128,7 +151,7 @@ def bars(slide, x, y, w, rows, vmax, label_w=1.75, pitch=0.66, bar_h=0.3):
 
 def pill(slide, x, y, w, s, good=True, h=0.46, size=14):
     box(slide, x, y, w, h, fill=OK_BG if good else NO_BG, line=None, radius=0.1)
-    text(slide, x + 0.16, y, w - 0.32, h, ("✓  " if good else "✗  ") + s, size, bold=True, color=OK_INK if good else NO_INK,
+    text(slide, x + 0.16, y, w - 0.32, h, s, size, bold=True, color=OK_INK if good else NO_INK,
          anchor=MSO_ANCHOR.MIDDLE)
 
 
@@ -155,7 +178,7 @@ class Deck:
         if kicker:
             text(s, M, 0.4, CW, 0.28, kicker, 13, bold=True, color=ACCENT)
         if title:
-            text(s, M, 0.7, CW, 1.0, title, title_size, bold=True)
+            text(s, M, 0.7, CW, 1.0, title, title_size, bold=True, spc=-15)
         if footer:
             text(s, M, 7.05, 6, 0.25, "Foresight  ·  Prior Labs track", 10, color=MUTED)
             text(s, W - M - 1, 7.05, 1, 0.25, str(self.n), 10, color=MUTED, align=PP_ALIGN.RIGHT)
@@ -169,10 +192,10 @@ def talk(d):
                 notes="Say: A delivery robot shares the street with people, cars and bikes. Foresight tells it where they'll be next, and how much to trust that.")
     pic(s, "media/stills/3d_range_every_agent.jpg", 0, 0, W, H, cover=True)
     box(s, 0, 4.46, W, H - 4.46, fill=BG, line=None, kind=MSO_SHAPE.RECTANGLE)
-    text(s, M, 5.1, CW, 0.95, "Foresight", 56, bold=True)
+    text(s, M, 5.1, CW, 0.95, "Foresight", 56, bold=True, spc=-40)
     text(s, M, 6.05, CW, 0.45, "Where will everyone be in two seconds, and how sure are we?", 24)
     text(s, M, 6.72, 8, 0.3, "Nooshin Pourkamali  ·  Darshak Panseriya", 15, color=MUTED)
-    text(s, W - M - 4, 6.72, 4, 0.3, "Prior Labs track", 15, bold=True, color=ACCENT, align=PP_ALIGN.RIGHT)
+    text(s, W - M - 4, 6.72, 4, 0.3, "HackLab Berlin  ·  Prior Labs track", 15, bold=True, color=ACCENT, align=PP_ALIGN.RIGHT)
 
     # 2 problem
     s = d.slide("The problem", "Robots guess with a straight line and a fixed margin", meta="Slide 2 · The problem · 30 s · Darshak",
@@ -183,10 +206,12 @@ def talk(d):
     text(s, x, 2.85, 4.2, 0.9, "how far \"keep walking straight\" is off after 2 s in our simulated crowd", 15)
     text(s, x, 3.62, 4.2, 0.4, "0.25–0.43 m on real Zurich pedestrians", 13, color=MUTED)
     for i, (a, b) in enumerate([("Margin too narrow", "the robot hits someone"), ("Margin too wide", "the robot freezes")]):
-        yy = 4.25 + i * 0.92
-        box(s, x, yy, 4.23, 0.78, radius=0.08)
-        text(s, x + 0.2, yy + 0.11, 3.9, 0.3, a, 14, bold=True)
-        text(s, x + 0.2, yy + 0.41, 3.9, 0.3, b, 13, color=MUTED)
+        xx = x + i * 2.165
+        box(s, xx, 4.15, 2.065, 0.9, radius=0.08)
+        text(s, xx + 0.16, 4.27, 1.8, 0.3, a, 12.5, bold=True)
+        text(s, xx + 0.16, 4.6, 1.8, 0.3, b, 11.5, color=MUTED)
+    text(s, x, 5.28, 4.23, 0.25, "A strong baseline in the literature: Schöller et al. 2020", 10.5, color=MUTED)
+    paper(s, "schoeller2020", x, 5.55, 4.23)
     text(s, M, 6.3, CW, 0.4, "Learned forecasters do better, but once trained they are frozen.", 18, bold=True)
 
     # 3 idea
@@ -213,14 +238,16 @@ def talk(d):
     text(s, M, ty + 3.65, tw, 0.4, "Example rows are the same table with the last column known.", 14, bold=True)
     x, w = 7.0, W - M - 7.0
     half = (w - 0.25) / 2
-    label_box(s, x, 1.75, half, 1.12, "Example bank", "2,000 example rows · frozen")
-    label_box(s, x + half + 0.25, 1.75, half, 1.12, "This scene", "up to 250 newest rows · swapped every 2 s", fill=SOFT, line=ACCENT)
+    label_box(s, x, 1.75, half, 1.12, "Example bank", "2,000 example rows\nfrozen")
+    label_box(s, x + half + 0.25, 1.75, half, 1.12, "This scene", "up to 250 newest rows\nswapped every 2 s", fill=SOFT, line=ACCENT)
     chevron(s, x + w / 2 - 0.15, 3.0, down=True)
     label_box(s, x, 3.43, w, 1.05, "TabPFN", "reads the rows and answers in one pass · weights never change", fill=ACCENT, line=None,
               ink=CARD, sub_ink=rgb("FBE3D8"))
     chevron(s, x + w / 2 - 0.15, 4.61, down=True)
     label_box(s, x, 5.04, w, 0.81, "A range for every agent", "5–95%, 1 s and 2 s ahead", size=15, sub_size=11.5)
     text(s, M, 6.3, CW, 0.45, "No training step. Adapting = swapping rows.", 22, bold=True, color=ACCENT)
+    ph = paper(s, "hollmann2025", x + 0.5, 6.0, 2.8)
+    text(s, x + 3.45, 6.0, w - 3.45, ph, "TabPFN\nHollmann et al., Nature 2025", 11.5, color=MUTED, anchor=MSO_ANCHOR.MIDDLE)
 
     # 4 four steps
     s = d.slide("How it reads one person", "From sensor dots to a range, in four steps", meta="Slide 4 · How it reads one person · 15 s · Nooshin",
@@ -271,7 +298,7 @@ def talk(d):
     text(s, M, y0 + ch + 0.08, 7.5, 0.3, "One crowd of the 20: about 60% vs 45% inside  ·  green dot = inside its range, red = outside", 11, color=MUTED)
     x, w = 8.4, W - M - 8.4
     box(s, x, y0, w, ch)
-    text(s, x + 0.25, y0 + 0.2, w - 0.5, 0.5, "People inside their 2 s range after the crowd changed", 13, bold=True)
+    text(s, x + 0.25, y0 + 0.2, w - 0.5, 0.5, "Inside their 2 s range, after the change", 13, bold=True)
     yb = bars(s, x + 0.2, y0 + 0.95, w - 0.4, [("TabPFN", "bank + this scene", 59.3, "59%", ACCENT), ("TabPFN", "bank only", 49.3, "49%", rgb("E7A37F")),
                                                ("LightGBM", "all rows", 41.3, "41%", BLUE)], 100, label_w=1.45)
     pill(s, x + 0.25, yb + 0.02, w - 0.5, "+18 points, no retraining")
@@ -298,7 +325,7 @@ def talk(d):
                 notes="Say: ETH, Hotel, Zara 1 and 2, Univ: train on four, test on the fifth. TabPFN beats the fixed-margin guess from slide 2 in all five scenes. On the same rows it beats LightGBM in four scenes and ties on Hotel. LightGBM needs about 15 times the data to catch up.\nThe clip is one 16 s window per scene, an illustration; the numbers below are the test (interval score, mean of the five scenes).\nAgainst constant velocity plus a fixed band: −0.365 [−0.405, −0.328] pooled (forecast quality only). Interval score −0.130 pooled at equal rows; −0.008 (tie) at 15x. Zara1 and Zara2 share one camera. Scene by scene: backup B10.")
     gh = 3.3
     clip(s, "scenes5", M, 1.6, CW, gh, pad=0.1)
-    text(s, M, 1.6 + gh + 0.06, CW, 0.25, "One 16 s window per scene  ·  1,500 example rows from the other four scenes  ·  small print below: interval score, lower is better", 10.5, color=MUTED)
+    text(s, M, 1.6 + gh + 0.06, CW, 0.25, "One 16 s window per scene  ·  ETH, Hotel: Pellegrini et al. 2009  ·  Zara, Univ: Lerner et al. 2007  ·  small print below: interval score, lower is better", 10.5, color=MUTED)
     stats = [("5 of 5 scenes", "better than the fixed-margin guess", "1.36 vs 1.72"),
              ("4 of 5 scenes", "ahead of LightGBM on the same rows", "level on Hotel  ·  1.36 vs 1.49"),
              ("15× less data", "same result as LightGBM", "1,500 rows vs about 22,000  ·  1.36 vs 1.37")]
@@ -353,7 +380,7 @@ def talk(d):
         if i < 3:
             chevron(s, xx + bw + (bg_ - 0.3) / 2, 2.22)
     fx = M + bw + bg_                                              # the bank row hangs under the Foresight box
-    chevron(s, fx + bw / 2 - 0.15, 3.07, down=True).rotation = 270
+    box(s, fx + bw / 2 - 0.015, 2.95, 0.03, 0.55, fill=ACCENT, line=None, kind=MSO_SHAPE.RECTANGLE)
     box(s, M, 3.5, CW, 1.2, fill=SOFT, line=ACCENT, radius=0.08)
     text(s, M + 0.3, 3.5, 3.6, 1.2, "Example bank\nSwap it, don't retrain", 15, bold=True, anchor=MSO_ANCHOR.MIDDLE, gap=2)
     chips = ["Pedestrians", "Cars", "New body: new bank"]
@@ -383,7 +410,7 @@ def talk(d):
         text(s, x, yy + 0.55, w, 0.3, body, 13.5, color=MUTED)
         if i < 3:
             box(s, x, yy + 1.02, w, 0.012, fill=RULE, line=None, kind=MSO_SHAPE.RECTANGLE)
-    text(s, M, 1.7, 6, 0.95, "Foresight", 52, bold=True)
+    text(s, M, 1.7, 6, 0.95, "Foresight", 52, bold=True, spc=-40)
     text(s, M, 2.85, 5.9, 1.6, "The robot's knowledge is a table of examples. It adapts to new behaviour, and to a new body, by swapping rows, with no training step.", 19)
     text(s, M, 4.7, 5.9, 0.4, REPO, 18, bold=True, color=ACCENT)
     text(s, M, 5.15, 5.9, 0.3, "Every number comes from a script in the repo.", 13, color=MUTED)
@@ -430,6 +457,26 @@ BACKUPS = [
 ]
 
 
+def sources(d, n):
+    s = d.slide(f"Backup · B{n}", "What is it built on?", meta=f"Backup B{n}",
+                notes="Schöller et al. 2020 (IEEE RA-L): constant velocity is a strong baseline on ETH/UCY, and they predict the displacement from it. Hollmann et al. 2025 (Nature): TabPFN predicts from example rows in one forward pass, no training on our data. Gibbs and Candès 2021: adaptive conformal inference, the online offset that keeps coverage near target when behaviour shifts. Data: ETH and Hotel from Pellegrini et al. 2009, Zara and Univ from Lerner et al. 2007, read through OpenTraj. Full list with what each source does and does not support: docs/REFERENCES.md.")
+    items = [("schoeller2020", "The baseline and the target", "Constant velocity is a strong baseline on these scenes. We predict the deviation from it.",
+              "Schöller et al., IEEE RA-L 2020"),
+             ("hollmann2025", "The model", "TabPFN predicts from example rows in one pass, with no training on our data.", "Hollmann et al., Nature 2025"),
+             ("gibbs2021", "Sizing the range", "An online offset keeps the share of people inside their range near the target when behaviour shifts.",
+              "Gibbs and Candès, NeurIPS 2021")]
+    gap = 0.25
+    cw = (CW - 2 * gap) / 3
+    for i, (name, head, body, cite) in enumerate(items):
+        x = M + i * (cw + gap)
+        paper(s, name, x, 1.75, cw)
+        text(s, x, 3.2, cw, 0.35, head, 17, bold=True)
+        text(s, x, 3.65, cw, 1.0, body, 13.5)
+        text(s, x, 4.7, cw, 0.3, cite, 11.5, color=MUTED)
+    text(s, M, 5.5, CW, 0.6, "Data: ETH and Hotel (Pellegrini et al. 2009), Zara and Univ (Lerner et al. 2007), read through OpenTraj (Amirian et al. 2020). "
+         "Cars: simulated with highway-env.", 13, color=MUTED)
+
+
 def backups(d):
     # a divider, so one click too many after the closing slide shows no new material
     s = d.slide(footer=False, meta="Divider before the backup slides",
@@ -455,13 +502,19 @@ def backups(d):
             rel = (DK + p + "_last.png" if STATIC else G + p + ".gif") if kind == "clip" else p
             pic(s, rel, xx, top + pad, iw, bottom - top - 2 * pad)
         text(s, M, 6.25, CW, 0.6, b["a"], 16, bold=True)
+    sources(d, len(BACKUPS) + 1)
 
 
 def build():
     d = Deck()
     talk(d)
     backups(d)
-    out = ROOT / ("deck/Foresight_finalist_static.pptx" if STATIC else "deck/Foresight_finalist.pptx")
+    cp = d.prs.core_properties
+    cp.title, cp.subject = "Foresight: finalist deck", "HackLab Berlin, Prior Labs track"
+    cp.author = cp.last_modified_by = "Nooshin Pourkamali, Darshak Panseriya"
+    cp.comments = cp.keywords = ""
+    folder = Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else ROOT / "deck"   # --out DIR: write elsewhere
+    out = folder / ("Foresight_finalist_static.pptx" if STATIC else "Foresight_finalist.pptx")
     out.parent.mkdir(exist_ok=True)
     d.prs.save(out)
     print(f"wrote {out} ({len(d.prs.slides)} slides)")

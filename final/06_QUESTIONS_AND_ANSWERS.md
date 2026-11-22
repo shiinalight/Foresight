@@ -1,4 +1,4 @@
-> **Copy of [`docs/DEFENSE.md`](../docs/DEFENSE.md)**, made by `tools/build_final.py` on 2026-11-22 15:07 (after commit `9398954`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/DEFENSE.md`](../docs/DEFENSE.md)**, made by `tools/build_final.py` on 2026-11-22 15:18 (after commit `4ca4217`). Edit the source and rerun the script; do not edit this copy.
 
 # Defence dossier: how Foresight can be attacked, and what we answer
 

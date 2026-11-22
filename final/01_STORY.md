@@ -1,4 +1,4 @@
-> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 15:07 (after commit `9398954`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 15:18 (after commit `4ca4217`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: the story we submit (single source of truth)
 

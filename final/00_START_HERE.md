@@ -48,7 +48,7 @@ Pages 01 to 06 are copies. Their sources are in `docs/`; after editing a source,
 | `media/fig_loso5.png` | Interval score per scene, four models | Proof 3 in the video; deck backup B10 |
 | `media/demo/seed3013.gif` | Four planners in the same crowd | Not in the deck (it shows the planner comparison) |
 | `media/demo/policy_seed3403.gif` | The TabPFN policy driving | Deck backup B11 |
-| `deck/Foresight_finalist.pptx` | The finished finalist deck: 10 talk slides, a closing slide, a divider, 11 backups; clips play in the slide show; spoken text in the notes | Finalist talk |
+| `deck/Foresight_finalist.pptx` | The finished finalist deck: 10 talk slides, a closing slide, a divider, 12 backups; clips play in the slide show; spoken text in the notes | Finalist talk |
 | `deck/Foresight_finalist_static.pptx`, `deck/Foresight_finalist.pdf` | The same deck with each clip replaced by its last frame | Upload, or a machine that cannot play the clips |
 
 The deck is built by `python tools/build_outline_deck.py` (add `--static` for the second file); the PDF is exported from the static file in PowerPoint.

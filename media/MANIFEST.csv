@@ -28,3 +28,4 @@ deck/3d_*.jpg,(frames),media/demo_full.mp4 on nooshin/dev (2:46 cut),fe06fe9,cur
 deck/street_clip.mp4,(cut),media/demo_full.mp4 on nooshin/dev (2:46 cut),fe06fe9,current,1:05.0-1:38.5 of the video; 1280x720 H.264; silent; deck slide 5
 deck/fig_t5_left.png + fig_t5_right.png,(crop),media/fig_t5.png,,current,the two panels of fig_t5.png; left = backup B7
 deck/*_last.png,(last frame),media/demo/*.gif,,current,last frame of each clip for the static deck and the PDF
+deck/paper_*.png,(crop),first page of arXiv 1903.07933 and 2106.00170 and of Nature s41586-024-08328-6,,current,title and author lines only; deck slides 2 and 3 and backup B12
