@@ -1,0 +1,105 @@
+H2: bank 31620 rows from 17 training episodes without 'aggressive'; 5 held-out episodes switch to 'aggressive': [np.int64(5), np.int64(8), np.int64(45), np.int64(53), np.int64(57)]
+H2: 46 candidate moments, 30 drawn, 600 query rows (100 vehicles), since switch 0.2-20.2 s
+  H1 TabPFN (3 seeds x 2 axes): 6 calls
+  H2 frozen: 2 calls
+  H2 scene models: 60 calls
+  H2b pedestrian frozen: 2 calls
+total 70 API calls x 30,000 = 2,100,000 credits (cap 3,000,000)
+server before: Currently, you have used 7370000 of the allowed limit of 50000000 credits. The limit will reset at 2026-12-01 00:00:00 UTC.
+H1 seed 0 done (2 API calls so far)
+H1 seed 1 done (4 API calls so far)
+H1 seed 2 done (6 API calls so far)
+H2 moment 1/30 ep 5 t 24.2: 20 cars, 250 scene rows (0 after the switch); calls so far 6
+H2 moment 2/30 ep 5 t 26.2: 20 cars, 250 scene rows (20 after the switch); calls so far 8
+H2 moment 3/30 ep 5 t 32.2: 20 cars, 250 scene rows (250 after the switch); calls so far 10
+H2 moment 4/30 ep 5 t 34.2: 20 cars, 250 scene rows (250 after the switch); calls so far 12
+H2 moment 5/30 ep 5 t 36.2: 20 cars, 250 scene rows (250 after the switch); calls so far 14
+H2 moment 6/30 ep 8 t 22.2: 20 cars, 250 scene rows (120 after the switch); calls so far 16
+H2 moment 7/30 ep 8 t 24.2: 20 cars, 250 scene rows (220 after the switch); calls so far 18
+H2 moment 8/30 ep 8 t 26.2: 20 cars, 250 scene rows (250 after the switch); calls so far 20
+H2 moment 9/30 ep 8 t 32.2: 20 cars, 250 scene rows (250 after the switch); calls so far 22
+H2 moment 10/30 ep 8 t 36.2: 20 cars, 250 scene rows (250 after the switch); calls so far 24
+H2 moment 11/30 ep 45 t 23.0: 20 cars, 250 scene rows (0 after the switch); calls so far 26
+H2 moment 12/30 ep 45 t 25.0: 20 cars, 250 scene rows (20 after the switch); calls so far 28
+H2 moment 13/30 ep 45 t 27.0: 20 cars, 250 scene rows (120 after the switch); calls so far 30
+H2 moment 14/30 ep 45 t 29.0: 20 cars, 250 scene rows (220 after the switch); calls so far 32
+H2 moment 15/30 ep 45 t 31.0: 20 cars, 250 scene rows (250 after the switch); calls so far 34
+H2 moment 16/30 ep 45 t 35.0: 20 cars, 250 scene rows (250 after the switch); calls so far 36
+H2 moment 17/30 ep 53 t 19.4: 20 cars, 250 scene rows (0 after the switch); calls so far 38
+H2 moment 18/30 ep 53 t 21.4: 20 cars, 250 scene rows (20 after the switch); calls so far 40
+H2 moment 19/30 ep 53 t 25.4: 20 cars, 250 scene rows (220 after the switch); calls so far 42
+H2 moment 20/30 ep 53 t 29.4: 20 cars, 250 scene rows (250 after the switch); calls so far 44
+H2 moment 21/30 ep 53 t 31.4: 20 cars, 250 scene rows (250 after the switch); calls so far 46
+H2 moment 22/30 ep 53 t 35.4: 20 cars, 250 scene rows (250 after the switch); calls so far 48
+H2 moment 23/30 ep 53 t 37.4: 20 cars, 250 scene rows (250 after the switch); calls so far 50
+H2 moment 24/30 ep 57 t 17.0: 20 cars, 250 scene rows (0 after the switch); calls so far 52
+H2 moment 25/30 ep 57 t 19.0: 20 cars, 250 scene rows (20 after the switch); calls so far 54
+H2 moment 26/30 ep 57 t 21.0: 20 cars, 250 scene rows (120 after the switch); calls so far 56
+H2 moment 27/30 ep 57 t 25.0: 20 cars, 250 scene rows (250 after the switch); calls so far 58
+H2 moment 28/30 ep 57 t 31.0: 20 cars, 250 scene rows (250 after the switch); calls so far 60
+H2 moment 29/30 ep 57 t 33.0: 20 cars, 250 scene rows (250 after the switch); calls so far 62
+H2 moment 30/30 ep 57 t 37.0: 20 cars, 250 scene rows (250 after the switch); calls so far 64
+H2: bank 31620 rows (17 ep); 600 queries, 100 vehicles, 30 moments in 5 episodes; thin moments 0
+server after: Currently, you have used 8070000 of the allowed limit of 50000000 credits. The limit will reset at 2026-12-01 00:00:00 UTC.
+test  kind             model  n_rows  vehicles  joint90    is90    err  width90  metric     diff       lo       hi
+  H1 level                cv    4500       355   0.0000 15.6230 1.3238   0.0000     NaN      NaN      NaN      NaN
+  H1 level          lgbm_all    4500       355   0.8207  4.0602 0.9175   2.3019     NaN      NaN      NaN      NaN
+  H1 level           cv_band    4500       355   0.8293  7.7761 1.3238   3.6409     NaN      NaN      NaN      NaN
+  H1 level              lgbm    4500       355   0.7651  5.0153 1.1024   2.5897     NaN      NaN      NaN      NaN
+  H1 level            tabpfn    4500       355   0.8560  3.5672 0.7540   1.9320     NaN      NaN      NaN      NaN
+  H1  diff tabpfn - lgbm_all    4500       355      NaN     NaN    NaN      NaN    is90  -0.4930  -0.6566  -0.3366
+  H1  diff tabpfn - lgbm_all    4500       355      NaN     NaN    NaN      NaN joint90   0.0353   0.0185   0.0531
+  H1  diff tabpfn - lgbm_all    4500       355      NaN     NaN    NaN      NaN     err  -0.1635  -0.1962  -0.1305
+  H1  diff tabpfn - lgbm_all    4500       355      NaN     NaN    NaN      NaN width90  -0.3699  -0.4104  -0.3289
+  H1  diff  tabpfn - cv_band    4500       355      NaN     NaN    NaN      NaN    is90  -4.2089  -4.7960  -3.5909
+  H1  diff  tabpfn - cv_band    4500       355      NaN     NaN    NaN      NaN joint90   0.0267   0.0062   0.0487
+  H1  diff  tabpfn - cv_band    4500       355      NaN     NaN    NaN      NaN     err  -0.5698  -0.6347  -0.5056
+  H1  diff  tabpfn - cv_band    4500       355      NaN     NaN    NaN      NaN width90  -1.7089  -1.7875  -1.6224
+  H1  diff     tabpfn - lgbm    4500       355      NaN     NaN    NaN      NaN    is90  -1.4481  -1.6734  -1.2308
+  H1  diff     tabpfn - lgbm    4500       355      NaN     NaN    NaN      NaN joint90   0.0909   0.0743   0.1087
+  H1  diff     tabpfn - lgbm    4500       355      NaN     NaN    NaN      NaN     err  -0.3485  -0.3934  -0.3021
+  H1  diff     tabpfn - lgbm    4500       355      NaN     NaN    NaN      NaN width90  -0.6577  -0.7075  -0.6082
+  H1  diff       tabpfn - cv    4500       355      NaN     NaN    NaN      NaN    is90 -12.0558 -13.0437 -11.0731
+  H1  diff       tabpfn - cv    4500       355      NaN     NaN    NaN      NaN joint90   0.8560   0.8404   0.8707
+  H1  diff       tabpfn - cv    4500       355      NaN     NaN    NaN      NaN     err  -0.5698  -0.6347  -0.5056
+  H1  diff       tabpfn - cv    4500       355      NaN     NaN    NaN      NaN width90   1.9320   1.8535   2.0185
+test  kind              model  n_rows  vehicles  joint90    is90    err  width90  metric     diff       lo       hi
+  H2 level             frozen     600       100   0.6250 13.9588 2.0483   2.5743     NaN      NaN      NaN      NaN
+  H2 level              split     600       100   0.7667 12.9798 1.9112   2.9307     NaN      NaN      NaN      NaN
+  H2 level         scene_only     600       100   0.7300 14.0156 2.0044   3.2871     NaN      NaN      NaN      NaN
+  H2 level           lgbm_all     600       100   0.5533 16.2167 2.1076   1.7801     NaN      NaN      NaN      NaN
+  H2 level            cv_band     600       100   0.5817 16.8042 2.3559   2.4293     NaN      NaN      NaN      NaN
+  H2 level                 cv     600       100   0.0000 27.0003 2.3559   0.0000     NaN      NaN      NaN      NaN
+  H2 level                ped     600       100   0.9283 51.6762 3.0236  50.5986     NaN      NaN      NaN      NaN
+  H2 level          ped+scene     600       100   0.9233 28.1639 2.3333  26.9429     NaN      NaN      NaN      NaN
+  H2  diff     split - frozen     600       100      NaN     NaN    NaN      NaN    is90  -0.9789  -1.4144  -0.5551
+  H2  diff     split - frozen     600       100      NaN     NaN    NaN      NaN joint90   0.1417   0.1146   0.1686
+  H2  diff     split - frozen     600       100      NaN     NaN    NaN      NaN     err  -0.1372  -0.1813  -0.0916
+  H2  diff     split - frozen     600       100      NaN     NaN    NaN      NaN width90   0.3564   0.1304   0.6174
+  H2  diff   split - lgbm_all     600       100      NaN     NaN    NaN      NaN    is90  -3.2368  -3.8712  -2.5861
+  H2  diff   split - lgbm_all     600       100      NaN     NaN    NaN      NaN joint90   0.2133   0.1841   0.2436
+  H2  diff   split - lgbm_all     600       100      NaN     NaN    NaN      NaN     err  -0.1965  -0.2481  -0.1440
+  H2  diff   split - lgbm_all     600       100      NaN     NaN    NaN      NaN width90   1.1506   0.8668   1.4788
+  H2  diff split - scene_only     600       100      NaN     NaN    NaN      NaN    is90  -1.0358  -1.4055  -0.6756
+  H2  diff split - scene_only     600       100      NaN     NaN    NaN      NaN joint90   0.0367   0.0120   0.0621
+  H2  diff split - scene_only     600       100      NaN     NaN    NaN      NaN     err  -0.0932  -0.1368  -0.0492
+  H2  diff split - scene_only     600       100      NaN     NaN    NaN      NaN width90  -0.3564  -0.6174  -0.1304
+  H2  diff  frozen - lgbm_all     600       100      NaN     NaN    NaN      NaN    is90  -2.2579  -2.9248  -1.6533
+  H2  diff  frozen - lgbm_all     600       100      NaN     NaN    NaN      NaN joint90   0.0717   0.0423   0.1000
+  H2  diff  frozen - lgbm_all     600       100      NaN     NaN    NaN      NaN     err  -0.0593  -0.1056  -0.0149
+  H2  diff  frozen - lgbm_all     600       100      NaN     NaN    NaN      NaN width90   0.7942   0.6291   0.9590
+  H2  diff    ped+scene - ped     600       100      NaN     NaN    NaN      NaN    is90 -23.5123 -23.8924 -23.1370
+  H2  diff    ped+scene - ped     600       100      NaN     NaN    NaN      NaN joint90  -0.0050  -0.0206   0.0098
+  H2  diff    ped+scene - ped     600       100      NaN     NaN    NaN      NaN     err  -0.6902  -0.7415  -0.6370
+  H2  diff    ped+scene - ped     600       100      NaN     NaN    NaN      NaN width90 -23.6558 -23.9319 -23.3638
+  H2  diff  ped+scene - split     600       100      NaN     NaN    NaN      NaN    is90  15.1841  14.2987  16.0960
+  H2  diff  ped+scene - split     600       100      NaN     NaN    NaN      NaN joint90   0.1567   0.1339   0.1791
+  H2  diff  ped+scene - split     600       100      NaN     NaN    NaN      NaN     err   0.4222   0.3852   0.4583
+  H2  diff  ped+scene - split     600       100      NaN     NaN    NaN      NaN width90  24.0122  23.8633  24.1619
+  H2  diff       ped - frozen     600       100      NaN     NaN    NaN      NaN    is90  37.7174  36.6706  38.8002
+  H2  diff       ped - frozen     600       100      NaN     NaN    NaN      NaN joint90   0.3033   0.2714   0.3344
+  H2  diff       ped - frozen     600       100      NaN     NaN    NaN      NaN     err   0.9752   0.9067   1.0443
+  H2  diff       ped - frozen     600       100      NaN     NaN    NaN      NaN width90  48.0243  47.7266  48.3238
+VERDICT H1 (docs/HIGHWAY.md): core transfers to cars
+VERDICT H2 (docs/HIGHWAY.md): adapts on cars
+API calls 70; 279 s

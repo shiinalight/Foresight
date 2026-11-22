@@ -123,3 +123,88 @@ This mirrors live_variants Setting B and realdata_claimb.
 - `results/highway_h2_q.npz`: H2 quantiles.
 - `results/highway.log`.
 - `media/fig_highway.png`: one H2 moment, with cars, the last 2 s of each track, split's 5–95% boxes at +2 s, and where each car really was. It is drawn after the run from the stored quantiles, with no extra calls.
+
+## Results (hosted TabPFN, default model; run Sun 22 Nov 2026; `results/highway.log`)
+
+**Verdicts by the rules above:** **H1: core transfers to cars. H2: adapts on cars.**
+
+### H1: same core on cars
+
+Setup: 1,500 held-out rows × 3 context seeds = 4,500 scored rows, 355 vehicles, all regimes.
+
+| Model | Joint 5–95 coverage | Interval score | Median error | Width |
+|---|---|---|---|---|
+| cv | 0% | 15.62 | 1.32 m | 0 |
+| cv_band | 82.9% | 7.78 | 1.32 m | 3.64 m |
+| lgbm (same 1,500 rows) | 76.5% | 5.02 | 1.10 m | 2.59 m |
+| lgbm_all (100,440 rows) | 82.1% | 4.06 | 0.92 m | 2.30 m |
+| **TabPFN (1,500 rows)** | **85.6%** | **3.57** | **0.75 m** | **1.93 m** |
+
+Paired vehicle bootstrap, TabPFN minus rival, with 95% intervals:
+
+| Rival | Interval score | Error | Coverage |
+|---|---|---|---|
+| lgbm_all | **−0.49 [−0.66, −0.34]** | −0.16 m [−0.20, −0.13] | +3.5 pts [+1.9, +5.3] |
+| cv_band | **−4.21 [−4.80, −3.59]** | −0.57 m | +2.7 pts |
+| lgbm (same rows) | −1.45 [−1.67, −1.23] | | |
+
+- TabPFN has the lowest interval score in every regime: aggressive 4.77 vs lgbm_all 4.93, defensive 3.03 vs 3.67, normal 3.10 vs 3.72.
+- Its coverage is 84–87% in every regime, slightly above the 81% target, while its boxes are the narrowest of the calibrated models.
+- On five pedestrian scenes (`docs/LOSO5.md`) TabPFN only tied lgbm_all. On cars it beats lgbm_all, which has 67x more rows, from the same simulator.
+
+### H2: adaptation after a switch to the unseen `aggressive` regime
+
+Setup: 600 query rows, 100 vehicles, 30 moments, 5 held-out episodes; no moment was thin.
+
+| Model | Joint 5–95 coverage | Interval score | Median error | Width |
+|---|---|---|---|---|
+| frozen (2,000 bank rows) | 62.5% | 13.96 | 2.05 m | 2.57 m |
+| **split (frozen + scene)** | **76.7%** | **12.98** | **1.91 m** | 2.93 m |
+| scene only (≤ 250 rows) | 73.0% | 14.02 | 2.00 m | 3.29 m |
+| lgbm_all (31,620 bank rows) | 55.3% | 16.22 | 2.11 m | 1.78 m |
+| cv_band (bank context) | 58.2% | 16.80 | 2.36 m | 2.43 m |
+| cv | 0% | 27.00 | 2.36 m | 0 |
+
+Paired vehicle bootstrap, split minus rival, with 95% intervals:
+
+| Comparison | Interval score | Coverage | Error |
+|---|---|---|---|
+| split − frozen (**the rule**) | **−0.98 [−1.41, −0.56]** | +14.2 pts [+11.5, +16.9] | −0.14 m [−0.18, −0.09] |
+| split − scene only | −1.04 [−1.41, −0.68] | | |
+| split − lgbm_all | −3.24 [−3.87, −2.59] | | |
+| frozen − lgbm_all | −2.26 [−2.92, −1.65] | | |
+
+By time since the switch (interval score, frozen → split; coverage, frozen → split):
+
+| Since switch | Rows | Interval score | Coverage | Read |
+|---|---|---|---|---|
+| 0–6 s | 220 | 31.7 → 29.6 | 20% → 51% | The cars are accelerating towards a new target speed and every model fails, with errors of about 4.6 m. The scene rows help most here. |
+| 6–12 s | 180 | 3.68 → 3.24 | 82% → 90% | |
+| 12–20 s | 200 | 3.66 → 3.49 | 92% → 93% | |
+
+Once traffic has settled into the new regime, the frozen model is roughly right again on its own, and split still gains a little.
+
+### H2b (exploratory): pedestrian bank predicting cars
+
+| Model | Joint 5–95 coverage | Interval score | Median error | Width |
+|---|---|---|---|---|
+| ped (2,000 crowd_cross_t2 rows) | 92.8% | 51.68 | 3.02 m | **50.6 m** |
+| ped + car scene model | 92.3% | 28.16 | 2.33 m | 26.9 m |
+| split (car bank + scene), for reference | 76.7% | 12.98 | 1.91 m | 2.93 m |
+
+- **The wrong embodiment fails in a safe direction.** On car rows the pedestrian-trained TabPFN gives boxes about 50 m wide. The car features (distances, speeds about 24 m/s against people's 1–1.6 m/s) are far outside its context, so it says "I don't know" rather than giving narrow, wrong boxes. Its coverage stays high (93%), but the boxes are useless for planning.
+- **Scene data halves the damage but does not rescue it.** Averaging with the car scene model cuts the interval score from 51.7 to 28.2 (−23.5 [−23.9, −23.1]) and the error by 0.69 m. That is still about twice split's interval score (+15.2 [+14.3, +16.1]), because averaging quantiles keeps half of the 50 m pedestrian width. A context that mixes the rows, rather than averaging the two models, might do better; it was not tested.
+- **Takeaway:** the core transfers, but each embodiment needs its own bank.
+
+### API use
+
+- **Calls:** 70, as planned.
+- **Credits:** the server's usage went from 7,370,000 to 8,070,000, so **700,000 credits** (about 10,000 per call), against the 2.1M budgeted. The account may be shared with other sessions.
+- **Log:** `results/api_usage.csv` has the run row plus a correction row to the measured figure.
+
+### Caveats
+
+- **Simulator only.** IDM/MOBIL traffic in highway-env, with regimes I set by hand. Real highway data (highD, NGSIM) would be the next check.
+- **Lateral behaviour on a highway is easier than people.** The median CV error at +2 s is 0.63 m. Most of the tail comes from lane changes, about 4% of steps, and from the speed change after a switch.
+- **Small H2 test set.** 5 held-out episodes and 100 vehicles. The time bins are descriptive.
+- **Figure.** `media/fig_highway.png` shows episode 8, t = 26.2 s, 8.2 s after a defensive → aggressive switch. It was chosen by a fixed rule: the frame ≥ 6 s after the switch with the most lane changes, among frames with no box wider than 10 m. The boxes are tight for cars holding their lane and wide for the car that is mid lane-change. Three cars that start a lane change inside the next 2 s land outside their boxes.
