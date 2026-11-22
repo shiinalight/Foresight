@@ -26,7 +26,7 @@ G = "media/demo/"
 # a bold line under the pictures, a to-do line, and the speaker notes.
 SLIDES = [
     dict(tag="1 · Title · 15 s · Darshak", title="Foresight", cover=S + "3d_range_every_agent.jpg",
-         sub="Where will everyone be in two seconds, and how sure are we?\nDarshak Panseriya · Nooshin Pourkamali · Prior Labs track",
+         sub="Where will everyone be in two seconds, and how sure are we?\nNooshin Pourkamali · Darshak Panseriya · Prior Labs track",
          notes="Say: A delivery robot shares the street with people, cars and bikes. Foresight tells it where they'll be next, and how much to trust that."),
     dict(tag="2 · The problem · 30 s · Darshak", title="Robots guess with a straight line and a fixed margin",
          pics=[S + "3d_problem_093m.jpg", D + "01_problem.png"],

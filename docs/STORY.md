@@ -128,7 +128,7 @@ Changes from version 2 (`docs/archive/VIDEO_SCRIPT.md`), each from section 2:
 | 1:50–2:15 | **Proof 2.** `media/fig_highway.png` | "Second proof: the same core on simulated highway traffic. With fifteen hundred rows it matches LightGBM trained on sixty-seven times more, with more honest ranges. When traffic turns aggressive, reading the scene adds fourteen points of coverage." (36) |
 | 2:15–2:30 | **Proof 3.** `media/fig_loso5.png` | "Third: on five real pedestrian scenes, TabPFN beats LightGBM on the same rows, and ties one trained on fifteen times more." (21) |
 | 2:30–2:48 | "Where it breaks" text card (to make in the editor: four lines, the four limits below) | "Where it breaks. Our robot was slower than standard planners: better ranges didn't change how this planner drives. Each body needs its own examples. The robot loop and the cars are simulated, and the weights are non-commercial." (36) |
-| **2:48–3:00** | **On camera:** Darshak and Nooshin. End card: repo URL, "every number comes from a script in the repo" | "Foresight lets a robot adapt its forecasts by swapping examples, not retraining. It's open source; every number here comes from a script. Thank you, Prior Labs." (26) |
+| **2:48–3:00** | **On camera:** Nooshin and Darshak. End card: repo URL, "every number comes from a script in the repo" | "Foresight lets a robot adapt its forecasts by swapping examples, not retraining. It's open source; every number here comes from a script. Thank you, Prior Labs." (26) |
 
 Beats: 15 + 15 + 25 + 25 + 30 + 25 + 15 + 18 + 12 = 180 s. Fastest beat: the close, 26 words in 12 s (2.2 per second).
 

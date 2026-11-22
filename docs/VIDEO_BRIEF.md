@@ -81,7 +81,7 @@ Pace limit: about 2.3 spoken words per second. No numbers on camera; numbers go 
 | 1:57–2:10 | **Proof 2.** `media/fig_highway.png` | "The same core on simulated highway traffic: fifteen hundred rows match LightGBM trained on sixty-seven times more, with more honest ranges." (21) |
 | 2:10–2:21 | **Proof 3.** `media/fig_loso5.png` | "On five real pedestrian scenes it beats LightGBM on the same rows, and ties one trained on fifteen times more." (20) |
 | 2:21–2:41 | "Where it breaks" text card (make in the editor; the four lines below) | "Where it breaks. Our robot was slower than standard planners: this planner ignores the range's shape. Our new-place claim didn't survive five scenes. Each body needs its own examples. And everything but the real pedestrians is simulated." (37) |
-| **2:41–2:53** | **On camera:** Darshak and Nooshin. End card: repo URL, "every number comes from a script in the repo" | "Foresight lets a robot adapt by swapping examples, not retraining. Open source; every number comes from a script. Thank you, Prior Labs." (22) |
+| **2:41–2:53** | **On camera:** Nooshin and Darshak. End card: repo URL, "every number comes from a script in the repo" | "Foresight lets a robot adapt by swapping examples, not retraining. Open source; every number comes from a script. Thank you, Prior Labs." (22) |
 
 Beats: 11 + 15 + 38 (five steps) + 35 + 18 + 13 + 11 + 20 + 12 = 173 s (2:53). Fastest beats: the problem and step 4 at about 2.1 words per second; the rest are 1.4 to 2.0. If the steps' own timings differ by a second in the edit, move the step sentences with them.
 

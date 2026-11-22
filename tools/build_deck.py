@@ -88,12 +88,12 @@ def build():
     s = slide(prs, "Foresight", kicker="HackLab Berlin · Prior Labs track",
               notes="One prediction layer for a robot among people. TabPFN reads a table of what people just did and "
                     "returns, for each person, a range for where they will be in one and two seconds. The robot keeps "
-                    "clear of the ranges. Darshak Panseriya, Nooshin Pourkamali.")
+                    "clear of the ranges. Nooshin Pourkamali, Darshak Panseriya.")
     _text(s, "Where will everyone be in two seconds, and how sure are we?", Inches(0.6), Inches(1.4), Inches(12), Inches(0.6), 22, color=MUTED)
     _text(s, "The robot's knowledge is a table of examples. It adapts to new behaviour, and to a new body, by swapping "
              "rows, with no training step.", Inches(0.6), Inches(1.95), Inches(12.1), Inches(0.7), 16, color=INK)
     image(s, "../docs/walkthrough/s6_all_boxes.png", top=Inches(2.7), max_h=Inches(4.0))
-    caption(s, "Darshak Panseriya · Nooshin Pourkamali")
+    caption(s, "Nooshin Pourkamali · Darshak Panseriya")
 
     s = slide(prs, "A robot needs the next two seconds, and how sure it is", kicker="Problem",
               notes="Walking straight is a strong baseline on real people (Schöller et al. 2020): in our claim A rows "
