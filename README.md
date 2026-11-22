@@ -1,257 +1,124 @@
 # Foresight
 
-*Where will everyone be in two seconds, and how sure are we?* TabPFN reads a table of what people just did, and the robot keeps clear of the ranges it returns.
+**A robot that knows where everyone around it will be in two seconds, and how sure it can be. It adapts to a new place by reading examples, not by retraining.**
 
-HackLab Berlin 2026, Prior Labs track. Foresight is a sense-predict-plan layer for a robot moving among people. Each person at each moment becomes one row of a table. [TabPFN](https://github.com/PriorLabs/TabPFN) reads a few hundred to a few thousand labelled rows as context and returns, in one forward pass and with no training, a 2D range for where each person will be 1 and 2 s ahead. The planner then takes the move with the most progress that stays out of every predicted box. Adapting to a new scene, a change in behaviour or a new body means swapping the rows TabPFN reads, never retraining. We tested that on three simulated crowds in a closed robot loop, five real pedestrian scenes and simulated highway traffic, each against LightGBM and standard planners under rules written before the runs; the claims, what failed and the wording we use are in [`docs/STORY.md`](docs/STORY.md). We do not claim lower point error, and we make no safety guarantee.
+HackLab Berlin 2026 · Prior Labs track · Nooshin Pourkamali and Darshak Panseriya · Video (3 min): [add link]
 
-![Every person's predicted 2 s box at one moment of a simulated crossing crowd](docs/walkthrough/s6_all_boxes.png)
-
-## In one screen
-
-**The robot's knowledge is a table of examples. It adapts to new behaviour, and to a new body, by swapping rows, with no training step.**
-
-| | Proof | Number | Limit |
-|---|---|---|---|
-| 1 | **Adapts when behaviour changes, no retraining** | After the crowd turns erratic, the scene-reading TabPFN keeps 59% of people inside its 2 s range against 41% for LightGBM (+18.0 pts [+16.7, +19.3]). Reading the scene alone adds 10 of those points over the same TabPFN without it. Ahead of LightGBM in all three simulated crowds (+6.6, +18.0, +19.7 pts) | Simulated crowds; still short of the 81% target; small on real pedestrians, who have no sudden switch |
-| 2 | **Same core, another body** | Highway cars through the unchanged core: TabPFN on 1,500 rows matches LightGBM trained on 67 times more, with more honest ranges (86% inside against 69–82%). After traffic turns aggressive, reading the scene adds 14 pts of coverage (76.7% vs 62.5%) | Simulated traffic, offline, no closed loop for cars; most of the gain in the first 6 s after the switch |
-| 3 | **Learns more per example** | Five real pedestrian scenes, each held out once: TabPFN beats constant velocity plus a fixed band in every scene (interval score −0.365 [−0.405, −0.328] pooled), beats LightGBM on the same 1,500 rows (−0.130 [−0.154, −0.107]) and ties LightGBM trained on about 15 times more | Ties, not wins, against the bigger model; Zara1 and Zara2 share a camera |
-| + | **TabPFN at every step of the loop** | TabPFN predicts the ranges, adapts them from the scene, and a second TabPFN picks the robot's move: it matched the planner it learned from on 20 new crowds (goal 100% vs 100%, time 24.65 vs 24.10 s); safety checks override it at 0.9% | Shows TabPFN can be the controller, not a better one; the collision interval is too wide at 20 crowds to rule out a 25-pt worse rate |
-| ✗ | **What failed** | The robot beat no standard navigation planner under the pre-set test, in any of three crowds; it was 3–4 s slower at equal safety. Better ranges did not change how the box planner drives; its caution setting did | At a lower caution setting, and in the densest crowd, it is roughly level with the baselines (exploratory) |
-
-**When to use which:** few examples, or behaviour that just changed → TabPFN. Plenty of familiar data → a well-fitted LightGBM is as good. The next lever is the planner, not the forecaster: one that uses the full range instead of a box veto. On an NVIDIA L4 the TabPFN step takes 71 ms per replan. The TabPFN-3.5 weights are non-commercial.
-
-![Five real scenes, each held out once](media/fig_loso5.png)
-
-Video: [link: confirm] · Repository: `shiinalight/Robodetect`
-
-## Start here
-
-| Read | What it gives you |
-|---|---|
-| [`final/00_START_HERE.md`](final/00_START_HERE.md) | The short reference set: eight pages (story and claims, video, deck, the two proof write-ups, questions and answers) with an index to everything else |
-| [`docs/VIDEO_BRIEF.md`](docs/VIDEO_BRIEF.md) | The 3-minute video plan: the story on one card, the timed script, and why we chose our data, step size, horizons and baselines, with references |
-| Branch `nooshin/dev` | The 3D street and doorway scenes behind the video (`media/street3d_demo.html`, `media/demo_full.mp4`). They use their own simulator setup and are not merged into this branch |
-| [`docs/STORY.md`](docs/STORY.md) | The story in one page: every claim with its status, number, source and exact wording; what exists; the video script; the hard questions |
-| [`docs/explainer.html`](docs/explainer.html) | Picture-first explainer, about 5 minutes. Published as an artifact page: https://claude.ai/artifact/So3d3641GrgCkkRMxyaii9 [confirm: set the page's sharing to public before submitting]. Also opens locally in a browser (GitHub shows HTML as source) |
-| [`docs/walkthrough.html`](docs/walkthrough.html) | One real planning decision, stage by stage, with the actual values (features f4, seed 6001). It uses the split setup of the T5 loop (frozen bank plus this scene's recent rows) |
-| [`PLAN.md`](PLAN.md) | The claims and their current status, the framework, the document map |
-| [`RESULTS.md`](RESULTS.md) | The pre-registration and its amendments, and every number with its limits. |
-| [`docs/DEFENSE.md`](docs/DEFENSE.md) | How the work can be attacked, our answers, and the claims we must not make |
+<p align="center"><img src="media/stills/3d_range_every_agent.jpg" width="820" alt="A 3D street where every person, car and bike carries a shaded range showing where it may be in two seconds"></p>
+<p align="center"><em>Every person, car and bike gets a range: where it may be in two seconds. A simulated street the model never saw.</em></p>
 
 ## The problem
 
-A robot crossing a station has to plan around where people will be in the next two seconds. The plan is only as good as the uncertainty it is given. An overconfident range tells the robot a path is clear when it is not, and this is hardest to trust in a place the robot has never seen. A common approach assumes people keep walking straight, or adds one fixed margin. Learned forecasters do better, but once trained they are frozen: a new site or a change in behaviour means training again. Constant velocity is a strong baseline on real pedestrians (Schöller et al. 2020); the hard part is knowing how wrong it might be.
+A delivery robot shares the street with people, cars and bikes. To move safely it has to guess where each of them will be next.
+
+Most robots today assume everyone keeps walking straight, or keep one fixed safety margin. Too narrow, and the robot walks into people. Too wide, and it freezes. Learned models guess better, but once trained they are frozen: a new place, or people suddenly moving differently, means training again.
+
+<p align="center"><img src="media/diagrams/01_problem.png" width="760" alt="The robot rejects moves that enter a person's predicted range and picks a move that stays clear"></p>
 
 ## How it works
 
-1. **Track (S1).** A forward-only Kalman filter, tuned per dataset on training data only, smooths each person's observed positions (`foresight/core/features.py`).
-2. **Table (S2).** One row = one person, one moment, one look-ahead (1 or 2 s). Features are in the person's own frame: their recent motion, their 3 nearest neighbours, the robot, the nearest obstacle, local density. The label is the deviation from the walking-straight point. A live query and an offline row give identical features (`tests/test_parity.py`).
-3. **Example selection (S3), the rows TabPFN reads.** A frozen bank of 2,000 rows sampled at natural move frequency, cached once, plus a "split" scene model that reads at most 250 of this episode's most recent completed rows, refit every 2 s and used only once their outcome is known (`foresight/core/context.py`, `run_closed.py`, D-30, D-31).
-4. **Ranges per person (S4), where TabPFN runs.** TabPFN returns quantiles on each axis for every person and horizon in one batched call. In the split setup the bank and scene models' quantiles are averaged per axis; the bank model runs alone below 20 recent rows (`foresight/core/models.py`).
-5. **Calibration (S5).** An online offset widens or narrows the box from completed rows (adaptive conformal, Gibbs and Candès 2021). In the T5 loop it is on, updated once per 2 s batch; a per-row update made the box oscillate and froze the robot (T4 addendum part 4). In T5 the split model's boxes stayed better calibrated than the frozen model's after the behaviour change (result 3b) (`foresight/core/conformal.py`).
-6. **Occupancy map (S6).** The same quantiles become a grid of where people may be, used for drawing and for an occupancy metric (metric pending) (`foresight/core/occupancy.py`).
-7. **Planner (S7).** Candidate moves that come within a margin of any predicted box at +1 or +2 s, or fail a 0.4 s constant-velocity check, are rejected. Of the rest, the one with the most progress wins. The box quantile (`box_q`, 0.10 to 0.20) is the caution dial (`foresight/core/planner.py`).
+**1. Every moment becomes one row of a table.** How a person is moving, who is near them, where the robot and the walls are.
 
-TabPFN's weights never change on the robot: adapting to a scene means swapping context rows, not training.
+<p align="center"><img src="media/diagrams/03_row.png" width="520" alt="One person's recent motion turned into numbers; the target is the gap between walking straight and where they actually went"></p>
 
-## Results (final on features f4 only)
+**2. TabPFN reads example rows and answers in one step, with no training.** The examples are a fixed bank plus the last few seconds of this very street. When people change how they move, the new rows show it within seconds. [TabPFN](https://github.com/PriorLabs/TabPFN) is a model from Prior Labs that learns from the examples it is shown.
 
-Every number below names its source. `results/` is git-ignored, so each result file is regenerated by the script named next to it (see "How to run"). Numbers not yet final on f4 are shown as **pending**.
+<p align="center"><img src="media/diagrams/04_tabpfn_step.png" width="560" alt="Example rows from this scene and the past go into TabPFN, which returns a box and an occupancy map for each person now"></p>
 
-**1. Claim A: ranges in a scene never seen. Holds on these two scenes, not on five** (a tie against LightGBM on about 15x more rows when each of five scenes is held out: [`docs/LOSO5.md`](docs/LOSO5.md)) (real pedestrians, ETH and Hotel, Zurich; context from one scene, test on the other; +2 s; n = 335 rows ETH → Hotel, 324 Hotel → ETH). Source: `results/claim_a_f4.md` / `.csv`, written by `tools/claim_a.py` (TabPFN-3.5 default settings, run locally: D-29, no API entry in `results/api_usage.csv`). Context-dependent models are averaged over 5 context samples of 1,500 rows; "±" is the spread over those samples, **not a confidence interval**. Box = 5–95% on each axis; honest joint coverage is 80–90% (81% if the axes are independent). Interval score (Gneiting and Raftery 2007, 90% interval, mean over axes, m): lower is better.
+**3. The robot takes the move that makes the most progress and stays out of every range.** It replans every 0.4 seconds; TabPFN answers in 71 ms on an NVIDIA L4 GPU.
 
-| Direction | Model | Rows read | Box coverage | Box miss rate | Interval score | 10–90% width | Error |
-|---|---|---|---|---|---|---|---|
-| ETH → Hotel | Constant velocity | — | 9% | 91% | 3.17 | 0 | 0.254 m |
-| | Constant velocity + fixed band | all | 92% | 8% | 1.34 | 0.82 m | 0.254 m |
-| | LightGBM, untuned | 1,500 | 68% ± 1 | 32% | 1.20 | 0.41 m | 0.267 m |
-| | LightGBM, small-data setting (m50 n100) | 1,500 | 78% ± 2 | 22% | 1.14 | 0.54 m | 0.258 m |
-| | LightGBM, untuned | all | 75% | 25% | 1.04 | 0.43 m | 0.253 m |
-| | **TabPFN** | 1,500 | **86% ± 2** | **14%** | 1.04 | 0.59 m | 0.244 m |
-| Hotel → ETH | Constant velocity | — | 1% | 99% | 5.31 | 0 | 0.428 m |
-| | Constant velocity + fixed band | all | 69% | 31% | 1.99 | 0.55 m | 0.428 m |
-| | LightGBM, untuned | 1,500 | 45% ± 2 | 55% | 2.29 | 0.41 m | 0.409 m |
-| | LightGBM, small-data setting (m50 n100) | 1,500 | 59% ± 3 | 41% | 2.03 | 0.52 m | 0.409 m |
-| | LightGBM, untuned | all | 58% | 42% | 2.05 | 0.46 m | 0.405 m |
-| | **TabPFN** | 1,500 | **75% ± 1** | **25%** | **1.75** | 0.65 m | 0.403 m |
+<p align="center"><img src="media/diagrams/06_planner.png" width="680" alt="Candidate moves fanning out from the robot: moves into a range or a wall are rejected, the safe move with most progress is chosen"></p>
 
-![Claim A on f4: joint coverage and interval score per model, both directions](media/fig_f4_claim_a.png)
+> **The robot's knowledge is the table. To adapt, swap the rows.**
 
-**Five-scene check (exploratory, `docs/LOSO5.md`):** with the three UCY scenes added and each of five scenes held out once, the pre-set rule says **not supported**: TabPFN with 1,500 examples ties LightGBM trained on all rows of four scenes (about 15x more, more varied data; pooled interval score −0.008 [−0.023, +0.007]), worse on Hotel and Zara1, better on Univ. What holds on five scenes: on the same 1,500 rows TabPFN beats LightGBM (−0.130 [−0.154, −0.107]) and beats constant velocity plus band everywhere (−0.365), with the most even coverage (77.5–87%). TabPFN's edge is strongest when data is scarce and narrow; it fades when the rival has plenty of varied data.
+## Does it work? Three tests
 
-How to read it. The claim is direction-dependent:
-- **ETH → Hotel:** TabPFN's box is inside the honest range; the best LightGBM is just below it (78%). LightGBM on all rows ties TabPFN on interval score (1.04 against 1.04).
-- **Hotel → ETH:** every model under-covers. TabPFN is closest (75%) and has the best interval score (1.75 against 1.99 and above), but it does not keep its promise here either.
-- **Point error:** every model is within 0.03 m of a well-filtered constant velocity. We claim no point-error gain.
-- **Moving people only** (diamonds in the figure): TabPFN covers 81% (ETH → Hotel) and 76% (Hotel → ETH), LightGBM 44–66%, the fixed band 88% and 68%.
-- **Intervals that resample whole people** (`tools/claim_a_boot.py` → `results/claim_a_boot_f4.csv`, 5,000 resamples by person, TabPFN minus LightGBM on all rows): Hotel → ETH interval score (5–95) −0.30 [−0.42, −0.18], box miss −17.0 points [−21.0, −13.0]; ETH → Hotel interval score +0.01 [−0.06, +0.07] (level), box miss −11.5 points [−15.7, −7.5] (`RESULTS.md`). The test rows are the f1 evaluation sample, re-scored on f4; on a fresh clone without the f1 row cache, `claim_a.py` draws a new sample.
+We compared TabPFN with LightGBM, a strong and widely used learned model, under rules we wrote down before each run.
 
-**2. Data efficiency** (simulated crossing crowd, in-distribution, +2 s, 2,000 test rows, 3 context samples). Source: `results/context_size.csv`, written by `tools/context_size.py`.
+### 1. Adapts to dynamic environments
 
-| Model | Rows read | Error | Pinball | Box coverage |
-|---|---|---|---|---|
-| Constant velocity | — | 0.745 m | — | — |
-| LightGBM, untuned / small-data setting | 2,000 | 0.706 / 0.705 m | 0.121 / 0.116 | 66% / 73% |
-| TabPFN-3.5-Fast, 1 estimator (local) | 2,000 | 0.646 m | 0.106 | 85% |
-| LightGBM, untuned | 20,000 | 0.634 m | 0.106 | 79% |
-| LightGBM, untuned (one fit) | all 73,163 | 0.606 m | 0.101 | 83% |
-| TabPFN-3.5, default (hosted API) | 20,000 | 0.593 m | 0.096 | 87% |
+<p align="center"><img src="media/demo/calibration_seed3013.gif" width="720" alt="One simulated crowd that turns erratic after 5 seconds; each model draws a box for every person"></p>
 
-TabPFN on 2,000 rows is about level with LightGBM on 20,000. Choosing rows by similarity instead of at random changed error by at most 0.005 m at 1,000 or 5,000 rows (same file). One simulated scene only.
+A crowd suddenly turns erratic. After the change, TabPFN keeps **59%** of people inside their predicted range, against **41%** for LightGBM: **+18 points, no retraining**. It led in all three crowds we tested. *(The clip is one crowd; its counters differ slightly from the overall numbers.)*
 
-**3. Claim B: reading the scene's own recent rows, offline in simulation** (T3: crossing crowd with erratic behaviour held out of the bank; 6 episodes switch calm → erratic at 20 s; 636 query rows). Source: `results/live_variants_cp.csv`, written by `tools/live_variants_cp.py`; `RESULTS.md`, amendment 2. Split (bank + recent scene rows) minus frozen bank, both with the online offset, after the switch, 95% person-bootstrap intervals:
+### 2. Works across modalities
 
-| Metric | Split minus frozen |
-|---|---|
-| Interval score (90% box) | −1.29 [−1.70, −0.94] |
-| Box coverage | +12.6 points [+9.0, +16.3] |
-| Median error | −0.057 m [−0.092, −0.021] |
+<p align="center"><img src="media/demo/highway.gif" width="720" alt="Cars on a simulated highway with each model's predicted range, before and after drivers turn aggressive"></p>
 
-Limits: no variant reaches the 80–90% target after the switch (best 68%). The split setup was chosen on this same data (D-30), so this is a selection-stage result; the in-loop check (3b) reproduces it on fresh seeds. Split costs about 3 s per moment offline against 0.27 s for frozen (emulated CPU). On real data (Hotel → ETH, 137 query rows over 44 moments, 83 people) no variant was distinguishable from constant velocity (split vs CV −0.015 m, paired person bootstrap 95% interval [−0.041, +0.010]). Real-data check of claim B (`tools/realdata_claimb.py`, `results/realdata_claimb.csv`), from 5 s, split vs frozen: interval score −0.045 [−0.080, −0.009] pooled over both directions, coverage level, level with the offset; small and direction-dependent.
+Same core, cars instead of people. With **1,500 examples**, TabPFN predicts as well as LightGBM trained on about **100,000**: the same result with **67× less data**. *(The clip is one road.)*
 
-**3b. Claim B in the closed loop** (T5 exploratory b: crossing crowd, every seed switches into erratic at 5 s, 20 paired seeds 3000–3019, box q 0.15, +2 s against true positions). Source: `results/inloop_claimb.csv`, written by `tools/inloop_claimb.py`; `RESULTS.md`, "Closed loop T5 results". Split minus other, 95% paired-seed intervals:
+### 3. Works with very little data
 
-| After the switch | Split | Frozen TabPFN | LightGBM, all rows | Split minus frozen | Split minus LightGBM |
-|---|---|---|---|---|---|
-| 5–95 box coverage | 59.3% | 49.3% | 41.3% | +10.0 pts [+8.4, +11.6] | +18.0 pts [+16.7, +19.3] |
-| Interval score | 5.03 | 6.34 | 7.03 | −1.31 [−1.55, −1.08] | −2.00 [−2.20, −1.80] |
-| Median error | 1.016 m | 1.073 m | 1.036 m | −0.057 m [−0.094, −0.021] | −0.020 m [−0.051, +0.010] |
+<p align="center"><img src="media/demo/scenes5.gif" width="720" alt="Five real pedestrian scenes, each shown as a new place, with predicted ranges around people"></p>
 
-Limits: no model reaches the 80% target after the switch. Before the switch split is slightly worse (interval score +0.18 [+0.10, +0.27] against frozen). So claim B holds offline and in the closed loop, in simulation only.
+Five real pedestrian scenes (ETH, Hotel, Zara 1 and 2, Univ), each tested as a place the model has never seen. TabPFN beats the "walk straight plus a fixed margin" guess in **all five** and beats LightGBM given the same examples (in 4 of 5 scenes, level on Hotel). LightGBM needs about **15× more examples** to match it. *(The clip shows one short window per scene.)*
 
-**4. Claim C: not supported in the closed loop (run as a stress test, as pre-registered).** In the crowd cell picked from baseline runs alone, by a rule written before any learned planner ran there (some baseline cells were seen before the rule; disclosed in amendment 1), the open-loop oracle (true future positions under the current command) had to beat every baseline by 2 s at matched safety. It did not: against constant velocity at margin 0.2 m it was 1.59 s faster [0.86, 2.39], and velocity obstacles at weight 0.5 was faster than every oracle point. The scene leaves little room: the straight-line time floor averages 17.74 s over the 20 seeds, and velocity obstacles runs only 1.50 s above it. By the pre-registered rule, a failed gate means the closed loop is reported as a stress test, not as evidence for claim C. The oracle plans under the current command while people react to the actual one, so it is not a strict upper bound. Sources: `results/oracle_gate_cross.csv`, `tools/curve_compare.py --a oracle`, D-33, `RESULTS.md` amendment 2.
+## Where it stops
 
-T5 then ran the primary test on 20 paired seeds (3000–3019). Source: `results/t5_primary.csv`, `tools/curve_compare.py`; `RESULTS.md`, "Closed loop T5 results".
-- **The TabPFN planner (tabpfn_split) beats no baseline:** all four fail Holm–Bonferroni (p = 1.0).
-- **It is slower at comparable safety:** 4.3 s slower than constant velocity at margin 0.4 at equal minimum gap, 3.0 s at equal collision rate. Constant velocity at margin 0.2 and velocity obstacles at every weight are 3.9–6.2 s faster, so it does not beat them either.
-- **Why:** not calibration. At the same caution setting (q 0.15) the split, frozen TabPFN and LightGBM planners all take about 26 s (split − frozen −0.12 s [−1.35, +1.25]; split − LightGBM +0.33 s [−1.29, +1.99], 20 paired seeds), although LightGBM's boxes are 0.63 m narrower after the switch. 40-seed update (exploratory, `results/t5_primary_40.csv`): split and frozen TabPFN still drive the same (+0.03 s [−1.08, +1.16]), but LightGBM's narrower, less honest boxes (41% vs 59% coverage after the switch) make it 1.24 s faster [+0.17, +2.34]; every learned planner stays 3–5 s slower than cv and vo at comparable safety. Better prediction did not change how this box planner drives; its caution setting did. An exploratory dial sweep on fresh seeds tests lower settings (`docs/EXPLORATORY_DIALS.md`).
-- **Exploratory (a), safety at matched time** (`results/t5_oracle_matchedtime.csv`): the open-loop oracle beats no baseline on every point and both axes. It buys clearance (minimum gap 0.22 m against 0.09 m for constant velocity at margin 0.2), but collision-rate gains mostly stay below the pre-set margin at 20 seeds.
+**Better forecasts did not make our robot faster.** Our planner is simple on purpose: it only asks yes or no, is this move inside a range? At the same safety it reaches the goal 3 to 4 seconds after standard planners. **Next:** a planner that weighs how likely each spot is, instead of a yes/no box.
 
-A 40-seed extension (same arms and rules) was declared after this analysis and before any of its results; the 20-seed analysis above stays the confirmatory result. Showcase seed 3013, picked by the rule in `RESULTS.md`; demo render: `media/demo/seed3013.gif`.
+The robot loop and the cars are simulated; the five pedestrian scenes are real data.
 
-**Second form factor: highway cars (exploratory, offline; `docs/HIGHWAY.md`, plan commit 34f1954; the order against the first TabPFN call cannot be proven to the minute, see the doc).** highway-env, 4 lanes, 20 cars at about 24 m/s, three driving styles with a sudden switch; the core (features, TabPFN quantiles) ran unchanged. **H1, same core on cars: passed.** TabPFN 85.6% joint coverage, interval score 3.57, against the pre-set LightGBM on all 100k rows 82.1% / 4.06 (−0.49 [−0.66, −0.34]) and CV + band 82.9% / 7.78. A post-hoc check against well-fitted LightGBM (1,000–2,000 trees) shrinks this to a tie (−0.18 [−0.37, +0.00]), with LightGBM's coverage falling to 69–72%: **TabPFN on 1,500 rows matches LightGBM trained on 67 times more, with more honest ranges.** **H2, adapts after cars turn aggressive (style never in the bank): passed.** Scene-reading TabPFN against frozen: coverage 76.7% vs 62.5%, interval score −0.98 [−1.41, −0.56]; about 80% of the gain is in the first 6 s after the switch (coverage 20% → 51%). A pedestrian bank predicting cars fails safe but useless (boxes about 50 m wide); adding car scene rows halves the damage but does not rescue it, so the bank must match the embodiment. ![Highway cars: TabPFN boxes at +2 s and where each car went](media/fig_highway.png)
+## What it is for
 
-**5. Intent chain: TabPFN at two chained layers, offline.** A TabPFN classifier gives probabilities for each person's next manoeuvre (straight, stop, turn left, turn right); it does not call turns outright (see below). Per-manoeuvre TabPFN range models then give the 2 s range, mixed by the classifier's probabilities. The pass/fail gate was fixed in the script before any result. Source: `results/intent_layer.log` / `.csv`, written by `tools/intent_layer.py`; `media/fig_intent_layer.png`.
+A forecasting layer that sits under whatever planner a robot already runs. A new site, a new crowd behaviour or a new kind of vehicle needs a new bank of examples, not a new training run.
 
-| Setting | Balanced accuracy (chance 0.25) | Turning people: interval score, chain minus single | Overall interval score | Verdict |
-|---|---|---|---|---|
-| Real, Hotel → ETH | 0.49 | 3.59 → 3.33, −0.263 [−0.481, −0.075] (73 rows, 37 people) | level, −0.022 [−0.057, +0.009] | adopted |
-| Simulated crossing crowd | 0.30 | — | worse | not adopted |
+- **Few examples, or behaviour that just changed:** use TabPFN.
+- **Plenty of familiar data:** a well-tuned LightGBM does as well.
 
-On real data the chain adds 5.0 points of joint coverage overall and 16.9 on turns; median error is 0.007 m worse. Simulated people pick turns at random, so intent is barely predictable there. TabPFN's class probabilities are better calibrated than LightGBM's (log loss 0.24 against 0.71 real, 0.81 against 1.53 simulated). **What the gain is, and is not:** neither classifier ever calls a turn outright on real data (turn recall 0; only 58-63 turn rows in each 2,000-row Hotel context, so turn_right gets no model of its own). The 0.49 balanced accuracy comes from straight (0.99) and stop (0.97). The gain on turning people comes from the classifier's small, well-calibrated probability on turn modes widening those people's ranges (joint coverage 45.7% to 62.6%), not from a sharper turn forecast. In simulation the chain also helps on turn rows (−0.143 [−0.275, −0.005]) but widens everyone else's ranges too much (overall +0.229 [+0.175, +0.287]). Limits: 37 turning people, 3 context seeds on real data, 2 in simulation, offline only (not in the closed loop).
+## Run it
 
-**Feature engineering (exploratory; plan `docs/FEATURES_ENG.md`, commit c85814d before any TabPFN run).** On the five real scenes we added 21 derived properties to the 39 raw features: time and distance of closest approach to each neighbour, biggest threat, a risk score, blocked-ahead counts, walking-with-a-companion, speed trend, path speed, straightness, curvature. **Neither variant passes the rule.** Raw plus engineered ties raw (pooled interval score −0.001 [−0.006, +0.004]); engineered-only (dropping raw history and neighbour positions) is worse (+0.029 [+0.017, +0.042]). The TabPFN–LightGBM tie is unchanged with either feature set. Reading: TabPFN already extracts what these hand-made properties carry from the raw history and relative neighbour motion; LightGBM ranks mean speed over the last 2 s and walking-with-someone highest, the collision-avoidance quantities about 1% each.
-
-**6. TabPFN picks the move (exploratory; plan `docs/TABPFN_POLICY.md` committed before any run; RESULTS "TabPFN picks the move").** A TabPFN classifier scores every candidate move in one batched call: robot state, the candidate's speed and turn, its clearance to every person's TabPFN box, its progress. It learned from 2,426 decisions of the box planner (q 0.35) on 40 crowds, with no training run. On 20 fresh crowds, policy vs teacher: goal reached 100% vs 100%, time 24.65 vs 24.10 s (+0.55 [−0.34, +1.65]), closest gap 0.020 vs 0.012 m, moving-collision crowds 45% vs 40% (+5 pts [−15, +25]). It picks the teacher's move at 87% of replans, and the safety checks override it at 0.9%, so TabPFN does the driving; 333 ms per plan on the L4. **Verdict by the plan's rule (point estimates within the T5 margins): passes.** As a stricter non-inferiority test on the 95% interval, collisions' upper end (+25 pts) just exceeds the 24.4-point margin at 20 crowds. Limit: it imitates a planner that does not beat the baselines, so it shows TabPFN can be the controller, not a better one. With this, TabPFN plays three roles in the running loop (ranges from the bank, adaptation from the scene, the move) and a fourth offline (intent).
-
-**7. Other runs and what is still open**
-
-| Result | Status |
-|---|---|
-| T5 latency arm (predictions 0.4 s stale) | dropped from T5 for compute (addendum part 5), then run on the L4 pod (40 seeds, same device both arms; `docs/EXPLORATORY_DIALS.md`): 0.4 s staleness costs +1.35 s [+0.18, +2.50] and raises crowds with a moving collision from 7.5% to 30% (+22.5 pts [+10, +37.5]). Prediction must arrive within the replan period: the L4's 71 ms does, the laptop CPU's 452 ms would not |
-| T5 fast-replan baselines (0.2 s) | reactive m0.4 finished 20 seeds, not yet reported; the other three were stopped (addendum part 5) |
-| Claim B on real data (`tools/realdata_claimb.py`) | **Done:** real pedestrians (from 5 s, split vs frozen, paired person bootstrap, `results/realdata_claimb.csv`): small gain, interval score −0.045 [−0.080, −0.009] pooled (1,540 rows, 544 people), coverage level (+1.3 pts [−0.5, +3.1]), level with the offset on both; direction-dependent (ETH→Hotel −0.046 [−0.086, −0.005], narrower boxes at equal coverage; Hotel→ETH −0.045 [−0.093, +0.007], level). Against LightGBM: +17.1 pts coverage, interval score −0.254. The real scenes have no sudden behaviour switch, which is where the simulator's +10 pts came from |
-| Calibration on arrival and after 20 s in the scene (`tools/conformal_eval.py`) | pending: f4 rerun (the existing table is f1) |
-| Time per plan on a GPU (`tools/latency_gpu.py`) | **measured, NVIDIA L4:** TabPFN 71 ms per replan (split design, 48 query rows), scene rebuild 318 ms every 2 s; real loop 225 ms per plan; see `docs/DEPLOYMENT.md`; **Apple M3 Pro (MPS, Nooshin):** live TabPFN 287–321 ms and frozen 130–135 ms per plan in the robot loop (`docs/runs/mac_smoke.md`) |
-
-**When to use which:** few examples, or behaviour that just changed: TabPFN. Plenty of familiar data: a well-fitted LightGBM is as good. Both under-cover turns.
-
-## Limits, and what we do not claim
-
-- **No safety guarantee.** Calibrated ranges are for efficiency; a worst-case floor is for safety (RSS; ISO/IEC TR 5469, see `docs/INDUSTRY.md`). What exists is the 0.4 s constant-velocity check; a takeover when the predictor is late is designed, not built. Online conformal gives long-run average coverage, not a per-step bound, and conformal safe-planning guarantees assume people who do not react to the robot (Lindemann et al. 2023, Assumption 1).
-- **Claim A is direction-dependent on two scenes and not supported on five:** with four varied training scenes LightGBM catches up (`docs/LOSO5.md`). The lasting result is data efficiency. No robot in the real data.
-- **Claim B is simulation-only** (offline and in the closed loop), and no model reaches the 81% target after the switch. On real pedestrians the gain is small and direction-dependent: real pedestrians (from 5 s, split vs frozen, paired person bootstrap, `results/realdata_claimb.csv`): small gain, interval score −0.045 [−0.080, −0.009] pooled (1,540 rows, 544 people), coverage level (+1.3 pts [−0.5, +3.1]), level with the offset on both; direction-dependent (ETH→Hotel −0.046 [−0.086, −0.005], narrower boxes at equal coverage; Hotel→ETH −0.045 [−0.093, +0.007], level). Against LightGBM: +17.1 pts coverage, interval score −0.254. The real scenes have no sudden behaviour switch, which is where the simulator's +10 pts came from.
-- **Claim C is not supported.** In T5 the TabPFN planner beat no baseline and was slower at comparable safety. The closed loop is a demonstration and a stress test.
-- **The intent chain is offline only,** on 37 turning people, with 3 context seeds on real data and 2 in simulation.
-- **Simulated people turn far more than real ones:** calm and hurried people in the crossing crowd turn in 8.5–13% of 2 s windows, against 2–3% on ETH and Hotel (D-24, `docs/DATA.md`).
-- **Latency:** measured on an NVIDIA L4 at 71 ms per replan (scene rebuild 318 ms every 2 s), which fits the 0.4 s replan period; Apple M3 Pro timings are in `docs/DEPLOYMENT.md`. The simulator runs in virtual time. 10 Hz needs a background scene rebuild that is designed, not built, so it is not claimed; nor is "real-time" on embedded hardware.
-- **Licence:** the TabPFN code is Apache 2.0. The TabPFN-3.5 and 3.5-Fast weights we use are non-commercial; the TabPFN-2 weights are Apache 2.0. This is a research prototype; a product would need Prior Labs' commercial licence or the v2 weights. Sizes: 219 M parameters (3.5), 83.5 M (3.5-Fast) (`docs/DEPLOYMENT.md`).
-
-## How we validated
-
-- **Pre-registration with dated amendments.** The closed-loop analysis rule was written before the run (commit 188d046, 20:28 Berlin). Amendment 1 (commit `0d5d335`), amendment 2 (`889bc36`) and the T4 addendum (`bec10b7`, `6517981`, `722e1bd`, `3df14bf`) were committed before any learned planner ran on the seeds they govern. What was seen first is disclosed: the move to the crossing crowd after T1, baseline cells visible before the picker was written, and exploratory analyses added after the oracle gate (`RESULTS.md`, DEFENSE attack 3).
-- **Gates before big runs.** Each stage has a pass/fail check written first (`docs/GATES.md`, tests T1–T5 in `docs/DECISIONS.md`). Failed gates stopped work: T1 (the default plaza could not separate planners, D-19) and the oracle gate (claim C, D-33).
-- **Every value has a decision row** (`docs/DECISIONS.md`): backed, assumed or pending.
-- **Paired seeds and person bootstrap.** Every planner runs on the same fresh seeds (40 planned from a power calculation, D-14; the learned arms were cut to 20 before any result, addendum part 5, so T5 is analysed on seeds 3000–3019); intervals are paired-seed bootstrap, Holm–Bonferroni across the four baselines. Offline intervals resample whole people.
-- **Baseline checked against the literature.** Our constant velocity at 4.8 s is 1.12 m (ETH) and 0.46 m (Hotel), close to the published 1.15 and 0.51 m (Schöller et al. 2020; D-26). Tuning the filter made constant velocity 24–30% stronger, so we reran everything against it (features f4).
-- **Leaks found and fixed.** Features f1 leaked world heading: "no obstacle" padding was rotated into the person's frame, and standing people were oriented on the world x-axis (D-20). Earlier, a "distance to the area's edge" feature used the camera's field of view, computed from future positions. Both are gone; f1 results are superseded.
-- **Pilot withdrawn.** An early "first 5 s" adaptation result rested on 10 rows in 4 episodes, and its early bin measured retrieved rows, not this scene's rows (DEFENSE attack 4). It is withdrawn (`PLAN.md`).
-
-## How to run
-
-Python 3.11 or 3.12. Windows and Linux (on Windows, run the lines in Git Bash or use `curl.exe` and `$env:` in PowerShell):
+Python 3.11 or 3.12.
 
 ```bash
-pip install -r requirements.txt           # add: pip install tabpfn-client  (only for --api runs)
-export TABPFN_TOKEN=<token>               # PowerShell: $env:TABPFN_TOKEN = "<token>". Accept the licence at ux.priorlabs.ai; never commit it
+pip install -r requirements.txt
+python -m pytest -q
+```
 
+<details>
+<summary>Rebuild the data and the main results</summary>
+
+On Windows, run these lines in Git Bash. Hosted TabPFN runs need a token from ux.priorlabs.ai in `TABPFN_TOKEN` (never commit it).
+
+```bash
+pip install tabpfn-client                 # only for --api runs
 # Real pedestrians (ETH, Hotel) from OpenTraj; raw data is not redistributed here
 for s in eth hotel; do
   curl -fsSL --create-dirs https://raw.githubusercontent.com/crowdbotp/OpenTraj/master/datasets/ETH/seq_$s/obsmat.txt -o data/raw/$s/obsmat.txt
   python -m foresight.domains.eth_ucy --raw data/raw/$s --out data/$s
 done
-# Simulated crossing crowd (bank)
+# Simulated crossing crowd (the example bank)
 python -m foresight.domains.crowd --episodes 80 --seed 0 --switch-prob 0.5 --goal-mode cross --out data/crowd_cross
-# Features f4: tune the tracking filter on training data only
+# Tune the tracking filter on training data only
 python tools/tune_kalman.py data/hotel --noise 0 --apply-to data/eth
 python tools/tune_kalman.py data/eth --noise 0 --apply-to data/hotel
 python tools/tune_kalman.py data/crowd_cross --noise 0.1 --split
 
-python tools/claim_a.py                   # result 1 (local TabPFN)
-python tools/context_size.py --part local # result 2; --part api for hosted TabPFN-3.5
-python -B tools/live_variants_cp.py       # result 3 (reads the f4 row caches the two lines above build)
-python tools/walkthrough.py --seed 6001   # docs/walkthrough.html and figures
-python -m pytest -q
+python tools/claim_a.py                   # ranges in a new place (local TabPFN)
+python tools/context_size.py --part local # how many examples are needed
+python -B tools/live_variants_cp.py       # reading the scene after a change
+python tools/walkthrough.py --seed 6001   # docs/walkthrough.html: one decision, step by step
 ```
 
-The closed-loop runs (T2 sweep, oracle gate, T4, T5) are launched by `tools/t2.ps1`, `tools/oracle_gate.ps1`, `tools/t4_*.ps1` and `tools/t5.ps1`, and analysed with `tools/curve_compare.py`; the exact settings are in `RESULTS.md`, amendment 2.
+The five real scenes and the cars have their own setup: [`docs/LOSO5.md`](docs/LOSO5.md) and [`docs/HIGHWAY.md`](docs/HIGHWAY.md). The closed robot loop is launched by `tools/t5.ps1` and analysed with `tools/curve_compare.py`; exact settings are in [`RESULTS.md`](RESULTS.md). On an Apple-silicon Mac, follow [`docs/MAC_SETUP.md`](docs/MAC_SETUP.md).
+</details>
 
-**Apple-silicon Mac:** follow `docs/MAC_SETUP.md`. `scripts/mac/setup.sh` builds the environment and data and runs the tests, `scripts/mac/smoke.sh` checks the GPU (MPS) and times TabPFN, and `scripts/mac/run.sh` runs longer jobs.
+## Learn more
 
-## Repository layout
+| Page | What it gives you |
+|---|---|
+| [`docs/STORY.md`](docs/STORY.md) | Every claim with its number, its source and the words we use for it |
+| [`docs/explainer.html`](docs/explainer.html) | A picture-first explainer, about 5 minutes (download and open in a browser) |
+| [`docs/walkthrough.html`](docs/walkthrough.html) | One real planning decision, step by step, with the actual values |
+| [`RESULTS.md`](RESULTS.md) | The rules written before each run, and every number with its limits |
+| [`docs/DEFENSE.md`](docs/DEFENSE.md) | The hard questions, and our answers |
+| [`docs/REFERENCES.md`](docs/REFERENCES.md) | Papers and datasets |
+| Branch `nooshin/dev` | The 3D street behind the video |
 
-```
-INTERFACE.md          data format every simulator or dataset writes (tracks.csv, obstacles.csv, meta.json)
-foresight/core/       schema, features (Kalman, rows), context, models, conformal, occupancy, planner, eval
-foresight/domains/    crowd.py (social-force crowd with a robot), eth_ucy.py (ETH/Hotel adapter), toy_crowd.py (tests)
-foresight/            trace.py (closed-loop trace), viz.py
-run_offline.py        rows and offline splits;  evaluate.py: offline table (its published numbers are f1)
-run_adapt.py          context strategies after arriving or after a behaviour change
-run_closed.py         closed loop: robot crossing the crowd, every planner, per-seed checkpoint
-render_closed.py, demo.py, compare.py   videos and figures
-tools/                claim_a, context_size, live_variants(_cp), curve_compare, tune_kalman, walkthrough, gates, launchers
-tests/                simulator, train/serve parity, planners, robustness
-scripts/mac/          setup, smoke test and runs on Apple silicon
-docs/                 explainer, walkthrough, decisions, gates, defence, references, data cards, deployment
-media/, deck/         figures, clips and the slide deck
-```
+## Fine print
 
-## References
+- Every pass rule was written before its run, failures stay in the record, and every number comes from a script in this repository.
+- TabPFN-3.5 weights are for non-commercial use; a product needs the commercial licence or the Apache-licensed TabPFN v2 weights.
+- Prepared before the event: generic utilities only (a Kalman filter, a constant-velocity baseline and timing code). Everything else was written at the event.
 
-Key references; the full list (36 entries, with how far each was checked) is in `docs/REFERENCES.md`.
-
-- Hollmann et al. 2025. Accurate predictions on small data with a tabular foundation model. *Nature* 637.
-- Jäger et al. 2026. TabPFN-3.5: Technical Report. arXiv:2609.17895. Vendor report, not peer reviewed; the model we run.
-- Thomas et al. 2024. Retrieval & Fine-Tuning for In-Context Tabular Models (LoCalPFN). NeurIPS. Classification only.
-- Schöller et al. 2020. What the Constant Velocity Model Can Teach Us About Pedestrian Motion Prediction. *IEEE RA-L* 5(2).
-- Pellegrini et al. 2009. You'll Never Walk Alone (ETH dataset). ICCV.
-- Amirian et al. 2020. OpenTraj. ACCV.
-- Helbing and Molnár 1995. Social force model for pedestrian dynamics. *Phys. Rev. E* 51.
-- Gibbs and Candès 2021. Adaptive Conformal Inference Under Distribution Shift. NeurIPS.
-- Lindemann et al. 2023. Safe Planning in Dynamic Environments Using Conformal Prediction. *IEEE RA-L* 8(8).
-- Gneiting and Raftery 2007. Strictly Proper Scoring Rules, Prediction, and Estimation. *JASA* 102.
-
-## Prepared before the event
-
-Generic utilities only: a Kalman filter, a constant-velocity baseline and timing code (`tools/check_tabpfn.py`). Everything else was written at the event. [confirm: the filter and baseline now live in `foresight/core/features.py` and `foresight/core/models.py`; confirm they descend from the pre-event `traj_kit.py` named in `docs/archive/TEAM-PLAN.md`, which is no longer in the repo.]
-
-The reference note `docs/archive/tabpfn-hackathon-strategies.md` was in the first commit (`58f96f8`, Sat 21 Nov 16:35 Berlin). [confirm: whether it was written before the event started.]
-
-[confirm: one line on how AI coding assistants were used.]
-
-## Team and acknowledgements
-
-- Darshak Panseriya: [role: confirm]
-- Nooshin Pourkamali: crowd simulator, 3D viewer, Mac timings [confirm]
-
-Thanks to Prior Labs and the HackLab Berlin organisers. [acknowledgements: confirm]
+Thanks to Prior Labs and the HackLab Berlin organisers.

@@ -17,8 +17,10 @@ fig_adapt.png,run_adapt.py,pilot (no person ids; 10-90 box),aea8af6,removed,repl
 fig_incontext_hotel_to_eth.png,tools/incontext_eval.py,pilot (98 rows),aea8af6,removed,dense rerun running
 fig_incontext_eth_to_hotel.png,tools/incontext_eval.py,pilot (73 rows),aea8af6,removed,dense rerun running
 fig_tier_grid.png,tools/tier_grid.py,API v3.5 / v3.5-fast / v2; hotel->eth and crowd,67d7b3d,removed,ETH->Hotel direction not yet in the grid; pre-f4 features (f1 leak / untuned filter): rerun
-sample_3d_crowd_1001.json,tools/export_3d.py,results/trace/crowd_lgbm_all_1001 (v4 trace),33a445d,current,3D viewer sample (lgbm_all planner; not a showcase seed)
+sample_3d_crowd_1001.json,tools/export_3d.py,results/trace/crowd_lgbm_all_1001 (v4 trace),33a445d,removed,removed 22 Nov (3D viewer lives on nooshin/dev); 3D viewer sample (lgbm_all planner; not a showcase seed)
 fig_data_overview.png,tools/data_cards.py,data/* (crowd, eth, hotel, crowd_c2e),8d6635a,current,docs/DATA.md
 fig_data_scenes.png,tools/data_cards.py,data/*,8d6635a,current,docs/DATA.md
 demo/highway.gif,tools/render_highway.py,results/highway_h2_q.npz + data/highway,ab3740b,current,replay of stored H2 predictions; episode by rule (median gap); stats in demo/highway_stats.json
 demo/scenes5.gif,tools/render_scenes5.py,data/eth hotel zara1 zara2 univ (local TabPFN),ab3740b,current,illustration of the LOSO5 setup; not a result; stats in demo/scenes5_stats.json
+fig_context_size.png,tools/context_size.py,results/context_size.csv,,removed,superseded by fig_f4_context_size.png (tools/plot_results.py)
+fig_live_variants.png,tools/live_variants.py,results/live_variants.csv,,removed,superseded by fig_live_variants_cp.png

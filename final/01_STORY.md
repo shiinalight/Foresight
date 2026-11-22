@@ -1,4 +1,4 @@
-> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 12:56 (after commit `bef9ae2`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 13:51 (after commit `e788ade`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: the story we submit (single source of truth)
 
@@ -166,7 +166,7 @@ From the wording audit on 22 Nov at about 09:15 Berlin. Section 2 of this page i
 - `docs/archive/PRESENTATION.md`, `docs/archive/CEO-HANDOVER.md`, `docs/archive/VIDEO_SCRIPT.md`: superseded banners.
 
 - `docs/explainer.html`, the published Overview (version 11): it now leads with the sentence and the three proofs, has sections for cars and the five scenes, and the old limits box is fixed (226bddc). `media/fig_highway.png` is retitled "same core".
-- `deck/Foresight.pptx`: reordered to section 6 with 12 main slides plus 4 backup; "when to use which" no longer says "safer" (b4c00ed, 402ac6f; RoboDetect).
+- `deck/Foresight.pptx` (removed 22 Nov; superseded by the Canva deck and `deck/Foresight_finalist.pptx`): reordered to section 6 with 12 main slides plus 4 backup; "when to use which" no longer says "safer" (b4c00ed, 402ac6f; RoboDetect).
 
 **Open, owner a person:**
 - **No LICENSE file**, while the video close and the README say "open source". Add a licence before the freeze or say "the code is public". [Darshak, shiinalight]

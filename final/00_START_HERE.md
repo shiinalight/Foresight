@@ -70,4 +70,4 @@ The open items before submission, with owners, are in [CTO_CHANGES.md](CTO_CHANG
 | Three crowds, caution dials, feature engineering | `docs/GENERALISATION.md`, `docs/EXPLORATORY_DIALS.md`, `docs/FEATURES_ENG.md` |
 | Picture-first explainer; one decision stage by stage | `docs/explainer.html`, `docs/walkthrough.html` |
 
-**History, not needed day to day:** `docs/archive/` (old plans, the first video script, the CEO handover, the presentation plan), `docs/runs/`, `deck/Foresight.pptx` (script-built; a source for pictures only), `TEAM-PLAN.md`.
+**History, not needed day to day:** `docs/archive/` (old plans, the first video script, the CEO handover, the presentation plan), `docs/runs/`, `TEAM-PLAN.md`.

@@ -1,4 +1,4 @@
-> **Copy of [`docs/DEFENSE.md`](../docs/DEFENSE.md)**, made by `tools/build_final.py` on 2026-11-22 12:56 (after commit `bef9ae2`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/DEFENSE.md`](../docs/DEFENSE.md)**, made by `tools/build_final.py` on 2026-11-22 13:51 (after commit `e788ade`). Edit the source and rerun the script; do not edit this copy.
 
 # Defence dossier: how Foresight can be attacked, and what we answer
 
@@ -597,5 +597,5 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 | docs/explainer.html:454–456 | "Our baseline matches the published one… (ours, filter tuned on the other scene)… on the standard 8 observed / 12 predicted steps" | "Our baseline is close to the published one: 1.12 m and 0.46 m against 1.15 and 0.51 m (Schöller et al. 2020), on gap-free windows with 3.2 s observed and 4.8 s ahead; on our own evaluation rows 1.13 and 0.58 m" |
 | docs/explainer.html:473 | "36 references, each verified" | "36 references, each looked up; the depth of each check is stated" |
 | docs/explainer.html:480 | "holds the truth about 80% of the time if the model is honest" | "80–90% of the time (81% if the axes are independent)" |
-| deck/Foresight.pptx (built 19:29 by `tools/build_deck.py`) | Superseded demo figure (MANIFEST: made before B9); hard-coded "box held the truth 94%" (`build_deck.py:138`); "Box holds truth (~80%)" header uses per-axis coverage | Rebuild from current figures only after the f4 rerun; drop the 94% line |
+| deck/Foresight.pptx (built 19:29 by `tools/build_deck.py`; both removed 22 Nov) | Superseded demo figure (MANIFEST: made before B9); hard-coded "box held the truth 94%" (`build_deck.py:138`); "Box holds truth (~80%)" header uses per-axis coverage | Rebuild from current figures only after the f4 rerun; drop the 94% line |
 | media/MANIFEST.csv | `fig_error_by_horizon`, `fig_calibration`, `fig_data_efficiency`, `fig_rows_place`, `fig_conformal_*`, `fig_failure_*` and `fig_tier_grid` marked "current" | Mark "superseded (f1)" until rerun on f4 |

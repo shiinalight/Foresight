@@ -1,4 +1,4 @@
-> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 12:56 (after commit `bef9ae2`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/DECK_OUTLINE.md`](../docs/DECK_OUTLINE.md)**, made by `tools/build_final.py` on 2026-11-22 13:51 (after commit `e788ade`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: finalist deck outline (5 minutes)
 
@@ -116,7 +116,7 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 
 - **"Where it stops" text card** (slide 9). Plain text, three lines.
 - **`media/diagrams/12_deployment.png`** is out of date: it says "size decided at 02:00" and "takes over if late" (that takeover is designed, not built). Edit it to read "2,000-row bank + 250 scene rows, every 0.4 s" and "safety check: 0.4 s straight-line veto", or draw the simple stack instead.
-- **Don't use** `media/diagrams/08_coverage.png` (the old claim A numbers), `media/diagrams/11_tests.png` (shows T2/T3 as running) or `media/diagrams/10_t1_curve.png` (the first plaza test). Their replacements are B5, B2 and B7.
+- **Removed (22 Nov):** the outdated diagrams `08_coverage`, `10_t1_curve` and `11_tests`; use B5, B2 and B7 instead.
 - **Two clips made on 22 Nov, 11:45:** `media/demo/highway.gif` (slide 7) and `media/demo/scenes5.gif` (slide 8). Each has a `_stats.json` next to it that says what is drawn and how the episode or window was picked.
 - **The 3D clip for slide 5:** cut from `media/demo_full.mp4` on `nooshin/dev` from about 1:03 to 1:43; it has no voice track.
 - **Starting file:** `deck/Foresight_finalist.pptx` (built by `tools/build_outline_deck.py`) has every slide below with its headline, its pictures placed and the spoken text in the speaker notes, on a plain white 16:9 page. Each picture's file name sits under it; delete those captions when done.

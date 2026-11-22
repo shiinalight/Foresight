@@ -1,4 +1,4 @@
-> **Copy of [`docs/VIDEO_BRIEF.md`](../docs/VIDEO_BRIEF.md)**, made by `tools/build_final.py` on 2026-11-22 12:56 (after commit `bef9ae2`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/VIDEO_BRIEF.md`](../docs/VIDEO_BRIEF.md)**, made by `tools/build_final.py` on 2026-11-22 13:51 (after commit `e788ade`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: video brief (3 minutes)
 
