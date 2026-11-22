@@ -648,6 +648,40 @@ Plan (committed before launch), amendment and results: `docs/GENERALISATION.md` 
   - velocity obstacles w1: 23.61 s, −0.199 m, 75%.
   - That is about half the collision crowds at similar time.
 
+## TabPFN picks the move (exploratory, Sun 22 Nov; plan and pass rule written before any run)
+
+Plan: `docs/TABPFN_POLICY.md`. Pilot and DAgger rule: `docs/runs/policy_pilot_rule.md` (6b9ffd4). Code: `foresight/core/policy.py`, `run_closed.py --planners tabpfn_policy` (232e9f0). Analysis: `tools/policy_parity.py` → `results/policy_parity.csv`. Rows: `results/closed/*pol-*`, `results/policy/*.csv`. All runs on the L4 pod.
+
+**Chain:**
+1. TabPFN ranges (tabpfn_split, q 0.35, batch offset).
+2. Every candidate move becomes one row: robot state relative to the goal; the candidate's speed and turn; its clearance to the nearest person's box at +1 s and +2 s and at the 0.4 s check; its progress and progress rank; in-area; people nearby.
+3. A TabPFN classifier (local, fit_with_cache, fitted once) scores P(teacher picks it), and the policy takes the best candidate that passes the hard checks.
+
+- **Teacher:** the box planner choose() on the same ranges, on seeds 3300–3339: 53,372 candidate rows, 2,426 picks.
+- **Context:** every pick plus 3 random non-picks per pick (9,704 rows).
+- **Kept classical, stated as such:** the tracking filter, the coverage offset, and the hard checks (the 0.4 s constant-velocity check and staying in the area).
+
+**Pilot** (3400–3404): passed the pre-written rule. The robot reached the goal in 5 of 5 crowds and picked the teacher's move at 66–96% of replans, so no DAgger round was needed. The pilot crowds count as the first 5 of the 20 test crowds (same policy and context).
+
+**Test:** 20 fresh crowds, 3400–3419, policy and teacher on the same device, paired. Each difference is policy − teacher, with a 95% paired-seed interval:
+
+| | Policy | Teacher | Difference | Rule | |
+|---|---|---|---|---|---|
+| Goal reached | 100% | 100% | 0 | ≥ −10 points | pass |
+| Time to goal | 24.65 s | 24.10 s | +0.55 [−0.34, +1.65] | ≤ +2.6 s | pass |
+| Closest gap | 0.020 m | 0.012 m | +0.009 [−0.113, +0.114] | ≥ −0.158 m | pass |
+| Moving-collision crowds | 45% | 40% | +5 points [−15, +25] | ≤ +24.4 points | pass |
+
+**Verdict by the rule: "TabPFN can drive the loop at the teacher's level."**
+- It picks the teacher's move at 87.4% of replans (66–98% per crowd).
+- The hard checks overrode its first choice at only 0.94% of replans, so TabPFN does the driving.
+- It costs 333 ms per plan on the L4, against 255 ms for the teacher.
+
+**Limits:**
+- **It imitates a planner that does not beat the baselines,** so this shows TabPFN can be the controller, not a better one. Claim C stays failed.
+- **The teacher itself collides while moving in 40% of these crowds** at q 0.35. The dial sweep's 15% was on other seeds.
+- **The collision-rate interval is wide** at 20 crowds.
+
 ## Deployment notes (wording rules for the deck)
 
 - **Licence** (checked on github.com/PriorLabs/TabPFN, 21 Nov):
