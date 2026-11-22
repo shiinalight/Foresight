@@ -17,7 +17,7 @@ LEARNED = ("tabpfn_split", "tabpfn", "lgbm_all")
 
 
 def load(tag):
-    fs = [f for f in sorted((ROOT / "results/closed").glob(f"*-{tag}.csv"))]
+    fs = [f for f in sorted((ROOT / "results/closed").glob(f"*-{tag}.csv")) if not f.name.startswith("robotfeat_")]
     return pd.concat([pd.read_csv(f).assign(setting=tag.split("-")[-1]) for f in fs], ignore_index=True) if fs else None
 
 
