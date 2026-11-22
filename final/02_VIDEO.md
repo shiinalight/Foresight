@@ -1,4 +1,4 @@
-> **Copy of [`docs/VIDEO_BRIEF.md`](../docs/VIDEO_BRIEF.md)**, made by `tools/build_final.py` on 2026-11-22 12:42 (after commit `6a04b36`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/VIDEO_BRIEF.md`](../docs/VIDEO_BRIEF.md)**, made by `tools/build_final.py` on 2026-11-22 12:44 (after commit `79cc5ab`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: video brief (3 minutes)
 
@@ -54,7 +54,7 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
    - **The robot wasn't faster:** +4.3 s at the same closest gap, +3.0 s at the same collision rate. Why: the planner only checks whether a move enters a box, so it ignores the range's shape.
    - **Each body needs its own examples:** predicting cars from pedestrian rows scores 51.7, against 13.0 for car rows. Why: people and cars move differently; the code carries over, the examples don't.
    - **Footer:** the robot loop and the cars are simulated (real data: pedestrians only) · TabPFN-3.5 weights are non-commercial.
-   - **The new-place tie is no longer listed as a limit.** On five scenes TabPFN on 1,500 rows ties a LightGBM given 15× more data, which is the data-efficiency result of proof 3, not a failure. Proof 3 says it: "Same quality from 15× fewer rows". The honest wording stays in STORY.md: claim A ("honest ranges in a new place") held on two scenes and tied on five. Say so if asked; don't call it a win in calibration.
+   - **The new-place tie is no longer listed as a limit.** On five scenes TabPFN on 1,500 rows ties a LightGBM given 15× more data, which is the data-efficiency result of proof 3, not a failure. Proof 3 says it: "Same result, 15× less data". The honest wording stays in STORY.md: claim A ("honest ranges in a new place") held on two scenes and tied on five. Say so if asked; don't call it a win in calibration.
    - The planner result is a limit both here and in STORY.md, and the bodies result is the per-body bank point.
 7. **The length is 2:46**, under 3:00.
 
@@ -65,10 +65,17 @@ Written Sun 22 Nov 2026, about 10:15 Berlin, for recording and cutting the submi
 - Limit 1: "The robot wasn't faster. Our planner only checks whether a move enters a box, so it ignores the range's shape."
 - Limit 2: "Each body needs its own examples. People and cars move differently; the code carries over, the examples don't."
 
-**Prepared, not yet rendered:** shorter proof titles, approved in a still frame. Re-render to include them; it takes about 10 min.
-- "Adapts to dynamic environments", "Works across modalities", "Works with very little data".
-- One-line verdicts: "+18 points, no retraining", "Same result, 67× less data", "Same result, 15× less data".
-- "Mistake score (lower is better)" in place of "range score".
+**Proof frame wording (applied, approved 12:50 from a still frame):** short, self-explanatory titles and one-line verdicts, so a non-technical viewer gets each proof at a glance.
+
+| Column | Title | Chart | Verdict |
+|---|---|---|---|
+| Proof 1 | **Adapts to dynamic environments** | People inside the range after the crowd changed: TabPFN 59%, LightGBM 41% | ✓ +18 points, no retraining |
+| Proof 2 | **Works across modalities** (not tied to one kind of body: people, cars, robots) | Cars instead of people, mistake score (lower is better): TabPFN on 1.5k examples 3.57, LightGBM on 100k 3.74 | ✓ Same result, 67× less data |
+| Proof 3 | **Works with very little data** | Real people in unseen places, mistake score: TabPFN on 1.5k 1.36, LightGBM on 1.5k 1.49, LightGBM on 22k 1.37 | ✓ Same result, 15× less data |
+
+- **"Mistake score"** is the interval score: it charges a range for being too wide and for missing.
+- **"Examples"** replaces "rows".
+- **Source lines are a few words each:** "Simulated robot loop · 3 crowds", "Simulated highway · 355 cars", "5 real pedestrian scenes".
 
 ---
 
