@@ -20,7 +20,7 @@ How to read the numbers:
 - **Speed** and **time stopped** (speed < 0.2 m/s) are over person rows. **Walking speed** is over rows at 0.2 m/s or more, so standing people do not pull it down. Simulated agents start from rest at t = 0, so that step is left out for the simulated sets.
 - **CV error at +2 s**: distance between the true position 2 s later and the position given by constant velocity from the true state now. It is computed on ground truth with no sensor noise, by matching each row to the same agent 2 s later (10 steps at dt 0.2, 5 at dt 0.4, 20 at dt 0.1). It shows how much of the motion a ruler already explains. Because t = 0 is left out, the simulated numbers are a little lower than `summary()` in `crowd.py` prints.
 - **Turns (tracks)**: share of 2 s windows whose heading changes by more than 30 degrees, counted only where the person moves faster than 0.5 m/s at both ends (heading is not defined for people who are standing).
-- **Mode labels** come from the cached rows. The label always looks 2 s ahead, whatever the horizon `h`, so shares per horizon differ only in which rows exist. `stop` means the mean speed over the next 2 s is under 0.2 m/s, **or the agent has no data 2 s later** (it left the scene). At h = 2 s every row has a future 2 s ahead, so that second case cannot happen; h = 2 s is the headline.
+- **Mode labels** come from the cached rows. The label always looks 2 s ahead, whatever the horizon `h`, so shares per horizon differ only in which rows exist. `stop` means the mean speed over the next 2 s is under 0.2 m/s, **or the agent has no data 2 s later** (it left the scene) (Fixed in feature version f3: no data 2 s later is now labelled "unknown", D-22.). At h = 2 s every row has a future 2 s ahead, so that second case cannot happen; h = 2 s is the headline.
 - **Nearest person**: centre-to-centre distance to the nearest other person in the same frame.
 
 ---
@@ -143,7 +143,7 @@ Mode labels:
 Observations:
 - Constant velocity already does well: 76% of rows are within 0.5 m at +2 s and the p90 is 0.73 m. A model has a small margin to win on this scene.
 - Turns are rare (about 5% of labels) and stops are rare (5.6% at h = 2 s). Almost 9 in 10 rows are `straight`.
-- The `stop` share at h = 1.2 s (15.5%) is not behaviour: the share of rows actually slow at t is 6.5% at both h = 1.2 s and h = 2 s. The extra stops at h = 1.2 s are people who leave the view within 2 s and get `stop` because they have no data 2 s later.
+- The `stop` share at h = 1.2 s (15.5%) is not behaviour: the share of rows actually slow at t is 6.5% at both h = 1.2 s and h = 2 s. The extra stops at h = 1.2 s are people who leave the view within 2 s and get `stop` because they have no data 2 s later. (Fixed in feature version f3: no data 2 s later is now labelled "unknown", D-22.)
 - People walk close together (median nearest person 1.10 m, against 2.01 m in the simulated plaza); 1.4% of distances are under 0.5 m, most likely people walking in groups.
 - Integrity: no duplicates, no gaps inside tracks, and `tracks.csv` has the same 8,908 rows as the raw `obsmat.txt`, so the converter dropped nothing. Stored velocity matches displacement (median mismatch 0.09 m/s). There are 12 annotation stalls: steps where a walking person (stored speed > 1 m/s) moves less than 0.3 m/s, usually followed by a catch-up step; the largest single step is 1.84 m in 0.4 s. 19 rows from 4 people are above 3 m/s (up to 3.9 m/s), steady over several seconds and consistent with the stored velocity. Nothing exceeds the 5 m/s bound.
 

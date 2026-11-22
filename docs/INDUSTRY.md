@@ -14,7 +14,7 @@ Company pages are the company's own claims, not independent evidence. Where publ
 Foresight facts used below come from the repo:
 - replan every 0.4 s (D-2);
 - boxes checked at h = 1 s and 2 s;
-- robot top speed 1.0 m/s according to RESULTS.md, although `run_closed.py` defaults to 1.2 m/s;
+- robot top speed 1.0 m/s according to RESULTS.md, although `run_closed.py` runs every planner at 1.0 m/s (--max-speed default); 1.2 appears only as a back-fill value for old rows;
 - the reactive baseline treats people as frozen at their current position (`run_closed.py`);
 - the safety floor has two parts. The 0.4 s constant-velocity hard check is **implemented** in `planner.choose` (D-8). The takeover by constant velocity plus band when TabPFN is late is **designed** (DEPLOYMENT.md tier table) but still an open gate (GATES S8). The current `fallback` flag in `planner.py` means "no safe candidate, so take the largest worst-case gap", which is not a deadline fallback.
 

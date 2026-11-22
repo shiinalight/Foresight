@@ -10,7 +10,7 @@ The deliverables:
 The judges are Prior Labs. Eddie asked for "something visual you can show of how it works".
 
 **How this page stays true overnight:**
-- **Fixed spine.** The story rests on what cannot flip: the one-moment walkthrough (`docs/walkthrough.html`, built on f4 features), the explainer diagrams, and the way we tested (gates written first, a leak found and fixed, our baseline matched to the published one).
+- **Fixed spine.** The story rests on what cannot flip: the one-moment walkthrough (`docs/walkthrough.html`, built on f4 features), the explainer diagrams, and the way we tested (gates written first, a leak found and fixed, our baseline close to the published one (within 3-14%)).
 - **Open results go into marked slots,** `[A]`, `[B]`, `[C]` and `[D]`. Section 8 lists every slot with its source file. Section 2.3 gives the sentence to say for each way a result can land.
 - **Numbers on this page are placeholders.** Every number currently in `RESULTS.md` was measured on features before f4 (D-26 says all results are rerun on f4). None of them goes into the video or deck until the f4 file exists.
 

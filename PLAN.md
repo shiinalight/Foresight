@@ -2,7 +2,7 @@
 
 **Read this first.** This page is the single source of truth for strategy, roadmap and framework. It is updated whenever a decision changes, by either Claude session or by any of us, and mirrored to `main` straight away, so everyone reads the same plan. Detail lives in the linked documents; this page holds only the current state.
 
-Last updated: Sat 21 Nov, 23:20 (Berlin). Code freeze Sun 12:30; submission Sun 16:30.
+Last updated: Sun 22 Nov, 02:00 (Berlin). Code freeze Sun 12:30; submission Sun 16:30.
 
 ## 0. Orchestration (live; the CTO session owns this section)
 
@@ -55,9 +55,9 @@ The modular sense–predict–plan pipeline. Each stage has its own pass/fail ch
 | S0 Data | `foresight/domains/` (crowd simulator, ETH/Hotel adapter), `INTERFACE.md` format | Crossing crowd passes on f4, narrowly (D-27: LightGBM 18.7% better than constant velocity, TabPFN-Fast on 1k rows 7.5%). Default plaza fails as a navigation test (T1) |
 | S1 State estimate | Kalman filter in `features.py` | Passes (D-26): filter tuned on training data; constant velocity at 4.8 s within 3–14% of the published value (Schöller et al. 2020), depending on the window selection |
 | S2 Table | `features.py`: agent-frame rows, target = deviation from constant velocity | Done. Leakage and parity tests pass |
-| S3 Context | `context.py`: recent, similar and fill rows | Done. Mix beats single sources (pilot) |
+| S3 Context | `context.py`: recent, similar and fill rows | Final: frozen 2,000-row bank at natural move frequency + recent-only scene model (≤250 rows), quantiles averaged ("split"). Similarity (kNN) selection dropped: no gain (D-30, D-31) |
 | S4 Forecaster | `models.py`: TabPFN and baselines behind one interface | Done. Model tiers in progress |
-| S5 Calibration | `conformal.py`: online offset | Done offline. **Not yet in the closed loop** (T4) |
+| S5 Calibration | `conformal.py`: online offset | In the loop: per-batch online offset (T4 gate); the per-row rule froze the robot. Offline: split/online conformal results in RESULTS |
 | S6 Occupancy | `occupancy.py`: one function for the metric and the drawing | Function in. Metric pending |
 | S7 Planner | `planner.py`, plus the baselines: stop and go, reactive, velocity obstacles | Done. Pre-registered comparison |
 | S8 System | latency, fallback, virtual-time delay | Delay model pending (T4) |
@@ -70,14 +70,14 @@ Rule: small tests with gates written in advance come first; the big run comes af
 | When | Item | Owner | Status |
 |---|---|---|---|
 | Sat night | T1: can the plaza separate the planners? | builder session | **done: no.** 100 common seeds: lgbm q0.15 23.3 s / 0.80 s intrusion sits on the cv-margin curve (cv m0.6 23.8 s / 0.87 s); vo w0.5 fastest (18.8 s, 2.05 s). No learned config beats every baseline by 2 s or 1 s (`results/t1_gate.csv`, `media/fig_t1_gate.png`) |
-| Sat night | T3: does live context recover when behaviour is new (crowd without erratic in the bank)? | builder session | running |
+| Sat night | T3: does live context recover when behaviour is new (crowd without erratic in the bank)? | builder session | done: offline Setting B of tools/live_variants.py (D-30) |
 | Sat night | Real-data adaptation, Hotel → ETH (local) | builder session | running |
 | After 01:00 | Real-data adaptation, ETH → Hotel (API, about 20M credits), then the model-size repeats (about 5M) | builder session | queued |
-| If T1 overlaps | T2: difficulty settings, chosen from the baselines alone by a rule fixed in advance; regenerate the bank | knobs: CTO session; sweep: builder session | **moved to the crossing crowd (D-24).** Default-scene sweep stopped. Cross bank built (data/crowd_cross), S0 passes (D-25: LightGBM 39.5% better than CV). Cross sweep running from Sun 00:20 |
+| If T1 overlaps | T2: difficulty settings, chosen from the baselines alone by a rule fixed in advance; regenerate the bank | knobs: CTO session; sweep: builder session | **moved to the crossing crowd (D-24).** Default-scene sweep stopped. Cross bank built (data/crowd_cross), S0 passes (D-25: LightGBM 39.5% better than CV). Cross sweep running from Sat 23:28 |
 | Sat night | Robustness tests: simulator (done, 11 tests), core pipeline, closed loop | CTO session + 2 subagents | running |
 | Sat night | Data cards for every dataset (`docs/DATA.md`) | CTO subagent | running |
-| Sun early | T4: refit interval, latency budget and calibration in the loop, 10 seeds each | builder session | waiting |
-| Sun early | T5: confirmatory run, 40 fresh seeds (3000–3039), dated amendment to the pre-registration | builder session | waiting |
+| Sun early | T4: refit interval, latency budget and calibration in the loop, 10 seeds each | builder session | done (T4 addendum parts 1-4) |
+| Sun early | T5: confirmatory run, 40 fresh seeds (3000–3039), dated amendment to the pre-registration | builder session | running: pruned to 20 seeds for learned arms (addendum part 5) |
 | Sun morning | Mac: MPS check and timings (`tools/check_mps.py`, `tools/latency.py`) | Nooshin | ready |
 | Sun morning | Data cards (`docs/DATA.md`); three.js viewer against the export schema | Nooshin | open |
 | Sun morning | Four-panel video and six-panel pipeline frame from traces, on the seed chosen by rule | builder session | after T1–T3 |
@@ -94,7 +94,7 @@ Rule: small tests with gates written in advance come first; the big run comes af
 - **Branches:** work goes on `darshak/core`. Plan documents (this page and `docs/`) are mirrored to `main` immediately with `tools/sync_docs.ps1`. Code and results reach `main` only once final and reviewed, by fast-forward, never by force. Before promoting, merge `origin/main` into `darshak/core`.
 - **Decisions:** no value enters a run without a row in `docs/DECISIONS.md` (backed, assumed or pending).
 - **Fairness:** same seeds, same features, same speed for every planner; baselines swept over their own settings; claims only at matched safety; analysis rules written before results.
-- **API budget:** stop at 30M credits a day; running total in `results/api_usage.csv`.
+- **API budget:** limits are monthly per account (D-29); a second account was added on Sun 22 Nov; every call is logged in results/api_usage.csv.
 
 ## 6. Document map
 
