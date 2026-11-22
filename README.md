@@ -57,6 +57,8 @@ Every number below names its source. `results/` is git-ignored, so each result f
 
 ![Claim A on f4: joint coverage and interval score per model, both directions](media/fig_f4_claim_a.png)
 
+**Five-scene check (exploratory, `docs/LOSO5.md`):** with the three UCY scenes added and each of five scenes held out once, the pre-set rule says **not supported**: TabPFN with 1,500 examples ties LightGBM trained on all rows of four scenes (about 15x more, more varied data; pooled interval score −0.008 [−0.023, +0.007]), worse on Hotel and Zara1, better on Univ. What holds on five scenes: on the same 1,500 rows TabPFN beats LightGBM (−0.130 [−0.154, −0.107]) and beats constant velocity plus band everywhere (−0.365), with the most even coverage (77.5–87%). TabPFN's edge is strongest when data is scarce and narrow; it fades when the rival has plenty of varied data.
+
 How to read it. The claim is direction-dependent:
 - **ETH → Hotel:** TabPFN's box is inside the honest range; the best LightGBM is just below it (78%). LightGBM on all rows ties TabPFN on interval score (1.04 against 1.04).
 - **Hotel → ETH:** every model under-covers. TabPFN is closest (75%) and has the best interval score (1.75 against 1.99 and above), but it does not keep its promise here either.
@@ -131,7 +133,7 @@ On real data the chain adds 5.0 points of joint coverage overall and 16.9 on tur
 ## Limits, and what we do not claim
 
 - **No safety guarantee.** Calibrated ranges are for efficiency; a worst-case floor is for safety (RSS; ISO/IEC TR 5469, see `docs/INDUSTRY.md`). What exists is the 0.4 s constant-velocity check; a takeover when the predictor is late is designed, not built. Online conformal gives long-run average coverage, not a per-step bound, and conformal safe-planning guarantees assume people who do not react to the robot (Lindemann et al. 2023, Assumption 1).
-- **Claim A is direction-dependent:** honest going to Hotel, under-covering (but closest) going to ETH. Two real scenes only, no robot in the real data.
+- **Claim A is direction-dependent on two scenes and not supported on five:** with four varied training scenes LightGBM catches up (`docs/LOSO5.md`). The lasting result is data efficiency. No robot in the real data.
 - **Claim B is simulation-only** (offline and in the closed loop), and no model reaches the 80% target after the switch. On real pedestrians the gain is small and direction-dependent: real pedestrians (from 5 s, split vs frozen, paired person bootstrap, `results/realdata_claimb.csv`): small gain, interval score −0.045 [−0.080, −0.009] pooled (1,540 rows, 544 people), coverage level (+1.3 pts [−0.5, +3.1]), level with the offset on both; direction-dependent (ETH→Hotel −0.046 [−0.086, −0.005], narrower boxes at equal coverage; Hotel→ETH −0.045 [−0.093, +0.007], level). Against LightGBM: +17.1 pts coverage, interval score −0.254. The real scenes have no sudden behaviour switch, which is where the simulator's +10 pts came from.
 - **Claim C is not supported.** In T5 the TabPFN planner beat no baseline and was slower at comparable safety. The closed loop is a demonstration and a stress test.
 - **The intent chain is offline only,** on 37 turning people, with 3 context seeds on real data and 2 in simulation.
