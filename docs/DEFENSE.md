@@ -470,7 +470,7 @@ Deep predictors need training per domain and are evaluated best-of-20 (REFERENCE
 
 30. **Q: Is the simulation real-time?**
     - No. Latency is zero (RESULTS.md:181), and measured plan times exceed the 0.4 s replan period on emulated CPU (DEPLOYMENT.md:23–25).
-    - The planned latency sweep (0 / 0.2 / 0.5 / 1.0 s in virtual time) was replaced by a single 0.4 s latency arm, predictions one replan period stale (T4 addendum part 3). That arm was dropped from T5 for compute (addendum part 5) and is now running on the L4 pod; no result yet.
+    - The planned latency sweep (0 / 0.2 / 0.5 / 1.0 s in virtual time) was replaced by a single 0.4 s latency arm, predictions one replan period stale (T4 addendum part 3). That arm was dropped from T5 for compute (addendum part 5) and is then run on the L4 pod (40 seeds, same device both arms; `docs/EXPLORATORY_DIALS.md`): 0.4 s staleness costs +1.35 s [+0.18, +2.50] and raises crowds with a moving collision from 7.5% to 30% (+22.5 pts [+10, +37.5]). Prediction must arrive within the replan period: the L4's 71 ms does, the laptop CPU's 452 ms would not.
 
 31. **Q: People react to the robot. Do your boxes?**
     - Only through the robot's current relative position and closing speed in the features.

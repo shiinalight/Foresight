@@ -120,7 +120,7 @@ On real data the chain adds 5.0 points of joint coverage overall and 16.9 on tur
 
 | Result | Status |
 |---|---|
-| T5 latency arm (predictions 0.4 s stale) | dropped from T5 for compute (`RESULTS.md` addendum part 5); now running on the L4 pod, no result yet |
+| T5 latency arm (predictions 0.4 s stale) | dropped from T5 for compute (addendum part 5), then run on the L4 pod (40 seeds, same device both arms; `docs/EXPLORATORY_DIALS.md`): 0.4 s staleness costs +1.35 s [+0.18, +2.50] and raises crowds with a moving collision from 7.5% to 30% (+22.5 pts [+10, +37.5]). Prediction must arrive within the replan period: the L4's 71 ms does, the laptop CPU's 452 ms would not |
 | T5 fast-replan baselines (0.2 s) | reactive m0.4 finished 20 seeds, not yet reported; the other three were stopped (addendum part 5) |
 | Claim B on real data (`tools/realdata_claimb.py`) | **done:** real pedestrians (from 5 s, split vs frozen, paired person bootstrap, `results/realdata_claimb.csv`): small gain, interval score −0.045 [−0.080, −0.009] pooled (1,540 rows, 544 people), coverage level (+1.3 pts [−0.5, +3.1]), level with the offset on both; direction-dependent (ETH→Hotel −0.046 [−0.086, −0.005], narrower boxes at equal coverage; Hotel→ETH −0.045 [−0.093, +0.007], level). Against LightGBM: +17.1 pts coverage, interval score −0.254. The real scenes have no sudden behaviour switch, which is where the simulator's +10 pts came from |
 | Calibration on arrival and after 20 s in the scene (`tools/conformal_eval.py`) | pending: f4 rerun (the existing table is f1) |
