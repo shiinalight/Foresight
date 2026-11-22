@@ -700,6 +700,21 @@ Plan, rules and results: `docs/HIGHWAY.md` (plan 34f1954, results 06d8d93). Figu
 
 - TabPFN − lgbm_all: −0.49 [−0.66, −0.34], with 67× fewer rows.
 - TabPFN is also lowest in every regime.
+- **Say "matches LightGBM trained on 67 times more rows, with more honest ranges", never "beats".** H1's verdict stands by its pre-set rule, but the post-hoc check below shrinks the margin to a tie against a well-fitted LightGBM.
+
+**H1 robustness check (post-hoc, disclosed; CEO review, `docs/CEO-HANDOVER.md` section 4a).** Same split, same 1,500 test rows, same paired vehicle bootstrap (355 vehicles). LightGBM is fitted on all 100,440 training rows; the first row reproduces the stored `lgbm_all` rows exactly.
+
+| LightGBM on all rows | Coverage | Interval score | Error | TabPFN − LightGBM: interval score | Coverage | Error |
+|---|---|---|---|---|---|---|
+| m50, 100 trees (pre-set `lgbm_all`) | 82.1% | 4.06 | 0.918 m | −0.49 [−0.66, −0.34] | +3.5 points | −0.164 m |
+| untuned default (m10, 300 trees) | 78.9% | 3.90 | 0.854 m | −0.33 [−0.49, −0.18] | +6.7 points | −0.100 m |
+| m20, 1,000 trees, 63 leaves | 71.6% | 3.74 | 0.741 m | −0.18 [−0.36, −0.01] | +14.0 points | +0.013 m [−0.016, +0.044] |
+| m50, 2,000 trees, 127 leaves | 69.1% | 3.75 | 0.705 m | −0.18 [−0.37, +0.00] | +16.5 points | +0.049 m [+0.020, +0.078] |
+| **TabPFN, 1,500 rows** | **85.6%** | **3.57** | 0.754 m | | | |
+
+- **Bigger LightGBM models get sharper and more accurate at the centre, and more overconfident:** coverage falls from 82% to 69% against an 81% target.
+- **TabPFN keeps the best interval score at every setting,** but against the largest model the interval touches zero. That is a tie on the proper score with 67× fewer rows, and more honest ranges: the pedestrian pattern again.
+- **Limits:** four settings picked after seeing H1, none tuned on a validation split, one run each.
 
 **H2, adapts after traffic turns aggressive** (a style the bank never saw): **PASSED**.
 - Split against frozen: coverage 76.7% against 62.5%, interval score −0.98 [−1.41, −0.56], error −0.14 m.
@@ -707,7 +722,7 @@ Plan, rules and results: `docs/HIGHWAY.md` (plan 34f1954, results 06d8d93). Figu
 
 **H2b, wrong embodiment** (no pass rule): a pedestrian bank predicting cars gives boxes about 50 m wide. That fails safe but is useless. Adding car scene rows halves the damage (interval score 51.7 → 28.2) but does not rescue it, so the bank must match the embodiment (D-35).
 
-**Limits:** offline and simulated, with no closed loop on cars.
+**Limits:** offline and simulated, with no closed loop on cars. Wording: "simulated traffic, offline", never "drives a car".
 
 ## Deployment notes (wording rules for the deck)
 

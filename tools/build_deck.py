@@ -118,20 +118,26 @@ def build():
                     "The oracle gate failed (D-33), so the closed loop is a stress test.")
     image(s, "diagrams/11_tests.png")
 
-    s = slide(prs, "Honest ranges in a place it never saw", kicker="Result · claim A",
+    s = slide(prs, "Honest ranges in a new place, on two scenes", kicker="Result · claim A (two scenes, not five)",
               notes="Real Zurich pedestrians, context from one scene, test on the other, 5 context samples, paired person "
                     "bootstrap. Hotel → ETH: TabPFN's 5-95% box holds the truth 74.8% (LightGBM on all rows 57.7%); "
                     "interval score −0.303 [−0.425, −0.184] against LightGBM. ETH → Hotel: 86.4% vs 74.9%, interval "
                     "score level with LightGBM on all rows. Direction-dependent; in the hard direction TabPFN still "
                     "under-covers (75% against about 81%). Point error level with LightGBM, slightly better than tuned CV. On five scenes (leave one out, "
                     "docs/LOSO5.md): edge strongest when data is scarce; ties a rival trained on 15x more varied data "
-                    "(pooled −0.008 [−0.023, +0.007]); on the same 1,500 rows it beats LightGBM (−0.130).")
+                    "(pooled −0.008 [−0.023, +0.007]); on the same 1,500 rows it beats LightGBM (−0.130). Say it as: better "
+                    "calibrated in a new place on two scenes, not on five; ties with 15 times less data.")
     image(s, "fig_f4_claim_a.png")
 
-    s = slide(prs, "Few rows are enough", kicker="Result · data efficiency",
-              notes="TabPFN on 2,000 rows is about level with LightGBM on 20,000 (results/context_size.csv, crowd_cross, "
-                    "f4). Retrieved (similar) rows did not beat random rows at equal size.")
-    image(s, "fig_f4_context_size.png")
+    s = slide(prs, "Learns more per example", kicker="Result · five real scenes",
+              notes="Leave one of five real scenes out (ETH, Hotel, Zara1, Zara2, Univ; docs/LOSO5.md, rule fixed before "
+                    "the run). On the same 1,500 rows TabPFN beats LightGBM (interval score −0.130 [−0.154, −0.107], "
+                    "clearly in 4 of 5 scenes). Against LightGBM trained on all rows of four scenes (about 15 times more) "
+                    "it ties (−0.008 [−0.023, +0.007]); it is worse on Hotel and Zara1 and better on Univ. Say \"ties "
+                    "with 15 times less data\". In the crowd simulator, TabPFN on 2,000 rows is about level with "
+                    "LightGBM on 20,000 (results/context_size.csv). Zara1 and Zara2 share a camera.")
+    image(s, "fig_loso5.png", max_h=Inches(5.1))
+    caption(s, "Five real scenes, each held out once: beats LightGBM on the same rows; ties one trained on 15x more")
 
     s = slide(prs, "TabPFN at two chained layers", kicker="Result · intent",
               notes="A TabPFN classifier gives manoeuvre probabilities (straight, stop, turn left or right); per-manoeuvre "
@@ -164,14 +170,17 @@ def build():
 
     s = slide(prs, "Same core, another form factor", kicker="Result · highway cars",
               notes="The core, unchanged, on highway-env cars (4 lanes, 20 IDM/MOBIL cars; offline, simulated; "
-                    "docs/HIGHWAY.md, rules fixed before any TabPFN run). H1 passed: TabPFN on 1,500 rows holds 85.6% "
-                    "with interval score 3.57, against LightGBM on 100,440 rows at 82.1% / 4.06 (−0.49 [−0.66, −0.34]) "
-                    "and constant velocity plus band at 82.9% / 7.78. H2 passed: after traffic turns aggressive, a style "
+                    "docs/HIGHWAY.md, rules fixed before any TabPFN run). H1 passed by its pre-set rule: TabPFN on 1,500 "
+                    "rows matches LightGBM trained on 67 times more rows, with more honest ranges: 85.6% coverage, "
+                    "interval score 3.57, against the pre-set LightGBM's 82.1% / 4.06 (−0.49 [−0.66, −0.34]). A "
+                    "post-hoc check with well-fitted LightGBM settings shrinks that to a tie (−0.18 [−0.37, +0.00]; those "
+                    "models cover only 69–72%). So say \"matches\", never \"beats\". Constant velocity plus band: "
+                    "82.9% / 7.78. H2 passed: after traffic turns aggressive, a style "
                     "the bank never saw, split beats frozen (coverage 76.7% vs 62.5%, interval score −0.98 [−1.41, "
                     "−0.56]); about 80% of the gain is in the first 6 s after the switch. A pedestrian bank on cars gives "
                     "~50 m boxes, so each embodiment needs its own bank (D-35). No closed loop on cars.")
     image(s, "fig_highway.png", max_h=Inches(5.1))
-    caption(s, "Cars: TabPFN 85.6% coverage, interval score 3.57 vs LightGBM (67x more rows) 4.06 · adapts after traffic turns aggressive")
+    caption(s, "Simulated traffic, offline: 1,500 rows match LightGBM trained on 67x more, with more honest ranges · adapts after traffic turns aggressive")
 
     s = slide(prs, "Adapts in the loop when behaviour changes", kicker="Result · claim B",
               notes="20 fresh simulated crowds that turn erratic at 5 s; erratic was never in the bank. After the switch, "
@@ -188,7 +197,7 @@ def build():
     image(s, "demo/calibration_seed3013_strip.png", max_h=Inches(5.15))
     caption(s, "This crowd: 60% vs 45% inside after the change; 20 crowds: 59% vs 41%")
 
-    s = slide(prs, "Calibrated, but slower", kicker="Closed loop · claim C",
+    s = slide(prs, "Slower than standard planners", kicker="Closed loop · claim C",
               notes="Pre-registered rule, 20 paired crowds: the TabPFN planner beats no baseline (Holm, p = 1.0). At "
                     "constant velocity m0.4's safety it is 4.3 s slower (gap) and 3.0 s slower (collision rate). Even "
                     "the open-loop oracle could not beat every baseline by 2 s: the fastest baseline runs 1.5 s above "
