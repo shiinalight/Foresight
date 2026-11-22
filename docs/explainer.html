@@ -1,9 +1,9 @@
-<title>Inside Foresight</title>
+<title>Foresight Overview</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: picture-first. Each section = one heading line, one figure, one caption. Colours reuse the project's figure palette (person blue, prediction orange, robot purple). */
+/* Picture-first: each section = one visual + one or two plain sentences. Palette: person blue, prediction orange, robot purple. */
 :root {
   --bg: #f4f6f9; --surface: #ffffff; --fg: #18202b; --muted: #5a6575; --line: #d5dbe3; --soft: #e9edf2;
   --person: #2a6fdb; --person-soft: #dbe7fb; --pred: #e8590c; --pred-soft: #fde4d6; --robot: #7a3fb5;
@@ -21,38 +21,74 @@
   --person: #6fa1ff; --person-soft: #1d2f4d; --pred: #ff8a4c; --pred-soft: #432517; --robot: #b48ef2;
   --ok: #5cc48a; --veto: #ff6b62; --warn: #e3a93b; color-scheme: dark }
 * { box-sizing: border-box }
-body { background: var(--bg); color: var(--fg); font: 400 16px/1.55 var(--body);
+body { background: var(--bg); color: var(--fg); font: 400 16px/1.55 var(--body); margin: 0;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px }
+img { max-width: 100%; height: auto; display: block }
+a { color: var(--person) }
 .wrap { max-width: 1060px; margin: 0 auto }
-header { padding-block: 40px 20px }
+header { padding-block: 40px 8px }
 .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
-h1 { font: 700 clamp(36px, 6.5vw, 60px)/1 var(--display); margin: 12px 0 12px; letter-spacing: -.01em }
-h2 { font: 600 clamp(22px, 3.2vw, 28px)/1.2 var(--display); margin: 0 0 4px; text-wrap: balance }
-.lede { font-size: 18px; max-width: 60ch; margin: 0 }
+h1 { font: 700 clamp(40px, 7vw, 64px)/1 var(--display); margin: 12px 0 14px; letter-spacing: -.01em }
+h2 { font: 600 clamp(22px, 3.2vw, 28px)/1.2 var(--display); margin: 0 0 6px; text-wrap: balance }
+h2 .n { font: 500 13px/1 var(--mono); color: var(--muted); margin-right: 10px; vertical-align: 4px }
+.lede { font-size: 19px; max-width: 62ch; margin: 0 }
+.tagline { font: 500 italic 18px/1.4 var(--body); color: var(--pred); margin: 14px 0 0; max-width: 60ch }
 .meta { margin-top: 10px; font: 400 12px/1.5 var(--mono); color: var(--muted) }
-section { padding-block: 36px 0 }
-.sub { color: var(--muted); margin: 0 0 4px; max-width: 70ch }
-figure { margin: 14px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 14px }
+section { padding-block: 44px 0 }
+.sub { color: var(--muted); margin: 0; max-width: 72ch }
+figure { margin: 14px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 14px; min-width: 0 }
 figure .scroll { overflow-x: auto }
 figure svg { display: block; width: 100%; height: auto; color: var(--fg); font-family: var(--body) }
-.wide-min svg { min-width: 620px }
+.wide-min svg { min-width: 560px }
+.narrow svg { max-width: 520px; margin: 0 auto }
 figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 86ch }
 figcaption b { color: var(--fg); font-weight: 600 }
-.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch }
-.grid2 > figure { margin-top: 14px }
-@media (max-width: 780px) { .grid2 { grid-template-columns: 1fr } }
-.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 14px }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px }
+.src { font: 400 11.5px/1.45 var(--mono); color: var(--muted); margin-top: 6px }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 16px }
+.grid3 figure svg { max-width: 520px; margin: 0 auto }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; margin-top: 14px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0 }
 .card h3 { font: 600 17px/1.25 var(--display); margin: 0 }
 .card p { margin: 0; font-size: 14px; color: var(--muted) }
+.card svg { width: 100%; max-width: 220px; height: auto; display: block; color: var(--fg) }
+.card.gap { border: 2px solid var(--pred); background: var(--pred-soft) }
+.card.gap p { color: var(--fg) }
 .pill { align-self: flex-start; font: 600 11px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; border: 1px solid currentColor }
 .pill.ok { color: var(--ok) } .pill.warn { color: var(--warn) } .pill.no { color: var(--veto) } .pill.part { color: var(--muted) }
-details { margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px }
-summary { cursor: pointer; font: 600 16px/1.3 var(--display) }
-summary:focus-visible { outline: 2px solid var(--person); outline-offset: 3px }
-dl { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: 6px 16px; margin: 12px 0 4px; font-size: 14px }
-dt { font-weight: 600 } dd { margin: 0 }
-@media (max-width: 560px) { dl { grid-template-columns: 1fr } dd { margin-bottom: 6px } }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px }
+.chip { font-size: 13.5px; border: 1px solid var(--line); background: var(--soft); border-radius: 999px; padding: 4px 11px }
+.chip b { font-weight: 600 }
+.chip.bad { border-color: var(--veto) } .chip.good { border-color: var(--ok) }
+/* step-by-step */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-top: 14px }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.step .k { font: 600 12px/1 var(--mono); color: var(--pred); letter-spacing: .04em }
+.step p { margin: 0; font-size: 14.5px }
+.shot { background: #ffffff; border-radius: 6px; padding: 4px; border: 1px solid var(--line) }
+.step.wide { grid-column: 1 / -1 }
+.step.wide > a, .pair { max-width: 900px }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px }
+table.row { width: 100%; border-collapse: collapse; font-size: 14px }
+table.row td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top }
+table.row td:last-child { text-align: right; font-family: var(--mono); font-size: 13px; white-space: nowrap }
+table.row tr.ans td { border-bottom: 0; color: var(--pred); font: 600 14px/1.4 var(--body); text-align: left; white-space: normal }
+.note { margin-top: 12px; font-size: 13px; color: var(--muted); border-left: 3px solid var(--warn); padding-left: 10px }
+.pending { margin-top: 14px; border: 2px dashed var(--warn); border-radius: 10px; padding: 14px 16px; background: var(--surface) }
+.pending b { font-family: var(--mono); color: var(--warn) }
+.pending p { margin: 6px 0 0; font-size: 14px; color: var(--muted) }
+/* checklist and limits */
+.checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 10px; margin-top: 14px }
+.check { display: grid; grid-template-columns: 28px 1fr; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; align-items: start }
+.check svg { width: 28px; height: 28px }
+.check h3 { font: 600 16px/1.25 var(--display); margin: 0 0 3px }
+.check p { margin: 0; font-size: 13.5px; color: var(--muted) }
+.check.lim { border-left: 4px solid var(--veto) }
+.check.nxt { border-left: 4px solid var(--ok) }
+footer { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 20px; font-size: 13.5px; color: var(--muted) }
+footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: 15px; margin-bottom: 14px }
+footer ol { margin: 6px 0 12px; padding-left: 20px }
+footer li { margin-bottom: 3px }
 /* SVG classes from theme tokens */
 .st { stroke: currentColor; fill: none; stroke-width: 1.5 }
 .st-thin { stroke: var(--muted); fill: none; stroke-width: 1 }
@@ -62,6 +98,7 @@ dt { font-weight: 600 } dd { margin: 0 }
 .box-hi { fill: var(--pred-soft); stroke: var(--pred); stroke-width: 2 }
 .box-soft { fill: var(--soft); stroke: var(--line); stroke-width: 1 }
 .frame { fill: var(--soft); stroke: var(--line); stroke-width: 1 }
+.band { fill: var(--ok); opacity: .14 }
 .person { fill: var(--person) } .person-st { stroke: var(--person); fill: none; stroke-width: 1.8 }
 .person-soft { fill: var(--person-soft); stroke: var(--person); stroke-width: 1 }
 .pred { stroke: var(--pred); fill: var(--pred-soft); fill-opacity: .6; stroke-width: 1.6 }
@@ -69,30 +106,38 @@ dt { font-weight: 600 } dd { margin: 0 }
 .pred-fill { fill: var(--pred) } .muted-fill { fill: var(--muted) }
 .robot { fill: var(--robot) } .robot-st { stroke: var(--robot); fill: none; stroke-width: 2.4 }
 .veto { stroke: var(--veto); fill: none; stroke-width: 1.8; stroke-dasharray: 5 4 }
-.warn-st { stroke: var(--warn); fill: none; stroke-width: 1.8; stroke-dasharray: 5 4 }
-.ok-st { stroke: var(--ok); fill: none; stroke-width: 1.6 }
+.veto-solid { stroke: var(--veto); fill: none; stroke-width: 2 }
+.ok-st { stroke: var(--ok); fill: none; stroke-width: 2 }
 .veto-fill { fill: var(--veto) } .ok-fill { fill: var(--ok) } .warn-fill { fill: var(--warn) }
 .trail { stroke: var(--muted); fill: none; stroke-width: 1.3; opacity: .85 }
 .t { fill: currentColor; font-size: 12px } .t-s { fill: var(--muted); font-size: 11px }
 .t-b { fill: currentColor; font-size: 14px; font-weight: 600 } .t-m { fill: var(--muted); font: 11px var(--mono) }
 .t-pred { fill: var(--pred); font-size: 12px; font-weight: 600 } .t-veto { fill: var(--veto); font-size: 12px; font-weight: 600 }
 .t-ok { fill: var(--ok); font-size: 12px; font-weight: 600 } .t-robot { fill: var(--robot); font-size: 12px; font-weight: 600 }
-.t-person { fill: var(--person); font-size: 12px; font-weight: 600 } .t-warn { fill: var(--warn); font-size: 12px; font-weight: 600 }
-.cell0 { fill: var(--surface) } .cell1 { fill: var(--pred); opacity: .18 } .cell2 { fill: var(--pred); opacity: .4 } .cell3 { fill: var(--pred); opacity: .7 }
+.t-person { fill: var(--person); font-size: 12px; font-weight: 600 }
 </style>
 
 <div class="wrap">
+
+<!-- 1. Hero -->
 <header>
   <div class="eyebrow">HackLab Berlin 2026 · Prior Labs track</div>
-  <h1>Inside Foresight</h1>
-  <p class="lede">A robot predicts where each person will be in 2 s, as a range, using TabPFN. Then it picks a move that stays clear.</p>
-  <p class="meta">State as of Sun 22 Nov, 00:35 Berlin · numbers from the repository's result files · sources at the bottom · one real decision step by step: <a href="https://claude.ai/artifact/Q9J6WKMiJ3KLrv4tVDAdvD">Foresight Walkthrough</a></p>
+  <h1>Foresight</h1>
+  <p class="lede">A robot among people predicts where each person will be in 1 and 2 seconds, as a range, using TabPFN, then picks a move that stays clear.</p>
+  <p class="tagline">Where will everyone be in two seconds, and how sure are we?</p>
+  <div class="cards">
+    <div class="card"><span class="pill warn">Direction-dependent</span><h3>A · Honest ranges in a new place</h3><p>Real pedestrians: on target going to Hotel (86%), short but closest going to ETH (75%).</p></div>
+    <div class="card"><span class="pill part">Simulation only</span><h3>B · Adapts by reading the scene</h3><p>Helped offline in simulation; not shown on real data.</p></div>
+    <div class="card"><span class="pill no">Stress test</span><h3>C · Beats standard navigation?</h3><p>Reported as a stress test, as pre-registered.</p></div>
+    <div class="card"><span class="pill part">Partly</span><h3>D · Deployable</h3><p>Model tier proposed; hardware timing pending.</p></div>
+  </div>
 </header>
 
-<!-- 1. The scene -->
+<!-- 2. The problem -->
 <section>
-  <h2>The problem</h2>
-  <figure>
+  <h2><span class="n">01</span>The problem</h2>
+  <p class="sub">A best guess is not enough: the robot needs to know how wrong it might be.</p>
+  <figure class="wide-min">
     <div class="scroll">
     <svg viewBox="0 0 680 320" role="img" aria-label="Top-down view: four people with predicted ranges at plus two seconds; the robot rejects two moves that enter a range and chooses the clear one.">
       <defs>
@@ -123,171 +168,178 @@ dt { font-weight: 600 } dd { margin: 0 }
       <text x="460" y="128" class="t-s">stopped</text>
     </svg>
     </div>
-    <figcaption><b>Orange boxes:</b> where each person will be in 2 s (nominal coverage 80–90%). Moves into a box are rejected.</figcaption>
+    <figcaption><b>Orange boxes:</b> where each person is likely to be in 2 s. Moves into a box are rejected.</figcaption>
+    <div class="chips">
+      <span class="chip bad"><b>Too small</b> → cuts close</span>
+      <span class="chip bad"><b>Too big</b> → robot freezes</span>
+      <span class="chip good"><b>Honest</b> → passes clear</span>
+    </div>
   </figure>
+  <p class="sub" style="margin-top:10px">Honest (calibrated) = the truth lands inside as often as promised. Hardest in a new place.</p>
 </section>
 
-<!-- 2. Pipeline -->
+<!-- 3. What exists today -->
 <section>
-  <h2>The pipeline</h2>
-  <figure>
-    <svg viewBox="0 0 640 700" role="img" aria-label="Pipeline: tracks, state estimate, table rows, example selection, TabPFN, calibration, planner, robot. Outcomes feed back as examples; a straight-line safety check runs beside it.">
-      <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
-      <rect x="170" y="20" width="300" height="52" rx="8" class="box"/><text x="320" y="42" class="t-b" text-anchor="middle">People's tracks</text><text x="320" y="60" class="t-s" text-anchor="middle">simulator, dataset or camera</text>
-      <rect x="170" y="104" width="300" height="52" rx="8" class="box"/><text x="320" y="126" class="t-b" text-anchor="middle">State estimate</text><text x="320" y="144" class="t-s" text-anchor="middle">Kalman filter</text>
-      <rect x="170" y="188" width="300" height="52" rx="8" class="box"/><text x="320" y="210" class="t-b" text-anchor="middle">Table rows</text><text x="320" y="228" class="t-s" text-anchor="middle">person × moment × look-ahead</text>
-      <rect x="170" y="272" width="300" height="52" rx="8" class="box"/><text x="320" y="294" class="t-b" text-anchor="middle">Example selection</text><text x="320" y="312" class="t-s" text-anchor="middle">recent here + similar past</text>
-      <rect x="170" y="356" width="300" height="52" rx="8" class="box-hi"/><text x="320" y="378" class="t-b" text-anchor="middle">TabPFN</text><text x="320" y="396" class="t-s" text-anchor="middle">reads examples, predicts quantiles</text>
-      <rect x="170" y="440" width="300" height="52" rx="8" class="box"/><text x="320" y="462" class="t-b" text-anchor="middle">Calibration</text><text x="320" y="480" class="t-s" text-anchor="middle">widens or narrows boxes to target (offline so far)</text>
-      <rect x="170" y="524" width="300" height="52" rx="8" class="box"/><text x="320" y="546" class="t-b" text-anchor="middle">Planner</text><text x="320" y="564" class="t-s" text-anchor="middle">reject, then most progress</text>
-      <rect x="170" y="608" width="300" height="52" rx="8" class="box"/><text x="320" y="630" class="t-b" text-anchor="middle">Robot</text><text x="320" y="648" class="t-s" text-anchor="middle">command every 0.4 s</text>
-      <line x1="320" y1="72" x2="320" y2="102" class="st" marker-end="url(#a2)"/><text x="328" y="91" class="t-s">positions</text>
-      <line x1="320" y1="156" x2="320" y2="186" class="st" marker-end="url(#a2)"/><text x="328" y="175" class="t-s">position + velocity</text>
-      <line x1="320" y1="240" x2="320" y2="270" class="st" marker-end="url(#a2)"/><text x="328" y="259" class="t-s">rows to predict</text>
-      <line x1="320" y1="324" x2="320" y2="354" class="st" marker-end="url(#a2)"/><text x="328" y="343" class="t-s">~1,000 examples + queries</text>
-      <line x1="320" y1="408" x2="320" y2="438" class="st" marker-end="url(#a2)"/><text x="328" y="427" class="t-s">5 quantiles per axis</text>
-      <line x1="320" y1="492" x2="320" y2="522" class="st" marker-end="url(#a2)"/><text x="328" y="511" class="t-s">ranges + occupancy map</text>
-      <line x1="320" y1="576" x2="320" y2="606" class="st" marker-end="url(#a2)"/><text x="328" y="595" class="t-s">chosen move</text>
-      <polyline points="170,46 110,46 110,298 168,298" class="person-st" marker-end="url(#a2)"/>
-      <text x="96" y="172" class="t-person" text-anchor="middle" transform="rotate(-90 96 172)">outcomes 2 s later → new examples</text>
-      <polyline points="470,130 560,130 560,550 472,550" class="st dash" marker-end="url(#a2)"/>
-      <text x="578" y="340" class="t-s" text-anchor="middle" transform="rotate(90 578 340)">safety floor: straight-line check, 0.4 s</text>
+  <h2><span class="n">02</span>What exists today</h2>
+  <p class="sub">Public material shows robots among people mostly reacting to where people are now.</p>
+  <div class="cards">
+    <div class="card">
+      <svg viewBox="0 0 220 80" aria-hidden="true"><rect x="20" y="32" width="18" height="18" rx="3" class="robot"/><line x1="44" y1="41" x2="110" y2="41" class="st dash"/><rect x="112" y="28" width="10" height="26" class="veto-fill"/><circle cx="150" cy="41" r="7" class="person"/><text x="117" y="72" class="t-veto" text-anchor="middle">STOP</text></svg>
+      <h3>Stop and go</h3><p>Delivery robots: stop when something is in front; a remote human helps.</p>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 220 80" aria-hidden="true"><rect x="20" y="32" width="18" height="18" rx="3" class="robot"/><circle cx="130" cy="41" r="7" class="person"/><circle cx="130" cy="41" r="26" class="st-thin dash"/><path d="M44 41 Q90 0 160 30" class="robot-st"/><text x="130" y="78" class="t-s" text-anchor="middle">margin around "now"</text></svg>
+      <h3>Reactive planner</h3><p>ROS 2 Nav2: 0.55 m default margin around obstacles as they are now; core Nav2 does not predict people.</p>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 220 80" aria-hidden="true"><rect x="16" y="30" width="30" height="20" rx="5" class="muted-fill"/><path d="M50 40 C100 40 140 10 200 8" class="pred-line"/><path d="M50 40 C100 40 140 40 200 38" class="pred-line"/><path d="M50 40 C100 40 140 68 200 70" class="pred-line"/><text x="200" y="56" class="t-s" text-anchor="end">8 s</text></svg>
+      <h3>Self-driving predictors</h3><p>Deep networks on large driving datasets: 6 possible paths, 8 s ahead.</p>
+    </div>
+    <div class="card gap">
+      <svg viewBox="0 0 220 80" aria-hidden="true"><rect x="20" y="32" width="18" height="18" rx="3" class="robot"/><circle cx="110" cy="56" r="7" class="person"/><rect x="128" y="18" width="44" height="30" rx="4" class="pred"/><line x1="110" y1="56" x2="146" y2="36" class="pred-line dash"/><path d="M44 41 Q80 20 120 10" class="robot-st"/></svg>
+      <h3>The gap Foresight targets</h3><p>Honest 1–2 s ranges per person that adapt to a new place without retraining.</p>
+    </div>
+  </div>
+  <p class="src">Nav2 docs (2026); Starship FAQ; Ettinger et al. 2021 (Waymo Open Motion).</p>
+</section>
+
+<!-- 4. The idea in one picture -->
+<section>
+  <h2><span class="n">03</span>The idea in one picture</h2>
+  <p class="sub">Each person becomes a table row. TabPFN, pretrained to learn from tables, reads solved examples and returns a range per person in one pass, no training.</p>
+  <figure class="narrow">
+    <svg viewBox="0 0 480 500" role="img" aria-label="Pipeline: scene, table rows, TabPFN reads examples, ranges, planner, robot. Outcomes two seconds later become new example rows. A straight-line safety check runs beside the learned part.">
+      <defs>
+        <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+        <marker id="a4b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="person"/></marker>
+      </defs>
+      <rect x="96" y="16" width="268" height="54" rx="8" class="box"/><text x="230" y="38" class="t-b" text-anchor="middle">1 · Scene</text><text x="230" y="57" class="t-s" text-anchor="middle">tracked positions of people + robot</text>
+      <rect x="96" y="96" width="268" height="54" rx="8" class="box"/><text x="230" y="118" class="t-b" text-anchor="middle">2 · Table</text><text x="230" y="137" class="t-s" text-anchor="middle">one row per person and look-ahead</text>
+      <rect x="96" y="176" width="268" height="64" rx="8" class="box-hi"/><text x="230" y="199" class="t-b" text-anchor="middle">3 · TabPFN reads examples</text><text x="230" y="216" class="t-s" text-anchor="middle">2,000 past rows + up to 250 recent</text><text x="230" y="231" class="t-s" text-anchor="middle">rows from this scene</text>
+      <text x="370" y="200" class="t-pred">◀ TabPFN</text><text x="370" y="215" class="t-pred">runs here</text>
+      <rect x="96" y="266" width="268" height="54" rx="8" class="box"/><text x="230" y="288" class="t-b" text-anchor="middle">4 · Ranges</text><text x="230" y="307" class="t-s" text-anchor="middle">a box per person at +1 s and +2 s</text>
+      <rect x="96" y="346" width="268" height="54" rx="8" class="box"/><text x="230" y="368" class="t-b" text-anchor="middle">5 · Planner</text><text x="230" y="387" class="t-s" text-anchor="middle">skip moves into a box; most progress wins</text>
+      <rect x="96" y="426" width="268" height="54" rx="8" class="box"/><text x="230" y="448" class="t-b" text-anchor="middle">6 · Robot moves</text><text x="230" y="467" class="t-s" text-anchor="middle">and replans every 0.4 s</text>
+      <g><line x1="230" y1="70" x2="230" y2="94" class="st" marker-end="url(#a4)"/><line x1="230" y1="150" x2="230" y2="174" class="st" marker-end="url(#a4)"/><line x1="230" y1="240" x2="230" y2="264" class="st" marker-end="url(#a4)"/><line x1="230" y1="320" x2="230" y2="344" class="st" marker-end="url(#a4)"/><line x1="230" y1="400" x2="230" y2="424" class="st" marker-end="url(#a4)"/></g>
+      <polyline points="96,453 46,453 46,208 94,208" class="person-st" marker-end="url(#a4b)"/>
+      <text x="34" y="330" class="t-person" text-anchor="middle" transform="rotate(-90 34 330)">2 s later: what people did → new examples</text>
+      <polyline points="364,43 448,43 448,373 366,373" class="st dash" marker-end="url(#a4)"/>
+      <text x="464" y="208" class="t-s" text-anchor="middle" transform="rotate(90 464 208)">safety floor: 0.4 s straight-line check, no model</text>
     </svg>
-    <figcaption><b>Orange:</b> TabPFN. <b>Blue loop:</b> what people actually did becomes new examples. <b>Dashed:</b> a no-prediction safety check that still works if TabPFN is late.</figcaption>
+    <figcaption><b>Blue loop:</b> outcomes become fresh examples. <b>Dashed:</b> a check with no learned model. An online offset nudges box width toward the promised hit rate.</figcaption>
   </figure>
 </section>
 
-<!-- 3. Row + TabPFN step -->
+<!-- 5. Step by step -->
 <section>
-  <h2>From scene to table to prediction</h2>
-  <div class="grid2">
+  <h2><span class="n">04</span>Step by step: one real decision</h2>
+  <p class="sub">One moment of a simulated run, through every stage.</p>
+  <div class="steps">
+    <div class="step"><span class="k">STEP 1 · SCENE</span><img class="shot" src="walkthrough/s1_scene.png" alt="Top-down view of a simulated crowd, the robot in purple, its goal as a star, and the followed person P circled." loading="lazy"><p>A crowd crosses a plaza; the robot (purple) heads for its goal (star). We follow person P.</p></div>
+    <div class="step"><span class="k">STEP 2 · SENSING</span><img class="shot" src="walkthrough/s2_sensing.png" alt="P's true, noisy and filtered positions over the last two seconds." loading="lazy"><p>A Kalman filter (a standard tracker) turns noisy positions into position and velocity.</p></div>
+    <div class="step"><span class="k">STEP 3 · ONE TABLE ROW</span>
+      <table class="row" aria-label="Six of P's 39 row values">
+        <tr><td>Look-ahead</td><td>2 s</td></tr>
+        <tr><td>P's speed</td><td>1.56 m/s</td></tr>
+        <tr><td>Turning rate</td><td>0.00 rad/s</td></tr>
+        <tr><td>Where P was 1 s ago</td><td>1.61 m behind</td></tr>
+        <tr><td>Nearest person</td><td>3.22 m</td></tr>
+        <tr><td>Robot</td><td>2.59 m, closing 0.93 m/s</td></tr>
+        <tr class="ans"><td colspan="2">To predict: offset from walking straight → ?</td></tr>
+      </table>
+      <p>P becomes one row of 39 numbers, from P's point of view; six shown.</p></div>
+    <div class="step wide"><span class="k">STEP 4 · EXAMPLES</span><a href="walkthrough/s4_context.png"><img class="shot" src="walkthrough/s4_context.png" alt="Scatter of what happened next in each example row, with P's predicted range." loading="lazy"></a><p>TabPFN reads examples with known outcomes (dots): past crowds plus this scene's latest seconds.</p></div>
+    <div class="step wide"><span class="k">STEP 5 · P'S RANGE</span><a href="walkthrough/s5_person_box.png"><img class="shot" src="walkthrough/s5_person_box.png" alt="P's predicted box one and two seconds ahead, with the true position." loading="lazy"></a><p>Out comes P's range at +1 s and +2 s.</p></div>
+    <div class="step wide"><span class="k">STEP 6 · EVERYONE</span><div class="pair"><a href="walkthrough/s6_all_boxes.png"><img class="shot" src="walkthrough/s6_all_boxes.png" alt="Predicted boxes for every person." loading="lazy"></a><a href="walkthrough/s7_occupancy.png"><img class="shot" src="walkthrough/s7_occupancy.png" alt="Occupancy map built from the same predictions." loading="lazy"></a></div><p>One call gives everyone's box, also drawn as a map of where people may be.</p></div>
+    <div class="step"><span class="k">STEP 7 · CHOOSE A MOVE</span><img class="shot" src="walkthrough/s8_planner.png" alt="Candidate moves around the robot; vetoed moves red, allowed moves green, chosen move thick." loading="lazy"><p>Candidate moves that enter a box are rejected (red); the clear one with most progress wins.</p></div>
+    <div class="step"><span class="k">STEP 8 · REPEAT</span><img class="shot" src="walkthrough/s9_ego_path.png" alt="The robot's full path through the crowd to its goal." loading="lazy"><p>Repeat every 0.4 s: the robot's whole path.</p></div>
+  </div>
+  <p class="note">Figures and values are being regenerated on the final planner and will be refreshed.</p>
+</section>
+
+<!-- 6. Why TabPFN -->
+<section>
+  <h2><span class="n">05</span>Why TabPFN</h2>
+  <p class="sub">Rival: LightGBM, a standard tree model trained beforehand.</p>
+  <div class="grid3">
     <figure>
-      <svg viewBox="0 0 380 260" role="img" aria-label="Person's own frame: heading along x; the target is the offset from the straight-line point to the actual point at plus two seconds.">
-        <defs>
-          <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
-          <marker id="a3p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="pred-fill"/></marker>
-        </defs>
-        <rect x="6" y="6" width="368" height="248" rx="8" class="frame"/>
-        <polyline points="20,206 50,196 80,186" class="trail"/><text x="22" y="226" class="t-s">last 1 s</text>
-        <line x1="80" y1="186" x2="350" y2="186" class="st" marker-end="url(#a3)"/><text x="352" y="204" class="t-s" text-anchor="end">heading</text>
-        <line x1="80" y1="186" x2="80" y2="30" class="st" marker-end="url(#a3)"/><text x="88" y="36" class="t-s">sideways</text>
-        <circle cx="80" cy="186" r="8" class="person"/>
-        <circle cx="250" cy="186" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><text x="250" y="218" class="t" text-anchor="middle">straight line, +2 s</text>
-        <line x1="250" y1="186" x2="268" y2="112" class="pred-line" marker-end="url(#a3p)"/>
-        <text x="262" y="106" class="t" text-anchor="middle" font-weight="600">✕</text><text x="276" y="96" class="t">actual</text>
-        <text x="276" y="156" class="t-pred">what TabPFN</text><text x="276" y="170" class="t-pred">predicts</text>
-        <circle cx="160" cy="92" r="6" class="person-soft"/><text x="150" y="76" class="t-s" text-anchor="middle">neighbour</text>
-        <rect x="318" y="34" width="14" height="14" rx="2" class="robot"/><text x="312" y="62" class="t-s" text-anchor="middle">robot</text>
+      <svg viewBox="0 0 400 300" role="img" aria-label="Error at plus two seconds against the number of example rows: TabPFN is lower than LightGBM on the same rows at every size; TabPFN-3.5 on 20,000 rows reaches 0.593 m, below LightGBM on all 73,000 rows at 0.606 m.">
+        <!-- x: log rows, 500 at 60, 20000 at 380; y: 0.58 m at 250, 0.76 m at 40 -->
+        <g class="grid"><line x1="60" y1="226.7" x2="380" y2="226.7"/><line x1="60" y1="168.3" x2="380" y2="168.3"/><line x1="60" y1="110" x2="380" y2="110"/><line x1="60" y1="51.7" x2="380" y2="51.7"/></g>
+        <line x1="60" y1="250" x2="380" y2="250" class="st"/>
+        <g class="t-m" text-anchor="end"><text x="54" y="230">0.60</text><text x="54" y="172">0.65</text><text x="54" y="114">0.70</text><text x="54" y="56">0.75 m</text></g>
+        <g class="t-m" text-anchor="middle"><text x="60" y="266">500</text><text x="120" y="266">1k</text><text x="180" y="266">2k</text><text x="260" y="266">5k</text><text x="320" y="266">10k</text><text x="388" y="266" text-anchor="end">20k rows</text></g>
+        <line x1="60" y1="57.5" x2="380" y2="57.5" class="st dash"/><text x="378" y="50" class="t-s" text-anchor="end">walk straight 0.745</text>
+        <line x1="60" y1="219.7" x2="380" y2="219.7" class="st-thin dash"/><text x="64" y="238" class="t-s">LightGBM, all 73k rows: 0.606</text>
+        <polyline points="60,50.5 120.1,75 180.3,103 259.8,134.5 319.9,167.2 380,187" class="person-st"/>
+        <g class="person"><circle cx="60" cy="50.5" r="3.5"/><circle cx="120.1" cy="75" r="3.5"/><circle cx="180.3" cy="103" r="3.5"/><circle cx="259.8" cy="134.5" r="3.5"/><circle cx="319.9" cy="167.2" r="3.5"/><circle cx="380" cy="187" r="3.5"/></g>
+        <polyline points="60,89 120.1,127.5 180.3,173" class="pred-line" stroke-dasharray="4 3"/>
+        <g class="pred-fill" opacity=".6"><circle cx="60" cy="89" r="3.5"/><circle cx="120.1" cy="127.5" r="3.5"/><circle cx="180.3" cy="173" r="3.5"/></g>
+        <polyline points="120.1,139.2 259.8,204.5 319.9,222 380,234.8" class="pred-line" stroke-width="2.6"/>
+        <g class="pred-fill"><circle cx="120.1" cy="139.2" r="4.5"/><circle cx="259.8" cy="204.5" r="4.5"/><circle cx="319.9" cy="222" r="4.5"/><circle cx="380" cy="234.8" r="4.5"/></g>
+        <g transform="translate(20 284)">
+          <line x1="0" y1="0" x2="18" y2="0" class="person-st"/><text x="22" y="4" class="t-s">LightGBM, same rows</text>
+          <line x1="140" y1="0" x2="158" y2="0" class="pred-line" stroke-dasharray="4 3"/><text x="162" y="4" class="t-s">TabPFN-Fast</text>
+          <line x1="244" y1="0" x2="262" y2="0" class="pred-line" stroke-width="2.6"/><text x="266" y="4" class="t-s">TabPFN-3.5</text>
+        </g>
       </svg>
-      <figcaption><b>One row:</b> a person's motion, neighbours and the robot, in their own frame. TabPFN predicts only the swerve on top of walking straight.</figcaption>
+      <figcaption><b>1 · More from each example, no training.</b> From 1,000 rows up, 0.04–0.06 m lower error than LightGBM on the same rows; hosted TabPFN-3.5 on 20,000 rows (0.593 m) is lower than LightGBM on all 73,000 (0.606 m).</figcaption>
+      <p class="src">Simulated crowd, 3 samples. results/context_size.csv</p>
     </figure>
     <figure>
-      <svg viewBox="0 0 380 260" role="img" aria-label="Examples from three sources and query rows go into TabPFN; out come quantiles, a box per person and an occupancy map.">
-        <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
-        <text x="14" y="24" class="t-s">examples (a set: order doesn't matter)</text>
-        <rect x="14" y="32" width="110" height="8" rx="2" class="person"/><rect x="14" y="43" width="110" height="8" rx="2" class="person"/><rect x="14" y="54" width="110" height="8" rx="2" class="person"/><rect x="14" y="65" width="110" height="8" rx="2" class="person"/>
-        <rect x="14" y="80" width="110" height="8" rx="2" class="person-soft"/><rect x="14" y="91" width="110" height="8" rx="2" class="person-soft"/>
-        <rect x="14" y="106" width="110" height="8" rx="2" class="box-soft"/>
-        <text x="130" y="58" class="t-person">this scene</text><text x="130" y="96" class="t-s">similar past</text><text x="130" y="114" class="t-s">rare moves</text>
-        <text x="14" y="150" class="t-s">queries</text>
-        <rect x="14" y="158" width="110" height="8" rx="2" fill="none" stroke="currentColor" stroke-dasharray="3 3"/>
-        <rect x="14" y="169" width="110" height="8" rx="2" fill="none" stroke="currentColor" stroke-dasharray="3 3"/>
-        <text x="130" y="172" class="t-s">people now</text>
-        <line x1="200" y1="80" x2="224" y2="108" class="st" marker-end="url(#a4)"/><line x1="200" y1="168" x2="224" y2="146" class="st" marker-end="url(#a4)"/>
-        <rect x="228" y="96" width="92" height="64" rx="10" class="box-hi"/>
-        <text x="274" y="124" class="t-b" text-anchor="middle">TabPFN</text><text x="274" y="142" class="t-s" text-anchor="middle">no training</text>
-        <line x1="274" y1="160" x2="274" y2="186" class="st" marker-end="url(#a4)"/>
-        <rect x="214" y="194" width="52" height="32" rx="4" class="pred"/><circle cx="238" cy="210" r="2.5" class="pred-fill"/>
-        <text x="240" y="244" class="t-pred" text-anchor="middle">box</text>
-        <g transform="translate(286 194)">
-          <rect x="0" y="0" width="11" height="11" class="cell1"/><rect x="11" y="0" width="11" height="11" class="cell2"/><rect x="22" y="0" width="11" height="11" class="cell1"/><rect x="33" y="0" width="11" height="11" class="cell0"/>
-          <rect x="0" y="11" width="11" height="11" class="cell2"/><rect x="11" y="11" width="11" height="11" class="cell3"/><rect x="22" y="11" width="11" height="11" class="cell2"/><rect x="33" y="11" width="11" height="11" class="cell1"/>
-          <rect x="0" y="22" width="11" height="11" class="cell0"/><rect x="11" y="22" width="11" height="11" class="cell1"/><rect x="22" y="22" width="11" height="11" class="cell1"/><rect x="33" y="22" width="11" height="11" class="cell2"/>
-          <rect x="0" y="0" width="44" height="33" fill="none" stroke="currentColor" stroke-width="1"/>
-        </g>
-        <text x="308" y="244" class="t-pred" text-anchor="middle">occupancy</text>
+      <svg viewBox="0 0 400 300" role="img" aria-label="Bar chart of box coverage in a scene never seen. Hotel to ETH: TabPFN 75%, LightGBM 45%, 59% and 58%. ETH to Hotel: TabPFN 86%, LightGBM 68%, 78% and 75%. Target band 80 to 90%.">
+        <!-- y: 0% at 240, 100% at 40 -> 2 px per % -->
+        <rect x="44" y="60" width="350" height="20" class="band"/>
+        <text x="392" y="56" class="t-s" text-anchor="end" style="fill:var(--ok)">target 80–90%</text>
+        <line x1="44" y1="240" x2="394" y2="240" class="st"/>
+        <line x1="44" y1="140" x2="394" y2="140" class="grid"/><line x1="44" y1="40" x2="394" y2="40" class="grid"/>
+        <g class="t-m" text-anchor="end"><text x="38" y="244">0</text><text x="38" y="144">50</text><text x="38" y="44">100%</text></g>
+        <rect x="60" y="90" width="26" height="150" class="pred-fill"/><text x="73" y="85" class="t" text-anchor="middle">75</text>
+        <rect x="90" y="150" width="26" height="90" class="person"/><text x="103" y="145" class="t" text-anchor="middle">45</text>
+        <rect x="120" y="122" width="26" height="118" class="person-soft"/><text x="133" y="117" class="t" text-anchor="middle">59</text>
+        <rect x="150" y="124" width="26" height="116" class="muted-fill"/><text x="163" y="119" class="t" text-anchor="middle">58</text>
+        <rect x="230" y="68" width="26" height="172" class="pred-fill"/><text x="243" y="63" class="t" text-anchor="middle">86</text>
+        <rect x="260" y="104" width="26" height="136" class="person"/><text x="273" y="99" class="t" text-anchor="middle">68</text>
+        <rect x="290" y="84" width="26" height="156" class="person-soft"/><text x="303" y="79" class="t" text-anchor="middle">78</text>
+        <rect x="320" y="90" width="26" height="150" class="muted-fill"/><text x="333" y="85" class="t" text-anchor="middle">75</text>
+        <text x="118" y="258" class="t-b" text-anchor="middle">Hotel → ETH</text><text x="288" y="258" class="t-b" text-anchor="middle">ETH → Hotel</text>
+        <g transform="translate(44 272)"><rect width="10" height="10" class="pred-fill"/><text x="14" y="9" class="t-s">TabPFN</text>
+          <rect x="64" width="10" height="10" class="person"/><text x="78" y="9" class="t-s">LightGBM</text>
+          <rect x="140" width="10" height="10" class="person-soft"/><text x="154" y="9" class="t-s">small-data set.</text>
+          <rect x="246" width="10" height="10" class="muted-fill"/><text x="260" y="9" class="t-s">all rows</text></g>
       </svg>
-      <figcaption><b>One prediction:</b> TabPFN reads ~1,000 example rows with known outcomes and returns a range per person, plus an occupancy map. The examples are a set: shuffling them changes predictions by under 0.0001 m (tested). Each row carries its own recent path (1 s in the simulator, 2 s on real data), so the recent past enters through the columns. Check: <span class="k">tools/check_row_order.py</span>.</figcaption>
+      <figcaption><b>2 · Honest ranges in a new place.</b> Real pedestrians, examples from the other Zurich scene. Going to ETH, TabPFN's 75% is short of target but closest: its box misses 25% of people, LightGBM's (all rows) 42%.</figcaption>
+      <p class="src">Coverage = truths inside the 5–95% box. Fixed band: 69% / 92%. results/claim_a_f4.md</p>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 360 260" role="img" aria-label="Three differences with 95% intervals, split minus frozen, after an unseen behaviour: coverage plus 12.6 points, median error minus 0.057 metres, interval score minus 1.29. All intervals exclude zero, all in the better direction.">
+        <!-- each row its own scale; zero line marked -->
+        <text x="40" y="30" class="t-b">Coverage</text><text x="330" y="30" class="t-ok" text-anchor="end">better →</text>
+        <line x1="40" y1="56" x2="330" y2="56" class="st-thin"/><line x1="98" y1="44" x2="98" y2="68" class="st"/>
+        <line x1="202.4" y1="56" x2="287.1" y2="56" class="pred-line" stroke-width="3"/><circle cx="244.2" cy="56" r="5.5" class="pred-fill"/>
+        <text x="244" y="44" class="t-pred" text-anchor="middle">+12.6 pts</text>
+        <g class="t-m" text-anchor="middle"><text x="98" y="82">0</text><text x="214" y="82">+10</text><text x="330" y="82">+20</text></g>
+        <text x="40" y="112" class="t-b">Median error</text><text x="40" y="112" dx="96" class="t-ok">← better</text>
+        <line x1="40" y1="138" x2="330" y2="138" class="st-thin"/><line x1="281.7" y1="126" x2="281.7" y2="150" class="st"/>
+        <line x1="59.3" y1="138" x2="230.9" y2="138" class="pred-line" stroke-width="3"/><circle cx="143.9" cy="138" r="5.5" class="pred-fill"/>
+        <text x="144" y="126" class="t-pred" text-anchor="middle">−0.057 m</text>
+        <g class="t-m" text-anchor="middle"><text x="40" y="164">−0.10</text><text x="160.8" y="164">−0.05</text><text x="281.7" y="164">0</text></g>
+        <text x="40" y="194" class="t-b">Interval score</text><text x="40" y="194" dx="104" class="t-ok">← better</text>
+        <line x1="40" y1="220" x2="330" y2="220" class="st-thin"/><line x1="281.7" y1="208" x2="281.7" y2="232" class="st"/>
+        <line x1="76.2" y1="220" x2="168.1" y2="220" class="pred-line" stroke-width="3"/><circle cx="125.8" cy="220" r="5.5" class="pred-fill"/>
+        <text x="126" y="208" class="t-pred" text-anchor="middle">−1.29</text>
+        <g class="t-m" text-anchor="middle"><text x="40" y="246">−2</text><text x="160.8" y="246">−1</text><text x="281.7" y="246">0</text></g>
+      </svg>
+      <figcaption><b>3 · Adapts by reading the scene.</b> After an unseen behaviour, adding the scene's recent rows improves on frozen examples. Dot = difference, line = 95% interval.</figcaption>
+      <p class="src">Simulation, offline. Interval score = width plus miss penalty. Best coverage after the switch: 68%. Setup chosen on this same data; in-loop check pending (T5). results/live_variants_cp.csv</p>
     </figure>
   </div>
 </section>
 
-<!-- 4. Live context -->
+<!-- 7. What we compared against -->
 <section>
-  <h2>Learning from the scene, no training</h2>
-  <figure class="wide-min">
-    <div class="scroll">
-    <svg viewBox="0 0 860 190" role="img" aria-label="Timeline: rows from the last 25 seconds with known outcomes can be examples; the last 2 seconds are pending; examples are refreshed every few seconds.">
-      <rect x="175" y="50" width="575" height="46" rx="4" class="person-soft"/>
-      <rect x="750" y="50" width="50" height="46" rx="4" class="box-soft"/>
-      <text x="462" y="78" class="t-person" text-anchor="middle">outcome known → usable as an example</text>
-      <text x="775" y="42" class="t-s" text-anchor="middle">pending</text>
-      <line x1="50" y1="120" x2="812" y2="120" class="st"/>
-      <g class="t-m" text-anchor="middle">
-        <line x1="50" y1="116" x2="50" y2="124" class="st"/><text x="50" y="140">−30 s</text>
-        <line x1="175" y1="116" x2="175" y2="124" class="st"/><text x="175" y="140">−25 s</text>
-        <line x1="550" y1="116" x2="550" y2="124" class="st"/><text x="550" y="140">−10 s</text>
-        <line x1="750" y1="116" x2="750" y2="124" class="st"/><text x="750" y="140">−2 s</text>
-        <line x1="800" y1="112" x2="800" y2="128" class="st"/><text x="800" y="140">now</text>
-      </g>
-      <g class="pred-fill"><path d="M800 104 l-5 -8 h10 z"/><path d="M750 104 l-5 -8 h10 z"/><path d="M700 104 l-5 -8 h10 z"/></g>
-      <text x="800" y="170" class="t-pred" text-anchor="end">▲ examples swapped in every 2 s</text>
-      <text x="50" y="170" class="t-s">LightGBM would have to retrain each time</text>
-    </svg>
-    </div>
-    <figcaption><b>TabPFN's "fit" only reads examples.</b> When the crowd or place changes, fresh rows are swapped in within seconds.</figcaption>
-  </figure>
-</section>
-
-<!-- 5. Planner checks -->
-<section>
-  <h2>Choosing a move</h2>
-  <figure>
-    <div class="scroll">
-    <svg viewBox="0 0 680 300" role="img" aria-label="Illustration of the planner: a fan of about 22 candidate moves coloured by why they were rejected (enters a range, straight-line check, wall) or kept; the kept move with most progress is chosen.">
-      <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="robot"/></marker></defs>
-      <rect x="10" y="10" width="440" height="280" rx="8" class="frame"/>
-      <line x1="10" y1="42" x2="450" y2="42" class="st" stroke-width="3"/><text x="440" y="34" class="t-s" text-anchor="end">wall</text>
-      <rect x="250" y="104" width="70" height="46" rx="4" class="pred" transform="rotate(20 285 127)"/>
-      <rect x="262" y="196" width="60" height="40" rx="4" class="pred"/>
-      <circle cx="200" cy="232" r="6" class="person"/><line x1="200" y1="232" x2="180" y2="204" class="st-thin"/>
-      <!-- candidates from (90,170): angles -90..90 relative to goal (east), lengths 70/140/210 -->
-      <g>
-        <line x1="90" y1="170" x2="90" y2="20" class="veto" style="stroke:var(--muted)"/>
-        <line x1="90" y1="170" x2="195" y2="48" class="veto" style="stroke:var(--muted)"/>
-        <line x1="90" y1="170" x2="272" y2="65" class="ok-st"/>
-        <line x1="90" y1="170" x2="300" y2="170" class="veto"/>
-        <line x1="90" y1="170" x2="272" y2="275" class="veto"/>
-        <line x1="90" y1="170" x2="195" y2="292" class="warn-st"/>
-        <line x1="90" y1="170" x2="225" y2="170" class="veto"/>
-        <line x1="90" y1="170" x2="211" y2="240" class="warn-st"/>
-        <line x1="90" y1="170" x2="160" y2="170" class="ok-st"/>
-        <line x1="90" y1="170" x2="150" y2="135" class="ok-st"/>
-        <line x1="90" y1="170" x2="150" y2="205" class="ok-st"/>
-        <line x1="90" y1="170" x2="211" y2="100" class="robot-st" marker-end="url(#a5)"/>
-      </g>
-      <rect x="81" y="161" width="18" height="18" rx="3" class="robot"/>
-      <text x="230" y="98" class="t-robot">chosen</text>
-      <!-- legend -->
-      <g transform="translate(476 40)">
-        <line x1="0" y1="10" x2="34" y2="10" class="veto"/><text x="44" y="14" class="t">enters a range</text>
-        <line x1="0" y1="44" x2="34" y2="44" class="warn-st"/><text x="44" y="48" class="t">fails 0.4 s straight-line check</text>
-        <line x1="0" y1="78" x2="34" y2="78" class="veto" style="stroke:var(--muted)"/><text x="44" y="82" class="t">hits a wall</text>
-        <line x1="0" y1="112" x2="34" y2="112" class="ok-st"/><text x="44" y="116" class="t">safe</text>
-        <line x1="0" y1="146" x2="34" y2="146" class="robot-st"/><text x="44" y="150" class="t">safe + most progress</text>
-        <text x="0" y="196" class="t-s">none safe → stop</text>
-        <text x="0" y="216" class="t-s">every 0.4 s, ~22 moves</text>
-        <text x="0" y="236" class="t-s">(4 speeds × 7 directions)</text>
-      </g>
-    </svg>
-    </div>
-    <figcaption><b>Illustration.</b> Each move is checked against the ranges at +1 s and +2 s, a short straight-line check and walls. The saved traces record the real reason for each rejected move.</figcaption>
-  </figure>
-</section>
-
-<!-- 6. Comparison panels -->
-<section>
-  <h2>What each method assumes</h2>
+  <h2><span class="n">06</span>What we compared against</h2>
+  <p class="sub">Same crowds for every robot; each baseline tuned over its own settings.</p>
   <figure class="wide-min">
     <div class="scroll">
     <svg viewBox="0 0 940 220" role="img" aria-label="Five panels: what each method assumes about a person about to turn.">
@@ -306,191 +358,70 @@ dt { font-weight: 600 } dd { margin: 0 }
       <text x="846" y="188" class="t-b" text-anchor="middle">TabPFN, live</text><text x="846" y="206" class="t-s" text-anchor="middle">reads this scene</text>
     </svg>
     </div>
-    <figcaption><b>Same person, about to turn (✕ = where they go).</b> Left to right, each method uses more information.</figcaption>
+    <figcaption><b>A person about to turn (✕ = where they go).</b> Left to right, more information.</figcaption>
   </figure>
+  <figure class="narrow">
+    <svg viewBox="0 0 440 170" role="img" aria-label="Time line in seconds: the robot's minimum travel time averages 17.74 s; the fastest baseline takes 19.24 s, only 1.5 s more. Beating it by the pre-set 2 s would need 17.24 s, below the minimum.">
+      <!-- x = 30 + (t - 16) * 47.5 -->
+      <rect x="30" y="50" width="82.7" height="44" class="veto-fill" opacity=".12"/>
+      <line x1="30" y1="94" x2="420" y2="94" class="st"/>
+      <g class="t-m" text-anchor="middle"><line x1="30" y1="94" x2="30" y2="100" class="st"/><text x="30" y="114">16</text><line x1="125" y1="94" x2="125" y2="100" class="st"/><text x="125" y="114">18</text><line x1="220" y1="94" x2="220" y2="100" class="st"/><text x="220" y="114">20</text><line x1="315" y1="94" x2="315" y2="100" class="st"/><text x="315" y="114">22</text><line x1="410" y1="94" x2="410" y2="100" class="st"/><text x="410" y="114">24 s</text></g>
+      <line x1="112.7" y1="40" x2="112.7" y2="94" class="veto-solid"/><text x="118" y="34" class="t-veto">robot's minimum time 17.74 s (mean)</text>
+      <circle cx="183.9" cy="94" r="6" class="person"/><text x="190" y="80" class="t-person">fastest baseline 19.24 s (+1.50)</text>
+      <circle cx="288.4" cy="94" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="288" y="134" class="t-s" text-anchor="middle">walk-straight planner (+3.70)</text>
+      <line x1="88.9" y1="150" x2="183.9" y2="150" class="pred-line"/><line x1="88.9" y1="143" x2="88.9" y2="157" class="pred-line"/><line x1="183.9" y1="143" x2="183.9" y2="157" class="pred-line"/>
+      <text x="196" y="154" class="t-pred">the pre-set 2 s bar</text>
+      <text x="36" y="66" class="t-s">below the</text><text x="36" y="80" class="t-s">minimum</text>
+    </svg>
+    <figcaption><b>Closed loop: a stress test.</b> Even an open-loop oracle (true futures under its current move) could not clear the pre-set 2 s bar: the fastest baseline is only 1.5 s above the robot's minimum time.</figcaption>
+    <p class="src">20 crowds. results/oracle_gate_cross.csv</p>
+  </figure>
+  <div class="pending"><b>[Final robot runs: results pending]</b><p>Fresh crowds that turn erratic mid-run (40 for baselines, 20 for the learned planners), judged by a rule written in advance. The main question: does reading the scene keep the robot's boxes honest after the change?</p></div>
 </section>
 
-<!-- 7. Results -->
+<!-- 8. How we kept it honest -->
 <section>
-  <h2>What the results show</h2>
-  <div class="grid2">
-    <figure>
-      <svg viewBox="0 0 400 300" role="img" aria-label="Bar chart: how often the box holds the truth in a new scene. Hotel to ETH: TabPFN 83%, LightGBM 46% and 62%, band 70%. ETH to Hotel: TabPFN 92%, LightGBM 76% and 80%, band 91%. Target about 81%.">
-        <!-- y: 0% at 240, 100% at 30 -> 2.1 px per % -->
-        <line x1="40" y1="240" x2="390" y2="240" class="st"/>
-        <g class="t-m" text-anchor="end"><text x="34" y="244">0</text><text x="34" y="139">50</text><text x="34" y="34">100%</text></g>
-        <line x1="40" y1="135" x2="390" y2="135" class="grid"/><line x1="40" y1="30" x2="390" y2="30" class="grid"/>
-        <line x1="40" y1="69.9" x2="390" y2="69.9" class="st dash"/><text x="390" y="64" class="t-s" text-anchor="end">nominal 80–90%</text>
-        <rect x="56" y="65.7" width="28" height="174.3" class="pred-fill"/><text x="70" y="60" class="t" text-anchor="middle">83</text>
-        <rect x="88" y="143.4" width="28" height="96.6" class="person"/><text x="102" y="138" class="t" text-anchor="middle">46</text>
-        <rect x="120" y="109.8" width="28" height="130.2" class="person-soft"/><text x="134" y="104" class="t" text-anchor="middle">62</text>
-        <rect x="152" y="93" width="28" height="147" class="muted-fill"/><text x="166" y="88" class="t" text-anchor="middle">70</text>
-        <rect x="222" y="46.8" width="28" height="193.2" class="pred-fill"/><text x="236" y="42" class="t" text-anchor="middle">92</text>
-        <rect x="254" y="80.4" width="28" height="159.6" class="person"/><text x="268" y="76" class="t" text-anchor="middle">76</text>
-        <rect x="286" y="72" width="28" height="168" class="person-soft"/><text x="300" y="68" class="t" text-anchor="middle">80</text>
-        <rect x="318" y="48.9" width="28" height="191.1" class="muted-fill"/><text x="332" y="44" class="t" text-anchor="middle">91</text>
-        <text x="118" y="258" class="t-b" text-anchor="middle">Hotel → ETH</text><text x="284" y="258" class="t-b" text-anchor="middle">ETH → Hotel</text>
-        <g transform="translate(40 274)"><rect width="10" height="10" class="pred-fill"/><text x="14" y="9" class="t-s">TabPFN</text>
-          <rect x="70" width="10" height="10" class="person"/><text x="84" y="9" class="t-s">LightGBM</text>
-          <rect x="150" width="10" height="10" class="person-soft"/><text x="164" y="9" class="t-s">LightGBM, all rows</text>
-          <rect x="270" width="10" height="10" class="muted-fill"/><text x="284" y="9" class="t-s">fixed band</text></g>
-      </svg>
-      <figcaption><b>New place, real pedestrians (feature set f1):</b> TabPFN's box stayed at or above target; LightGBM's dropped to 46% in the hard direction. <b>Being re-checked:</b> our tests found a feature that leaked walking direction, so these numbers are being rerun on the fixed features.</figcaption>
-    </figure>
-    <figure>
-      <svg viewBox="0 0 400 300" role="img" aria-label="Error at plus two seconds against the number of example rows, simulated crossing crowd: TabPFN 0.718, 0.685, 0.646 metres at 500, 1000, 2000 rows; LightGBM on the same rows 0.751 down to 0.634 at 20000 rows; LightGBM on all 73000 rows 0.606; constant velocity 0.745.">
-        <!-- x: log rows, 500 at 60, 20000 at 380; y: error 0.58 m at 250, 0.76 m at 40 -->
-        <g class="grid"><line x1="60" y1="226.7" x2="380" y2="226.7"/><line x1="60" y1="168.3" x2="380" y2="168.3"/><line x1="60" y1="110" x2="380" y2="110"/><line x1="60" y1="51.7" x2="380" y2="51.7"/></g>
-        <line x1="60" y1="250" x2="380" y2="250" class="st"/>
-        <g class="t-m" text-anchor="end"><text x="54" y="230">0.60</text><text x="54" y="172">0.65</text><text x="54" y="114">0.70</text><text x="54" y="56">0.75 m</text></g>
-        <g class="t-m" text-anchor="middle"><text x="60" y="266">500</text><text x="120" y="266">1k</text><text x="180" y="266">2k</text><text x="260" y="266">5k</text><text x="320" y="266">10k</text><text x="380" y="266">20k rows</text></g>
-        <line x1="60" y1="57.5" x2="380" y2="57.5" class="st dash"/><text x="378" y="50" class="t-s" text-anchor="end">constant velocity 0.745</text>
-        <line x1="60" y1="219.7" x2="380" y2="219.7" class="st-thin dash"/><text x="378" y="240" class="t-s" text-anchor="end">LightGBM, all 73k rows: 0.606</text>
-        <polyline points="60,50.5 120.1,75 180.3,103 259.8,134.5 319.9,167.2 380,187" class="person-st"/>
-        <g class="person"><circle cx="60" cy="50.5" r="3.5"/><circle cx="120.1" cy="75" r="3.5"/><circle cx="180.3" cy="103" r="3.5"/><circle cx="259.8" cy="134.5" r="3.5"/><circle cx="319.9" cy="167.2" r="3.5"/><circle cx="380" cy="187" r="3.5"/></g>
-        <polyline points="60,89 120.1,127.5 180.3,173" class="pred-line" stroke-width="1.6" stroke-dasharray="4 3"/>
-        <g class="pred-fill" opacity=".6"><circle cx="60" cy="89" r="3.5"/><circle cx="120.1" cy="127.5" r="3.5"/><circle cx="180.3" cy="173" r="3.5"/></g>
-        <polyline points="120.1,139.2 259.8,204.5 319.9,222 380,234.8" class="pred-line" stroke-width="2.6"/>
-        <g class="pred-fill"><circle cx="120.1" cy="139.2" r="4.5"/><circle cx="259.8" cy="204.5" r="4.5"/><circle cx="319.9" cy="222" r="4.5"/><circle cx="380" cy="234.8" r="4.5"/></g>
-        <text x="190" y="186" class="t-s">TabPFN-Fast, laptop</text><text x="262" y="226" class="t-pred">TabPFN-3.5</text><text x="300" y="148" class="t-person">LightGBM, same rows</text>
-        <text x="60" y="290" class="t-s">Crossing crowd, +2 s, f4 features, mean of 3 seeds</text>
-      </svg>
-      <figcaption><b>TabPFN learns more per example row:</b> at every size it is 0.04–0.06 m more accurate than LightGBM on the same rows. TabPFN-3.5 on 20,000 rows (0.593 m) beats LightGBM trained on all 73,000 (0.606 m), with boxes that hold the truth 87% of the time against 83% at about the same width. Choosing rows by similarity added nothing. One simulated scene; 3 seeds.</figcaption>
-    </figure>
-  </div>
-  <figure>
-    <div class="scroll">
-    <svg viewBox="0 0 640 360" role="img" aria-label="Scatter of time to goal against seconds close to people for each planner over 100 crowds. Constant velocity with growing margins forms a curve; LightGBM-guided points sit on that curve; velocity obstacles are fastest but closest to people; stop and go is slow and close.">
-      <!-- x: intrusion 0..4 s -> 70..600 (132.5/s); y: time 18..29 s -> 300..30 (24.545/s) -->
-      <g class="grid"><line x1="70" y1="250.9" x2="600" y2="250.9"/><line x1="70" y1="201.8" x2="600" y2="201.8"/><line x1="70" y1="152.7" x2="600" y2="152.7"/><line x1="70" y1="103.6" x2="600" y2="103.6"/><line x1="70" y1="54.5" x2="600" y2="54.5"/></g>
-      <line x1="70" y1="300" x2="600" y2="300" class="st"/><line x1="70" y1="30" x2="70" y2="300" class="st"/>
-      <g class="t-m" text-anchor="middle"><text x="70" y="318">0</text><text x="202.5" y="318">1</text><text x="335" y="318">2</text><text x="467.5" y="318">3</text><text x="600" y="318">4 s</text></g>
-      <g class="t-m" text-anchor="end"><text x="62" y="304">18</text><text x="62" y="255">20</text><text x="62" y="206">22</text><text x="62" y="157">24</text><text x="62" y="108">26</text><text x="62" y="59">28 s</text></g>
-      <text x="335" y="344" class="t" text-anchor="middle">seconds within 0.5 m of a person (lower is better)</text>
-      <text x="20" y="165" class="t" text-anchor="middle" transform="rotate(-90 20 165)">time to goal (lower is better)</text>
-      <!-- constant velocity curve, margins 0.2..1.0 -->
-      <polyline points="295.3,238.6 226.4,204.3 185.3,157.6 149.5,118.4 141.6,47.2" class="st-thin"/>
-      <g class="muted-fill"><circle cx="295.3" cy="238.6" r="4"/><circle cx="226.4" cy="204.3" r="4"/><circle cx="185.3" cy="157.6" r="4"/><circle cx="149.5" cy="118.4" r="4"/><circle cx="141.6" cy="47.2" r="4"/></g>
-      <text x="100" y="44" class="t-s">straight line, margin 1.0 m</text><text x="304" y="244" class="t-s">margin 0.2 m</text>
-      <!-- reactive -->
-      <polyline points="321.8,231.3 282,207.7 254.2,160.8" class="st-thin dash"/>
-      <g><rect x="317.8" y="227.3" width="8" height="8" class="box-soft"/><rect x="278" y="203.7" width="8" height="8" class="box-soft"/><rect x="250.2" y="156.8" width="8" height="8" class="box-soft"/></g>
-      <text x="262" y="152" class="t-s">reactive</text>
-      <!-- velocity obstacles -->
-      <g class="st"><path d="M341.6 274.4 l6 10 h-12 z"/><path d="M343 249.8 l6 10 h-12 z"/></g>
-      <text x="356" y="282" class="t-s">velocity obstacles</text>
-      <!-- stop and go -->
-      <circle cx="543" cy="59.5" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="535" y="80" class="t-s" text-anchor="end">stop and go</text>
-      <!-- LightGBM-guided -->
-      <g class="person"><circle cx="176" cy="169.9" r="6"/><circle cx="165.4" cy="145.4" r="6"/></g>
-      <text x="186" y="180" class="t-person">LightGBM-guided</text>
-    </svg>
-    </div>
-    <figcaption><b>Robot runs, default plaza, 100 crowds.</b> The learned planner lands on the same curve as walking-straight prediction with a bigger margin. So in this scene, prediction doesn't win yet. People here dodge the robot strongly, so the next test uses a harder crowd.</figcaption>
-  </figure>
-  <div class="verdict">
-    <div class="card"><span class="pill warn">Re-checking</span><h3>Calibrated in a new place</h3><p>Ranges, not accuracy: no point-error gain is claimed. Rerun on fixed features in progress.</p></div>
-    <div class="card"><span class="pill part">Open</span><h3>Adapts in seconds</h3><p>The first pilot was withdrawn (it measured cold start). Rerun with a true recency-only arm.</p></div>
-    <div class="card"><span class="pill no">Not shown yet</span><h3>Beats standard navigation</h3><p>Same curve in the easy plaza. Harder scene running.</p></div>
-    <div class="card"><span class="pill part">Partly</span><h3>Deployable</h3><p>Model size chosen. Mac and GPU timing pending.</p></div>
+  <h2><span class="n">07</span>How we kept it honest</h2>
+  <div class="checks">
+    <div class="check"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M8 14.5 l4 4 l8 -9" class="ok-st"/></svg><div><h3>Rules before results</h3><p>Judging rules committed before the runs they govern.</p></div></div>
+    <div class="check"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M8 14.5 l4 4 l8 -9" class="ok-st"/></svg><div><h3>Small tests first</h3><p>Two failed tests stopped work instead of being tuned away.</p></div></div>
+    <div class="check"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M8 14.5 l4 4 l8 -9" class="ok-st"/></svg><div><h3>Leaks found and fixed</h3><p>Two leaking features removed; older results withdrawn.</p></div></div>
+    <div class="check"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M8 14.5 l4 4 l8 -9" class="ok-st"/></svg><div><h3>Baseline close to published</h3><p>Walk-straight error at 4.8 s: 1.12 / 0.46 m vs 1.15 / 0.51 m (Schöller et al. 2020).</p></div></div>
+    <div class="check"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M8 14.5 l4 4 l8 -9" class="ok-st"/></svg><div><h3>Intervals over people</h3><p>Resampling whole people or crowds, not single rows.</p></div></div>
+    <div class="check"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M8 14.5 l4 4 l8 -9" class="ok-st"/></svg><div><h3>Every decision logged</h3><p>Each chosen value has a dated row with its evidence.</p></div></div>
   </div>
 </section>
 
-<!-- 8. Testing sequence -->
+<!-- 9. Limits and next -->
 <section>
-  <h2>How we test</h2>
-  <figure class="wide-min">
-    <div class="scroll">
-    <svg viewBox="0 0 900 200" role="img" aria-label="Test sequence: T1 done, scene too easy; T2 running, harder crowd chosen by a fixed rule; T3 running, unseen behaviour; T4 waiting, loop settings; T5 waiting, 40 fresh crowds.">
-      <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
-      <g>
-        <rect x="10" y="30" width="160" height="128" rx="10" class="box"/>
-        <text x="24" y="54" class="t-warn">T1 · DONE</text><text x="24" y="80" class="t-b">Can the scene tell</text><text x="24" y="98" class="t-b">planners apart?</text>
-        <text x="24" y="126" class="t-s">no: scene too easy</text><text x="24" y="142" class="t-s">→ go to T2</text>
-        <line x1="170" y1="94" x2="186" y2="94" class="st" marker-end="url(#a6)"/>
-        <rect x="188" y="30" width="160" height="128" rx="10" class="box-hi"/>
-        <text x="202" y="54" class="t-pred">T2 · RUNNING</text><text x="202" y="80" class="t-b">Harder crowd</text><text x="202" y="98" class="t-b">by a fixed rule</text>
-        <text x="202" y="126" class="t-s">baselines only pick it;</text><text x="202" y="142" class="t-s">rule fixed in a dated note first</text>
-        <line x1="348" y1="94" x2="364" y2="94" class="st" marker-end="url(#a6)"/>
-        <rect x="366" y="30" width="160" height="128" rx="10" class="box-hi"/>
-        <text x="380" y="54" class="t-pred">T3 · RUNNING</text><text x="380" y="80" class="t-b">Behaviour never</text><text x="380" y="98" class="t-b">seen in examples</text>
-        <text x="380" y="126" class="t-s">does reading the scene</text><text x="380" y="142" class="t-s">recover? offline</text>
-        <line x1="526" y1="94" x2="542" y2="94" class="st" marker-end="url(#a6)"/>
-        <rect x="544" y="30" width="160" height="128" rx="10" class="box"/>
-        <text x="558" y="54" class="t-s">T4 · WAITING</text><text x="558" y="80" class="t-b">Loop settings</text><text x="558" y="98" class="t-b">10 crowds each</text>
-        <text x="558" y="126" class="t-s">refresh interval, delay,</text><text x="558" y="142" class="t-s">calibration in the loop</text>
-        <line x1="704" y1="94" x2="720" y2="94" class="st" marker-end="url(#a6)"/>
-        <rect x="722" y="30" width="160" height="128" rx="10" class="box"/>
-        <text x="736" y="54" class="t-s">T5 · WAITING</text><text x="736" y="80" class="t-b">Confirmation</text><text x="736" y="98" class="t-b">40 fresh crowds</text>
-        <text x="736" y="126" class="t-s">judging rule written</text><text x="736" y="142" class="t-s">before the run</text>
-        <text x="10" y="186" class="t-s">Each test's pass condition is written before it runs. A failed test stops the work that depends on it.</text>
-      </g>
-    </svg>
-    </div>
-    <figcaption><b>Small tests first, one big run last.</b> Same crowds for every method, every chosen value logged with its reason.</figcaption>
-  </figure>
+  <h2><span class="n">08</span>Where it breaks, and what's next</h2>
+  <div class="checks">
+    <div class="check lim"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="veto-fill" opacity=".15"/><path d="M14 7 v9 M14 20 v1" class="veto-solid" stroke-linecap="round"/></svg><div><h3>Adapting: simulation only</h3><p>On real pedestrians, nothing beat walking straight.</p></div></div>
+    <div class="check lim"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="veto-fill" opacity=".15"/><path d="M14 7 v9 M14 20 v1" class="veto-solid" stroke-linecap="round"/></svg><div><h3>Direction-dependent</h3><p>Short going to ETH. Two real scenes, no robot in them.</p></div></div>
+    <div class="check lim"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="veto-fill" opacity=".15"/><path d="M14 7 v9 M14 20 v1" class="veto-solid" stroke-linecap="round"/></svg><div><h3>No safety guarantee</h3><p>Ranges buy efficiency; safety needs a worst-case floor.</p></div></div>
+    <div class="check lim"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="veto-fill" opacity=".15"/><path d="M14 7 v9 M14 20 v1" class="veto-solid" stroke-linecap="round"/></svg><div><h3>Speed not proven</h3><p>About 3 s per moment on an emulated laptop CPU; no robot-hardware timing.</p></div></div>
+    <div class="check lim"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="veto-fill" opacity=".15"/><path d="M14 7 v9 M14 20 v1" class="veto-solid" stroke-linecap="round"/></svg><div><h3>Research licence</h3><p>TabPFN-3.5 weights are non-commercial; v2 weights are Apache 2.0.</p></div></div>
+    <div class="check nxt"><svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" class="ok-fill" opacity=".15"/><path d="M9 14 h10 M15 10 l4 4 l-4 4" class="ok-st"/></svg><div><h3>Next</h3><p>40-crowd analysis, robot-hardware timing, a fallback when TabPFN is late, real robot data.</p></div></div>
+  </div>
 </section>
 
-<!-- 9. Deployment -->
-<section>
-  <h2>On a real robot</h2>
-  <figure class="wide-min">
-    <div class="scroll">
-    <svg viewBox="0 0 880 280" role="img" aria-label="On the robot: real-time TabPFN, a background second opinion and a safety floor feed the planner. The cloud is offline only and never in the control loop.">
-      <defs><marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
-      <rect x="10" y="10" width="600" height="258" rx="12" fill="none" stroke="currentColor" stroke-width="1.5"/>
-      <text x="28" y="36" class="t-b">On the robot</text>
-      <rect x="28" y="52" width="300" height="56" rx="8" class="box-hi"/><text x="40" y="74" class="t-b">Real time, every 0.4 s</text><text x="40" y="94" class="t-s">TabPFN, cached bank of examples (size decided at 02:00)</text>
-      <rect x="28" y="124" width="300" height="56" rx="8" class="box"/><text x="40" y="146" class="t-b">Second opinion, background</text><text x="40" y="166" class="t-s">planned: larger TabPFN for uncertain people only</text>
-      <rect x="28" y="196" width="300" height="56" rx="8" class="box"/><text x="40" y="218" class="t-b">Safety floor</text><text x="40" y="238" class="t-s">straight line + band; takes over if late</text>
-      <rect x="440" y="110" width="150" height="76" rx="8" class="box"/><text x="515" y="144" class="t-b" text-anchor="middle">Planner</text><text x="515" y="164" class="t-s" text-anchor="middle">every 0.4 s</text>
-      <line x1="328" y1="80" x2="438" y2="130" class="st" marker-end="url(#a7)"/><text x="360" y="88" class="t-s">ranges</text>
-      <line x1="328" y1="152" x2="438" y2="150" class="st dash" marker-end="url(#a7)"/><text x="350" y="144" class="t-s">refined</text>
-      <line x1="328" y1="224" x2="438" y2="172" class="st" marker-end="url(#a7)"/><text x="352" y="222" class="t-s">veto</text>
-      <rect x="650" y="40" width="220" height="200" rx="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5"/>
-      <text x="668" y="66" class="t-b">Cloud, offline only</text>
-      <text x="668" y="92" class="t-s">largest hosted TabPFN models</text><text x="668" y="112" class="t-s">build the example bank</text><text x="668" y="132" class="t-s">evaluation</text>
-      <line x1="648" y1="200" x2="612" y2="200" class="st dash" marker-end="url(#a7)"/>
-      <text x="760" y="204" class="t-s" text-anchor="middle">between missions</text>
-      <text x="760" y="226" class="t-veto" text-anchor="middle">never in the control loop</text>
-    </svg>
-    </div>
-    <figcaption><b>Model size by job.</b> In the size grid, 1 ensemble member matched 8 (tests run 3.5-Fast; the deployed tier is still being chosen). The second opinion is planned, not built. The cloud never decides a move.</figcaption>
-  </figure>
-  <details>
-    <summary>Our baseline is close to the published one</summary>
-    <dl>
-      <dt>Constant velocity at 4.8 s</dt><dd>Within 3–14% of the values published by Schöller et al. (RA-L 2020): ETH 1.12–1.15 m and Hotel 0.46–0.58 m (ours, depending on window selection) against 1.15 m and 0.51 m.</dd>
-      <dt>Why it matters</dt><dd>A weak baseline inflates every gain. Our first filter setting made constant velocity about 25–30% worse than published; it was fixed and every result is being rerun on the fixed features (version f4).</dd>
-    </dl>
-  </details>
-  <details>
-    <summary>Sources</summary>
-    <dl>
-      <dt>TabPFN</dt><dd>Hollmann et al., Nature 2025: tabular foundation model, in-context learning on small tables. Our TabPFN-3.5 is described in a Prior Labs technical report (2026), not peer reviewed.</dd>
-      <dt>Choosing example rows</dt><dd>Thomas et al., NeurIPS 2024 (LoCalPFN): nearest-neighbour context improves TabPFN (shown for classification; we apply it to regression by analogy).</dd>
-      <dt>Constant velocity is a strong baseline</dt><dd>Schöller et al., RA-L 2020.</dd>
-      <dt>Data</dt><dd>Pellegrini et al., ICCV 2009 (ETH, Hotel), via OpenTraj (Amirian et al., ACCV 2020).</dd>
-      <dt>Crowd simulation</dt><dd>Helbing &amp; Molnár, Phys. Rev. E 1995 (social force). Our simulator is our own; it shares evaluation metrics with CrowdNav (Chen et al., ICRA 2019) but is not that testbed.</dd>
-      <dt>Ranges in planning</dt><dd>Lindemann et al., RA-L 2023 (conformal prediction for safe planning). Their guarantee assumes the robot doesn't change how people move, so we claim no safety guarantee.</dd>
-      <dt>Calibration layer</dt><dd>Gibbs &amp; Candès, NeurIPS 2021 (adaptive conformal inference): long-run average coverage, not per-step.</dd>
-      <dt>Freezing robot</dt><dd>Trautman &amp; Krause, IROS 2010. We measure freezing; we don't claim to solve it.</dd>
-      <dt>Baselines</dt><dd>van den Berg et al., ICRA 2008 (velocity obstacles; ours is a sampling variant without reciprocity); Fox et al. 1997 (dynamic window; our reactive planner is DWA-style).</dd>
-      <dt>Social navigation metrics</dt><dd>Francis et al., ACM THRI 2025 (0.5 m personal-space threshold, as in our intrusion metric).</dd>
-      <dt>Full list</dt><dd><span class="k">docs/REFERENCES.md</span> in the repository: 36 references, each checked against its source (the level of check is noted per entry).</dd>
-    </dl>
-  </details>
-  <details>
-    <summary>Glossary</summary>
-    <dl>
-      <dt>TabPFN</dt><dd>Pretrained model for tables: reads example rows, predicts a distribution for each query, no training.</dd>
-      <dt>Range, box</dt><dd>5% to 95% on both axes; holds the truth 80–90% of the time if the model is honest (81% if the two axes are independent).</dd>
-      <dt>Coverage</dt><dd>How often the truth lands in the box. Below target = overconfident, the dangerous direction.</dd>
-      <dt>Calibration layer</dt><dd>One number per look-ahead that widens or narrows boxes to keep coverage on target.</dd>
-      <dt>Constant velocity</dt><dd>Assume people keep their speed and direction. Baseline, and the reference for the target.</dd>
-      <dt>Intrusion</dt><dd>Seconds with someone within 0.5 m of the robot.</dd>
-      <dt>Paired crowds</dt><dd>Every method faces the same simulated crowds.</dd>
-    </dl>
-  </details>
-</section>
+<!-- 10. Footer -->
+<footer>
+  <div class="links">
+    <a href="https://github.com/shiinalight/Robodetect#readme">Repository README</a>
+    <a href="https://claude.ai/artifact/PEvN5H8zPQTxyuD5eUihLC">Foresight Internal Reference</a>
+  </div>
+  <div><b>Sources</b></div>
+  <ol>
+    <li>Hollmann et al. 2025, <i>Nature</i> (TabPFN)</li>
+    <li>Jäger et al. 2026, TabPFN-3.5 report (not peer reviewed)</li>
+    <li>Schöller et al. 2020, <i>IEEE RA-L</i> (walk-straight baseline)</li>
+    <li>Pellegrini et al. 2009, <i>ICCV</i> (ETH, Hotel data)</li>
+    <li>Trautman &amp; Krause 2010, <i>IROS</i> (freezing robot)</li>
+    <li>Lindemann et al. 2023, <i>IEEE RA-L</i> (ranges in planning)</li>
+    <li>Ettinger et al. 2021, Waymo Open Motion Dataset</li>
+    <li>Nav2 documentation, 2026</li>
+  </ol>
+  <p>Sun 22 Nov 2026, 01:21 Berlin. Full references: docs/REFERENCES.md.</p>
+</footer>
 </div>
