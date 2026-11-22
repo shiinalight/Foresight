@@ -1,0 +1,60 @@
+eth: 5252 rows at h=2.0, 339 people
+hotel: 2870 rows at h=2.0, 271 people
+zara1: 3370 rows at h=2.0, 159 people
+zara2: 7036 rows at h=2.0, 235 people
+univ: 16806 rows at h=2.0, 473 people
+held out eth seed 0: done (2 API calls so far)
+held out eth seed 1: done (4 API calls so far)
+held out eth seed 2: done (6 API calls so far)
+held out hotel seed 0: done (8 API calls so far)
+held out hotel seed 1: done (10 API calls so far)
+held out hotel seed 2: done (12 API calls so far)
+held out zara1 seed 0: done (14 API calls so far)
+held out zara1 seed 1: done (16 API calls so far)
+held out zara1 seed 2: done (18 API calls so far)
+held out zara2 seed 0: done (20 API calls so far)
+held out zara2 seed 1: done (22 API calls so far)
+held out zara2 seed 2: done (24 API calls so far)
+held out univ seed 0: done (26 API calls so far)
+held out univ seed 1: done (28 API calls so far)
+held out univ seed 2: done (30 API calls so far)
+scene       eth  hotel   univ  zara1  zara2
+model                                      
+cv        5.140  3.304  5.767  4.234  3.805
+cv_band   1.686  1.337  2.328  1.543  1.722
+lgbm      1.650  1.080  1.999  1.346  1.368
+lgbm_all  1.521  1.035  1.770  1.252  1.251
+tabpfn    1.500  1.062  1.720  1.283  1.226
+scene       eth  hotel   univ  zara1  zara2
+model                                      
+cv        0.009  0.076  0.082  0.000  0.000
+cv_band   0.787  0.907  0.652  0.856  0.839
+lgbm      0.676  0.787  0.644  0.767  0.741
+lgbm_all  0.763  0.851  0.720  0.859  0.842
+tabpfn    0.820  0.870  0.775  0.856  0.821
+       comparison  scope metric   diff     lo     hi
+tabpfn - lgbm_all    eth   is90 -0.021 -0.057  0.014
+tabpfn - lgbm_all  hotel   is90  0.027  0.003  0.052
+tabpfn - lgbm_all  zara1   is90  0.032  0.002  0.067
+tabpfn - lgbm_all  zara2   is90 -0.025 -0.063  0.016
+tabpfn - lgbm_all   univ   is90 -0.050 -0.095 -0.010
+tabpfn - lgbm_all pooled   is90 -0.008 -0.023  0.007
+ tabpfn - cv_band    eth   is90 -0.186 -0.260 -0.114
+ tabpfn - cv_band  hotel   is90 -0.275 -0.348 -0.206
+ tabpfn - cv_band  zara1   is90 -0.260 -0.329 -0.194
+ tabpfn - cv_band  zara2   is90 -0.496 -0.572 -0.414
+ tabpfn - cv_band   univ   is90 -0.608 -0.723 -0.498
+ tabpfn - cv_band pooled   is90 -0.365 -0.405 -0.328
+    tabpfn - lgbm    eth   is90 -0.150 -0.207 -0.095
+    tabpfn - lgbm  hotel   is90 -0.018 -0.054  0.018
+    tabpfn - lgbm  zara1   is90 -0.062 -0.105 -0.020
+    tabpfn - lgbm  zara2   is90 -0.142 -0.185 -0.103
+    tabpfn - lgbm   univ   is90 -0.279 -0.350 -0.213
+    tabpfn - lgbm pooled   is90 -0.130 -0.154 -0.107
+      tabpfn - cv    eth   is90 -3.640 -3.890 -3.399
+      tabpfn - cv  hotel   is90 -2.242 -2.539 -1.970
+      tabpfn - cv  zara1   is90 -2.951 -3.217 -2.705
+      tabpfn - cv  zara2   is90 -2.579 -2.996 -2.170
+      tabpfn - cv   univ   is90 -4.047 -4.432 -3.657
+      tabpfn - cv pooled   is90 -3.092 -3.240 -2.938
+VERDICT (docs/LOSO5.md rule): not supported; significantly worse cells: [['tabpfn - lgbm_all', 'hotel'], ['tabpfn - lgbm_all', 'zara1']]; API calls 30
