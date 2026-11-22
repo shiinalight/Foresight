@@ -35,3 +35,20 @@
   - lgbm_all's five-dial curve against each baseline curve, for the same question about the deployable rival.
 - Also reported: the paired split − lgbm_all and split − frozen differences at each shared dial (time, min gap, collision rate; paired-seed bootstrap 95%).
 - Wording rule: a "beats" result here is labelled exploratory, from 20 fresh seeds and a dial range chosen after T5.
+
+## Amendment (Sun 22 Nov ~03:45 Berlin, before any LightGBM, split q 0.25 or split q 0.50 result existed)
+
+**What went wrong on the pod.**
+- The pod reports 48 cores, but its cgroup CPU quota is 5.1 cores (`cpu.cfs_quota_us` 510000).
+- With 31 processes on 5 cores:
+  - the LightGBM arms finished no episode in 35 minutes (LightGBM's threads thrash);
+  - three split arms (q 0.10, 0.25, 0.50) crashed with CUDA out of memory at start-up, with 11 TabPFN processes on one 24 GB GPU.
+
+**Changes:**
+- **lgbm_all, all five dials, move to the laptop** (Windows x64, OMP threads capped at 2 per process). LightGBM is not TabPFN. The one-device rule (DEPLOYMENT.md section 4) exists for TabPFN's numerics, so these arms are compared with baselines run on the pod. Disclosed in every table that uses them.
+- **Pod learned arms:**
+  - split q 0.15 and 0.35 keep running;
+  - split q 0.25 and 0.50 restart once the latency arm frees the GPU;
+  - split q 0.10 is dropped (T5 already covers it on seeds 3000–3039).
+- **Frozen tabpfn q 0.15 / 0.50 are dropped** from this sweep to free the GPU and CPU. T5 already compares split and frozen at q 0.15. Two to six of their episodes had printed when they were stopped; none are used.
+- **Analysis unchanged:** tabpfn_split's curve is now four dials (0.15, 0.25, 0.35, 0.50).
