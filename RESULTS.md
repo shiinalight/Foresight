@@ -2,7 +2,7 @@
 
 > **Numbers below are being rerun on feature version f4; see PLAN.md for status.**
 
-Live document: numbers update as experiments finish. The figures in `media/` carry only labels and legends; this file holds the explanations.
+Live document: numbers update as experiments finish. Times on this page are commit hashes with their commit times (`git log --format='%h %ci'`, Berlin = UTC+1); run ids from the L4 pod are UTC. The figures in `media/` carry only labels and legends; this file holds the explanations.
 
 ## Setup (R1 baselines on real pedestrians)
 
@@ -294,11 +294,11 @@ Show "none qualifies" if no setting does. Also report success rate, and compute 
 
 A win on (1) is not a TabPFN win.
 
-## Closed loop: pre-registration amendment 1 (committed Sat 21 Nov 23:51 Berlin, 0d5d335)
+## Closed loop: pre-registration amendment 1 (commit 0d5d335, 2026-11-21 23:51:57 +0100)
 
 Written before any learned planner, the open-loop oracle included, has run in the crossing crowd.
 
-**What changed since the original pre-registration (Sat ~20:30), disclosed in full:**
+**What changed since the original pre-registration (commit 188d046, 2026-11-21 20:28:33 +0100), disclosed in full:**
 - **Pilot and T1:** the pilot (seeds 1000–1012) and T1 (100 seeds, default plaza, D-19) showed that the default plaza does not separate planners.
 - **Default-scene T2:** a T2 sweep in the default scene ran partly (`results/closed/*t2-r*`), then stopped when the scene changed.
 - **Criterion changed mid-sweep:** collisions are now judged on moving-robot collisions only (D-23).
@@ -330,7 +330,7 @@ Written before any learned planner, the open-loop oracle included, has run in th
 - **If it fails:** T5 still runs, but the closed loop is reported as a stress test.
 
 **Primary comparison, named now.**
-- **The primary planner:** the live TabPFN setup decided at 02:00, named in amendment 2 before T5 launches; until then `tabpfn_live`.
+- **The primary planner:** the live TabPFN setup decided later (D-30), named in amendment 2 before T5 launches; until then `tabpfn_live`.
 - **The primary test:** that planner against each of the four baselines (stop_go, constant velocity, reactive, velocity obstacles, each over its own dial), on both safety axes.
 - **Correction for four tests:** Holm–Bonferroni across the four baselines at 5%.
 - **Secondary planners:** frozen TabPFN, lgbm and lgbm_all are exploratory. They are reported but carry no claim.
@@ -347,18 +347,18 @@ Written before any learned planner, the open-loop oracle included, has run in th
 - whether smoothing is on (D-28 gate);
 - the latency budget: the virtual-time delay before a command applies, and the delay before refreshed context can be used. *(Correction, Sun 22 Nov: the refreshed-context delay was never implemented. Refits apply immediately in every run, and only the command delay exists, as `--latency`.)*
 
-Both apply to every planner. Amendment 2 also names the 02:00 TabPFN setup and is committed before T5 launches.
+Both apply to every planner. Amendment 2 also names that TabPFN setup and is committed before T5 launches.
 
 **Run:**
 - seeds 3000–3039;
 - every seed with a crowd-wide switch at mid-episode;
 - crossing crowd at the chosen T2 cell;
 - features f4.
-- **TabPFN tier in the loop:** 3.5-Fast with 1 estimator, or the setup decided at 02:00 from the context-size test, stated per row (tabpfn_cfg). The deployed-tier documents name 3.5 with 1 estimator.
+- **TabPFN tier in the loop:** 3.5-Fast with 1 estimator, or the setup decided from the context-size test (D-30), stated per row (tabpfn_cfg). The deployed-tier documents name 3.5 with 1 estimator.
 
 **Fallback, written now:** if neither TabPFN planner beats every baseline curve under the rule above, the closed loop is reported as a stress test, not as evidence for claim C. Claims A and B then rest on the offline and real-data results.
 
-## Closed loop: pre-registration amendment 2, design and analysis (committed Sun 22 Nov 00:34 Berlin, 889bc36)
+## Closed loop: pre-registration amendment 2, design and analysis (commit 889bc36, 2026-11-22 00:34:03 +0100)
 
 Written before any planner ran on the T5 seeds (3000–3039). The settings T4 decides are named here. Their values follow in a short dated addendum before launch.
 
@@ -394,7 +394,7 @@ From the learned-planner runs only ms per plan, the logging check and the offset
 - **Switch:** every seed starts calm or hurried (alternating by seed) and switches the whole crowd into erratic at t = 5 s (`--switch --switch-all --switch-to erratic --switch-t 5`). Why: so the scene model can receive erratic labels while the robot is still crossing. The value was chosen before any learned planner ran in the cell, on timing arguments only.
 
 **Planners (flags common to all learned arms: `--frozen-ctx fill --context 2000`, TabPFN 3.5-Fast with 1 estimator, `tabpfn_cfg = fast1-est1`):**
-- **Primary:** `tabpfn_split` at box_q {0.10, 0.15, 0.20}, with the online offset if the in-loop offset passes its reproduction test by 03:00, otherwise without it. The addendum states which.
+- **Primary:** `tabpfn_split` at box_q {0.10, 0.15, 0.20}, with the online offset if the in-loop offset passes its reproduction test in T4, before launch, otherwise without it. The addendum states which.
   - `tabpfn_split` is the frozen bank model (2,000 rows at natural move frequency, fitted once) plus a scene model.
   - The scene model is refit every 2 s on at most 250 of this episode's most recent completed rows, labelled from observed (filtered) positions.
   - Quantiles are averaged per axis, then sorted. The frozen model runs alone while fewer than 20 recent rows exist.
@@ -453,7 +453,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 
 **Fallback:** unchanged. Claim C is already a stress test (gate failed). T5 is now the in-loop claim-B test and the source of demo traces.
 
-**T4 addendum, part 1: the offset update rule** (committed Sun 22 Nov 00:36 Berlin, bec10b7, before any T4 offset result was read; `tools/t4_offset.ps1`):
+**T4 addendum, part 1: the offset update rule** (commit bec10b7, 2026-11-22 00:36:35 +0100, before any T4 offset result was read; `tools/t4_offset.ps1`):
 - **Why:** in the loop the offset gets ~2,500 row updates per episode in 2 s batches of correlated rows. One update per row steps d by eta × batch, which can make the box oscillate and freeze the robot. Adaptive conformal assumes one update per time step.
 - **Test:** seeds 5100–5105 (outside T5 and T2), T5 config, box_q 0.15; tabpfn_split, tabpfn and lgbm_all; three settings:
   - offset OFF, scored only (eta 0);
@@ -492,7 +492,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
   - tabpfn: −30% short of the line, time +1.2 s;
   - lgbm_all: −25%, time +6.4 s.
   - If the full 10 seeds reverse the verdict, the smoothing-ON sets below enter the analysis instead; this is stated before any T5 result.
-- **No time gates** (Darshak, Sun ~01:10: "do not block anything by time"):
+- **No time gates** (Darshak, relayed by the CTO session before this part's commit 3df14bf, 2026-11-22 01:12:00 +0100: "do not block anything by time"):
   - Every arm using choose/choose_vo (baselines, oracle, fast-replan) runs in BOTH smoothing modes (tags `*-sm` = ON). The smoothing gate picks the set that enters the analysis.
   - The primary also runs at q 0.15 with smoothing ON as an extra process.
 - **Secondary arms run on seeds 3000–3019 to reduce compute (exploratory):** frozen tabpfn, lgbm_all, lgbm, the 0.4 s latency arm and the 0.2 s replan arms. The primary (tabpfn_split at q 0.10 / 0.15 / 0.20) and every baseline and oracle arm use all 40 seeds. A secondary process that finishes early may be extended to 40 seeds only while the CPU has spare capacity.
@@ -500,7 +500,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
   - Primary test: the smoothing-OFF rows at latency 0 and replan 0.4 s.
   - The latency, fast-replan and smoothing-ON rows are reported separately.
 
-**T4/T5 addendum, part 5: compute, reduced before results** (Sun 22 Nov 01:36 Berlin).
+**T4/T5 addendum, part 5: compute, reduced before results** (commit 766c0da, 2026-11-22 01:37:26 +0100).
 - **Why:** split q0.20, seed 3000 took 1,030 s (16.2 s per plan), with the CPU at 100% under ~35 python processes. At that rate one split process needs ~11 h. Darshak wants the solution final tonight.
 - **No learned result was read** except that one q0.20 timing row, which is discarded (`results/closed/discarded/`).
 - **Learned set kept**, all on seeds 3000–3019 (20 seeds, paired), batch offset, smoothing OFF, latency 0, replan 0.4:
@@ -529,7 +529,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
   - **Detectable time difference at n = 20:** about 2.6 s (80% power, 5% two-sided, the cell's median paired SD of 4.16 s), against 1.84 s at 40. Claim C is a stress test anyway.
   - **Exploratory (a)** keeps its stated margins (0.158 m, 0.244), so it has less power at 20 seeds.
   - **The in-loop claim B comparison** (split vs tabpfn vs lgbm_all at q0.15, before and after the switch, paired by seed) is now the main closed-loop question.
-- **Compute, part 6** (Sun 22 Nov ~01:52):
+- **Compute, part 6** (commit ae4b112, 2026-11-22 01:51:44 +0100):
   - Every smoothing-ON arm was stopped: baselines, oracle and fast-replan, all tagged `-sm`. Their partial rows are in `results/closed/discarded/smoothing_on/`.
   - Baseline and oracle seeds beyond 3019 were stopped (`tools/seed_cap.ps1 -PythonOnly`). Arms that had already run 40 seeds keep those rows.
   - Neither set is used in any analysis: smoothing is OFF by the T4 gate, and the primary test runs on the common seeds 3000–3019.
@@ -586,7 +586,7 @@ A consequence to state: a baseline point faster than the primary's fastest arm c
 - **This reproduces WP-J2's offline Setting B result in closed loop** (simulated crowd only).
 - **The speed gap is not TabPFN's doing.** At q 0.15 every learned planner drove the same: split 26.23 s, frozen TabPFN 26.35 s, LightGBM on all rows 25.90 s. Paired: split − frozen −0.12 s [−1.35, +1.25], split − LightGBM +0.33 s [−1.29, +1.99], even though LightGBM's boxes are 0.63 m narrower after the switch. Better prediction did not change how this box planner drives; its caution setting did.
 
-**Extension to 40 seeds** (started Sun 22 Nov ~02:25 Berlin, before any result from seeds 3020–3039; `tools/t5_extend.py`):
+**Extension to 40 seeds** (declared in commit 3226e4f, 2026-11-22 02:20:27 +0100, before any result from seeds 3020–3039; `tools/t5_extend.py`):
 - **Why:** spare CPU, as addendum part 5 allows.
 - **Same arms and dials:** tabpfn_split q0.15 and q0.10, frozen tabpfn q0.15, lgbm_all q0.15, vo w 0.5/1/2 and oracle m 0.2/0.4/0.6, on only the seeds not yet run.
 - **The 20-seed analysis above stays the confirmatory result.** The 40-seed tables follow as an update, computed by the same scripts and rules.
