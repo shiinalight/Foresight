@@ -30,6 +30,7 @@ def record(page_url, out, frame_js, seconds, fps, size):
         page = browser.new_page(viewport={"width": w, "height": h})
         page.goto(page_url)
         page.wait_for_function("typeof window.__introFrame === 'function'", timeout=60000)
+        page.wait_for_function("window.__assetsReady !== false", timeout=60000)   # the proofs' figures and clip frames
         page.wait_for_timeout(1500)                                  # textures and fonts
         if seconds is None:
             seconds = page.evaluate("window.__videoLength")
@@ -55,6 +56,7 @@ def stills(page_url, times, fps, size):
         page = browser.new_page(viewport={"width": w, "height": h})
         page.goto(page_url)
         page.wait_for_function("typeof window.__videoWarm === 'function'", timeout=60000)
+        page.wait_for_function("window.__assetsReady !== false", timeout=60000)
         page.wait_for_timeout(1500)
         print(f"video length {page.evaluate('window.__videoLength'):.1f} s")
         for T in times:

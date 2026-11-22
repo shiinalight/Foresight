@@ -91,6 +91,70 @@
   body.video #caption .step { font-size: 22px; }
   body.video #caption h2 { font-size: 36px; margin: 2px 0 8px; }
   body.video #caption p { font-size: 28px; line-height: 1.35; }
+  #open, #note, #proof { position: fixed; display: none; z-index: 6; }
+  #open { left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; padding: 48px 72px; }
+  #open h1 { margin: 0; font-size: 112px; letter-spacing: -.03em; line-height: 1; }
+  #open p { margin: 18px 0 0; font-size: 36px; color: #46433e; }
+  #open .lt { margin-top: 30px; font-size: 26px; font-weight: 650; color: var(--accent); letter-spacing: .02em; text-transform: uppercase; }
+  #note { left: 50%; top: 40px; transform: translateX(-50%); padding: 10px 22px; font-size: 22px; color: #46433e; white-space: nowrap; }
+  #proof { left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1640px; max-width: 92%; padding: 34px 44px 30px; text-align: left; }
+  #proof .step { font-size: 22px; font-weight: 650; color: var(--accent); letter-spacing: .02em; text-transform: uppercase; }
+  #proof h2 { margin: 4px 0 18px; font-size: 48px; letter-spacing: -.015em; }
+  #proof .fig { display: flex; justify-content: center; align-items: center; height: 600px; background: #fff; border-radius: 14px; overflow: hidden; }
+  #proof .fig img, #proof .fig canvas { max-width: 100%; max-height: 600px; display: block; }
+  #proof p.cap { margin: 18px 0 0; font-size: 30px; line-height: 1.35; color: #2b2925; }
+  #proof ul { margin: 6px 0 0; padding-left: 34px; font-size: 38px; line-height: 1.6; }
+  #proof .end { text-align: center; padding: 40px 0 20px; }
+  #proof .end h1 { margin: 0; font-size: 104px; letter-spacing: -.03em; }
+  #proof .end .tag { font-size: 40px; color: #2b2925; margin-top: 14px; }
+  #proof .end .url { font-size: 36px; font-weight: 650; color: var(--accent); margin-top: 40px; }
+  #proof .end .small { font-size: 26px; color: #46433e; margin-top: 14px; }
+  #proof .end.lead h1 { font-size: 64px; letter-spacing: -.02em; line-height: 1.15; }
+  #proof .chart-h { font-size: 24px; color: #6d6a64; margin: 0 0 18px; }
+  #proof .bars { display: grid; grid-template-columns: 470px 1fr; row-gap: 22px; align-items: center; }
+  #proof .lab { text-align: right; padding-right: 26px; font-size: 30px; line-height: 1.15; color: #2b2a28; }
+  #proof .lab small { display: block; font-size: 22px; color: #6d6a64; margin-top: 2px; }
+  #proof .track { position: relative; display: flex; flex-direction: column; gap: 8px; }
+  #proof .brow { display: flex; align-items: center; gap: 16px; }
+  #proof .bar { height: 42px; border-radius: 8px; flex: none; }
+  #proof .bar.thin { height: 30px; }
+  #proof .val { font-size: 30px; font-weight: 700; color: #2b2a28; white-space: nowrap; }
+  #proof .tgt { position: absolute; top: -10px; bottom: -10px; border-left: 3px dashed #2b2a28; }
+  #proof .tgt span { position: absolute; top: -30px; left: 6px; font-size: 20px; color: #2b2a28; white-space: nowrap; }
+  #proof .legend { display: flex; gap: 34px; justify-content: center; font-size: 24px; color: #46433e; margin-top: 22px; }
+  #proof .legend i { display: inline-block; width: 26px; height: 18px; border-radius: 4px; margin-right: 8px; vertical-align: -2px; }
+  #proof .verdict { margin-top: 26px; padding: 18px 24px; border-radius: 14px; font-size: 27px; line-height: 1.4; color: #2b2a28; }
+  #proof .verdict.yes { background: rgba(27,175,122,.14); }
+  #proof .verdict.no { background: #ece7de; }
+  #proof .verdict b { display: block; font-size: 30px; margin-bottom: 4px; }
+  #proof .src { margin-top: 14px; font-size: 20px; color: #8a867e; line-height: 1.4; }
+  #proof .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  #proof .pair .bars { grid-template-columns: 300px 1fr; }
+  #proof .pair h4 { margin: 0 0 16px; font-size: 30px; }
+  #proof.board { width: 1780px; padding: 30px 36px 26px; }
+  #proof .sub2 { font-size: 26px; color: #46433e; margin: -10px 0 20px; }
+  #proof .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  #proof .cols.two { grid-template-columns: repeat(2, 1fr); }
+  #proof .col { background: #fff; border-radius: 16px; padding: 22px 24px 18px; border: 3px solid transparent; display: flex; flex-direction: column; }
+  #proof .col.on { border-color: var(--accent); }
+  #proof .col .k { font-size: 20px; font-weight: 650; color: var(--accent); letter-spacing: .02em; text-transform: uppercase; }
+  #proof .col h3 { margin: 4px 0 14px; font-size: 32px; line-height: 1.15; letter-spacing: -.01em; min-height: 74px; }
+  #proof .col .ch { font-size: 22px; color: #6d6a64; margin-bottom: 12px; min-height: 54px; }
+  #proof .cb { display: grid; grid-template-columns: 150px 1fr; row-gap: 14px; align-items: center; }
+  #proof .cb .l { font-size: 24px; text-align: right; padding-right: 14px; line-height: 1.1; }
+  #proof .cb .l small { display: block; font-size: 20px; color: #6d6a64; }
+  #proof .cb .t { display: flex; align-items: center; gap: 10px; position: relative; }
+  #proof .cb .b { height: 34px; border-radius: 7px; flex: none; }
+  #proof .cb .v { font-size: 26px; font-weight: 700; white-space: nowrap; }
+  #proof .cb .tg { position: absolute; top: -8px; bottom: -8px; border-left: 3px dashed #2b2a28; }
+  #proof .col .vd { margin-top: 16px; padding: 12px 16px; border-radius: 12px; font-size: 23px; line-height: 1.35; flex: 1; }
+  #proof .col .vd.yes { background: rgba(27,175,122,.14); }
+  #proof .col .vd.no { background: #ece7de; }
+  #proof .col .vd b { display: block; font-size: 24px; margin-bottom: 2px; }
+  #proof .col .vd.short { flex: none; padding: 16px 18px; }
+  #proof .col .vd.short b { font-size: 30px; margin: 0; }
+  #proof .col .s { margin-top: 10px; font-size: 18px; color: #8a867e; line-height: 1.35; }
+  #proof .foot { margin-top: 16px; font-size: 22px; color: #6d6a64; text-align: center; }
   body.video .pill { font-size: 22px; padding: 6px 13px; }
   body.video .pill.tag { font-size: 22px; padding: 5px 12px; }
   body.video .pill.event { font-size: 28px; }
@@ -143,6 +207,9 @@
 <div id="panel" class="card"></div>
 <div id="pcard" class="card"></div>
 <div id="speedbadge" class="pill tag">▶▶ 2× speed</div>
+<div id="open" class="card"></div>
+<div id="note" class="card"></div>
+<div id="proof" class="card"></div>
 <div id="fade"></div>
 <div id="tab" class="card"><div class="name">TabPFN</div><div class="sub">pretrained on tables, no training here</div><div class="count" id="tab-count">0 rows</div><div class="sub">example rows with known answers</div></div>
 <div id="meter" class="card"><div class="lbl">Validation episodes: real positions inside the patch</div><div class="big" id="meter-val">80%</div><div class="barbox"><div class="fillbar" id="meter-bar"></div><div class="target"></div></div><div class="lbl" style="margin-top:8px">patch size <b id="meter-f">×1.00</b> · target 80%</div></div>
@@ -182,7 +249,7 @@ document.querySelector('#info h1').textContent = TXT.title;
 document.getElementById('phase').textContent = TXT.calm;
 document.querySelector('[data-view="street"]').textContent = TXT.eye;
 document.getElementById('sub').textContent = `${TXT.sub} · episode ${D.episode} · ${D.agents.length} agents`;
-const VIDEO_SUB = 'A street episode the model never saw';
+const VIDEO_SUB = 'Simulated street, never seen by the model · robot route scripted';
 
 // ---------- renderer, scene, camera ----------
 const stage = document.getElementById('stage');
@@ -294,7 +361,7 @@ for (const [s, dir] of [[-1, 1], [1, -1]]) {                                  //
   for (const x of [-12, 12]) floorText('BIKE ' + (dir > 0 ? '→' : '←'), x, s * (ROAD + CURB) / 2 - 0.33, 0.03, 0.55, 'rgba(255,255,255,.85)');
 }
 floorText('Bike lane', -17.5, (ROAD + CURB) / 2 - 0.3, 0.03, 0.5, 'rgba(255,255,255,.9)');
-floorText('Zebra crossing', CX + 1.6, -CURB - 0.9, SIDE_H, 0.45, '#5b5750');
+floorText('Pedestrian crossing', CX + 1.6, -CURB - 0.9, SIDE_H, 0.45, '#5b5750');
 
 // lamp posts and planters with round trees (from the simulation's obstacles)
 for (const [x, y, r] of D.obstacles) {
@@ -634,16 +701,16 @@ function drawRoute(f) {                                  // the robot's route ov
 
 // ---------- scripted events: labels over the agents involved, ticks on the timeline ----------
 // video mode: one line on why each event matters for prediction
-const EVENT_WHY = { sudden_stop: 'A “keep walking” guess would run straight past them.',
-  steps_onto_crosswalk: 'Someone enters the road: the robot’s crossing is no longer clear.',
-  car_brake_crosswalk: 'Its speed changes fast; its range has to change with it.',
-  jaywalk: 'Off every expected path: where a range beats a single guess.',
-  rush_hour: 'The crowd changes behaviour; the model has to keep up.',
+const EVENT_WHY = { sudden_stop: 'A “keep walking” guess would put them metres ahead. Their range has to stay with them.',
+  steps_onto_crosswalk: 'The robot’s way across is blocked. It can’t cross until it’s clear.',
+  car_brake_crosswalk: 'It slows fast, so where it will be in 2 seconds changes fast too.',
+  jaywalk: 'No usual path predicts this. A range covers what a single guess misses.',
+  rush_hour: 'Everyone hurries. The ranges have to keep up with the new pace.',
   robot_waits_door: 'The robot gives way at a tight door, then goes.',
   robot_door_clear: 'The doorway is free: the robot moves on.' };
 const eventHTML = n => VIDEO ? `<b>${EVENT_TEXT[n] || n}</b><span class="why">${EVENT_WHY[n] || ''}</span>` : (EVENT_TEXT[n] || n);
-const EVENT_TEXT = { sudden_stop: 'Stops suddenly', steps_onto_crosswalk: 'Steps onto the zebra', car_brake_crosswalk: 'Brakes hard',
-                     jaywalk: 'Jaywalking', rush_hour: 'Rush hour: more people, more cars',
+const EVENT_TEXT = { sudden_stop: 'A person stops suddenly', steps_onto_crosswalk: 'A person steps onto the crossing', car_brake_crosswalk: 'A car brakes hard for them',
+                     jaywalk: 'Someone crosses away from the crossing', rush_hour: 'Rush hour: more people, more cars',
                      rush: 'The meeting ends: 24 people head for one 1.5 m door',
                      robot_waits_door: 'Waits: someone is coming in', robot_door_clear: 'Door clear: going' };
 const EVENT_TICK = { sudden_stop: 'Sudden stop', car_brake_crosswalk: 'Hard braking', jaywalk: 'Jaywalker', rush_hour: 'Rush hour', rush: 'Meeting ends',
@@ -725,7 +792,7 @@ function update() {
     if (VIDEO) document.getElementById('stat').innerHTML =
       `Where each will be in ${PRED.h} s (80% range):<br>${sw('rgba(79,155,255,.5)', '#2a78d6')}cars ${sw('rgba(155,111,214,.45)', '#7d4fc0')}cyclists ${sw('rgba(240,138,93,.45)', '#d9622f')}people<br>`
       + `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#fff;border:4px solid #26262a;vertical-align:middle;margin-right:6px"></span>where it really was`
-      + `<br><b style="color:var(--ink)">Inside its range so far: ${due.length ? Math.round(100 * hit / due.length) : '–'}%</b>`;
+      ;
     else document.getElementById('stat').innerHTML =
       `<span style="display:inline-block;width:12px;height:9px;background:rgba(235,104,52,.45);border:1.5px solid #c4471c;vertical-align:middle"></span> `
       + `${PRED.model}: where each agent will be in ${PRED.h} s (80% range)<br>`
@@ -777,11 +844,11 @@ const TL = [0, 3, 11, 20, 28, 37, 45, 50];
 const CAPS = [
   ['How the prediction works', 'Five steps, on one person in this street', 'Pedestrian, held-out episode, 11 seconds in.'],
   ['Step 1', 'Watching', 'Sensors are noisy (dots). A Kalman filter turns them into a smooth track: where the person is, and how fast they move.'],
-  ['Step 2', 'One row of a table', 'Every half second, each agent’s situation becomes numbers: speed, turning, neighbours, the robot, obstacles, crowd, type.'],
+  ['Step 2', 'One row of a table', 'Every 0.4 seconds, each agent’s situation becomes numbers: speed, turning, neighbours, the robot, obstacles, crowd, type.'],
   ['Step 3', 'The question', 'The simple guess: keep going straight at the same speed. The model only learns the correction to that guess.'],
-  ['Step 4', 'TabPFN answers', 'Shown 5,000 example rows with known answers, it predicts this row in one step, with no training: a 5%, a 50% and a 95% point.'],
+  ['Step 4', 'TabPFN answers', 'Shown thousands of example rows with known answers, it predicts this row in one step, with no training: a 5%, a 50% and a 95% point.'],
   ['Step 5', 'Sizing the patch', 'On validation episodes the patch is stretched or shrunk until 80% of the real positions land inside. Never on the episode you see.'],
-  ['', 'Every agent, every half second', 'A patch for every person, car and cyclist. Now the street: an episode the model never saw.'],
+  ['', 'Every agent, every 0.4 seconds', 'A patch for every person, car and cyclist. Now the street: an episode the model never saw.'],
 ];
 const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
 const stepOf = it => Math.max(0, TL.findIndex((b, i) => i + 1 < TL.length && it >= b && it < TL[i + 1]));
@@ -1091,30 +1158,174 @@ window.__outroFrame = ot => {
 const SI = 1.1, SO = 1.06;
 const EVT = n => D.events.find(e => e.name === n);
 const SEG = [   // [scene t0, t1, speed, shot, event]
-  [0, 4, 1, 'establish'], [4, 10.5, 1, 'follow'],
+  [4, 10.5, 1, 'follow'],
   [10.5, 15, 1, 'event', 'sudden_stop'], [15, 20.5, 2, 'follow'],
   [20.5, 25.5, 1, 'event', 'car_brake_crosswalk'], [25.5, 30.5, 2, 'follow'],
   [30.5, 35.5, 1, 'event', 'jaywalk'], [35.5, 39, 2, 'follow'],
-  [39, 44, 1, 'event', 'rush_hour'], [44, Math.min(56, T_END), 2, 'overview']];
+  [39, 44, 1, 'event', 'rush_hour'], [44, Math.min(48, T_END), 2, 'overview']];
+// Cut to docs/VIDEO_BRIEF.md (darshak/core): open 11 s, challenge 15 s, the five steps without their title and
+// "every agent" cards, the street without its establishing shot, then the team's three proofs, limits and the close.
+const LOPEN = VIDEO && IN ? 11 : 0;
+const I0 = TL[1], I1 = TL[TL.length - 2];             // intro steps 1-5 only
 const LP = VIDEO && IN ? 15 : 0;                       // the challenge, before the solution
-const LI = VIDEO && IN ? TL.at(-1) / SI : 0, LS = SEG.reduce((a, g) => a + (g[1] - g[0]) / g[2], 0), LO = VIDEO && OUTRO ? OL.at(-1) / SO : 0;
-const VLEN = LP + LI + LS + LO;
+const LI = VIDEO && IN ? (I1 - I0) / SI : 0, LS = SEG.reduce((a, g) => a + (g[1] - g[0]) / g[2], 0);
+// the proofs: [seconds, kicker, title, figure, caption]; figures and wording from docs/VIDEO_BRIEF.md and docs/STORY.md
+const PROOFS = [
+  [10, 'Proof 1 · adapts when behaviour changes', 'Swapping rows works', 'gif',
+   'Our robot loop: at 5 s the simulated crowd turns erratic. Real positions inside the range, this crowd: <b>60%</b> for TabPFN reading the scene vs <b>45%</b> for LightGBM (target 81%).'],
+  [28, '', 'Three proofs', 'proofs', ''],
+  [20, '', 'Where it breaks', 'limits', ''],
+  [9, '', '', 'end', '']];
+const BOARD_AT = { proofs: [0, 9.5, 19], limits: [0.5, 10.5] };   // when each column appears (s into the board)
+const LR = VIDEO && IN ? PROOFS.reduce((a, p) => a + p[0], 0) : 0, LO = 0;
+const VLEN = LOPEN + LP + LI + LS + LR;
 // same tagline and framing as docs/PRESENTATION.md and the pitch deck
 const PCAPS = [
   ['The challenge', 'Where will everyone be in two seconds, and how sure are we?', 'A delivery robot shares the street with people, cars and bikes. To move safely, it has to plan around all of them.'],
   ['The challenge', 'The usual guess is not good enough', 'Assume everyone keeps walking straight, and after two seconds the guess is off by almost a metre in a crowd.'],
   ['The challenge', 'A guess alone is not enough', 'Too narrow a margin and the robot collides; too wide and it freezes. It needs a range it can trust.']];
 const PCARD = [null,
-  '<p class="big">0.93 m</p><p class="lbl">how far “keep walking straight” is off after 2 s in a crowd; 0.25–0.37 m on real Zurich pedestrians</p>',
+  '<p class="big">0.93 m</p><p class="lbl">how far “keep walking straight” is off after 2 s in a crowd; 0.25–0.43 m on real Zurich pedestrians</p>',
   '<p class="big" style="color:#C94D26;">A range for every agent</p><p class="lbl">with a promise of how often the truth lands inside. That is Foresight.</p>'];
 let pIdx = -1;
 function problemUpdate(T) {
   const s = T < 5 ? 0 : T < 10 ? 1 : 2;
   if (s !== pIdx) { pIdx = s; document.getElementById('cap-step').textContent = PCAPS[s][0]; document.getElementById('cap-title').textContent = PCAPS[s][1];
     document.getElementById('cap-text').textContent = PCAPS[s][2]; const pc = document.getElementById('pcard'); pc.innerHTML = PCARD[s] || ''; pc.style.display = PCARD[s] ? 'block' : 'none'; }
+  orbitCam(T);
+  predShow = T > 11 ? 'all' : 'none';                    // the ranges appear as the solution begins
+}
+function orbitCam(T) {                                   // a slow turn around the whole street
   const ov = VIEWS.overview, base = ov.pos.clone().sub(ov.target), a = 0.18 - 0.016 * T, c = Math.cos(a), sn = Math.sin(a);
   controls.target.copy(ov.target); camera.position.copy(ov.target).add(new THREE.Vector3(base.x * c - base.z * sn, base.y, base.x * sn + base.z * c));
-  predShow = T > 11 ? 'all' : 'none';                    // the ranges appear as the solution begins
+}
+// the open: a title card (the editor may put the on-camera shot here instead)
+const OPEN_HTML = '<h1>Foresight</h1><p>Where will everyone be in two seconds, and how sure are we?</p><div class="lt">Foresight · Prior Labs track</div>';
+const NOTE_HTML = 'Illustration: a held-out simulated street. The robot’s route is scripted; the ranges are TabPFN’s.';
+// proof 1's clip: Darshak's calibration_seed3013.gif as frames, drawn by index so every video frame is exact
+const GIF_N = 172, gifFrames = [];
+window.__assetsReady = !VIDEO;
+if (VIDEO && GIF_N) {
+  let left = GIF_N + 3;
+  const done = () => { if (--left === 0) window.__assetsReady = true; };
+  for (let i = 0; i < GIF_N; i++) { const im = new Image(); im.onload = done; im.onerror = done; im.src = `video_assets/gif/f${String(i + 1).padStart(3, '0')}.jpg`; gifFrames.push(im); }
+  for (let j = 0; j < 3; j++) done();               // (the proof figures are drawn as charts now)
+} else window.__assetsReady = true;
+// the charts: numbers from docs/STORY.md's claims ledger and the files it names (darshak/core)
+const CT = '#eb6834', CL = '#2a78d6', CL2 = '#1baf7a', CG = '#9a958c';
+function hbars(rows, max, opt = {}) {          // rows: {label, sub, bars: [{v, c, txt}]}
+  const sc = 78 / max, tgt = opt.target != null ? `<div class="tgt" style="left:${opt.target * sc}%"><span>${opt.targetLabel}</span></div>` : '';
+  return `<div class="bars">` + rows.map((r, i) => `<div class="lab">${r.label}${r.sub ? `<small>${r.sub}</small>` : ''}</div><div class="track">`
+    + r.bars.map(b => `<div class="brow"><div class="bar${r.bars.length > 1 ? ' thin' : ''}" style="width:${b.v * sc}%;background:${b.c}"></div><span class="val">${b.txt}</span></div>`).join('')
+    + (i === 0 ? tgt : tgt.replace('<span>' + opt.targetLabel + '</span>', '')) + `</div>`).join('') + `</div>`;
+}
+const legend = items => `<div class="legend">${items.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('')}</div>`;
+const verdictP = (yes, head, text) => `<div class="verdict ${yes ? 'yes' : 'no'}"><b>${head}</b>${text}</div>`;
+const srcP = t => `<div class="src">${t}</div>`;
+function cbars(rows, max, target) {            // a compact bar chart for one board column
+  const sc = 72 / max;
+  return `<div class="cb">` + rows.map((r, i) => `<div class="l">${r.label}${r.sub ? `<small>${r.sub}</small>` : ''}</div><div class="t">`
+    + `<div class="b" data-w="${r.v * sc}" style="width:${r.v * sc}%;background:${r.c}"></div><span class="v">${r.txt}</span>`
+    + (target != null ? `<div class="tg" style="left:${target * sc}%"></div>` : '') + `</div>`).join('') + `</div>`;
+}
+const col = (k, h, ch, chart, yes, head, text, src) => `<div class="col"><div class="k">${k}</div><h3>${h}</h3><div class="ch">${ch}</div>${chart}`
+  + `<div class="vd ${yes ? 'yes' : 'no'}${text ? '' : ' short'}"><b>${head}</b>${text}</div><div class="s">${src}</div></div>`;
+function figHTML(fig, cap) {
+  if (fig === 'proofs') return `<div class="cols">`
+    + col('Proof 1', 'Adapts to dynamic environments', 'People inside the range after the crowd changed',
+        cbars([{ label: 'TabPFN', v: 59.3, c: CT, txt: '59%' }, { label: 'LightGBM', v: 41.3, c: CL, txt: '41%' }], 100),
+        true, '✓ +18 points, no retraining', '', 'Simulated robot loop · 3 crowds')
+    + col('Proof 2', 'Works across modalities', 'Cars instead of people · mistake score (lower is better)',
+        cbars([{ label: 'TabPFN', sub: '1.5k examples', v: 3.57, c: CT, txt: '3.57' }, { label: 'LightGBM', sub: '100k examples', v: 3.74, c: CL, txt: '3.74' }], 4.2),
+        true, '✓ Same result, 67× less data', '', 'Simulated highway · 355 cars')
+    + col('Proof 3', 'Works with very little data', 'Real people, unseen places · mistake score (lower is better)',
+        cbars([{ label: 'TabPFN', sub: '1.5k examples', v: 1.358, c: CT, txt: '1.36' }, { label: 'LightGBM', sub: '1.5k examples', v: 1.489, c: CL, txt: '1.49' },
+               { label: 'LightGBM', sub: '22k examples', v: 1.366, c: CL2, txt: '1.37' }], 1.65),
+        true, '✓ Same result, 15× less data', '', '5 real pedestrian scenes')
+    + `</div>`;
+  if (fig === 'limits') return `<div class="sub2">Every test had rules set in advance. Two claims didn’t hold.</div><div class="cols two">`
+    + col('Limit 1', 'The robot wasn’t faster', 'Seconds slower than the “keep going straight” planner, at the same safety',
+        cbars([{ label: 'Same gap', sub: 'to people', v: 4.3, c: CT, txt: '+4.3 s' }, { label: 'Same', sub: 'collisions', v: 3.0, c: CT, txt: '+3.0 s' }], 5),
+        false, 'Why', 'Our planner only checks whether a move enters a box, so it ignores the range’s shape.',
+        '3 crowds × 20, 4 standard planners, none beaten · RESULTS.md (T5)')
+    + col('Limit 2', 'Each body needs its own examples', 'Predicting cars: range score (lower is better)',
+        cbars([{ label: 'Pedestrian', sub: 'rows', v: 51.7, c: CG, txt: '51.7' }, { label: 'Car', sub: 'rows', v: 13.0, c: CT, txt: '13.0' }], 56),
+        false, 'Why', 'People and cars move differently. The code carries over; the examples don’t.',
+        'docs/HIGHWAY.md (exploratory)')
+    + `</div><div class="foot">Also: the robot loop and the cars are simulated (real data: pedestrians only) · TabPFN-3.5 weights are non-commercial</div>`;
+  if (fig === 'gif') return `<div class="fig"><canvas id="gifc" width="1280" height="720"></canvas></div><p class="cap">${cap}</p>`;
+  if (fig === 'p1') return hbars([
+      { label: 'Open plaza', sub: '16 people', bars: [{ v: 70.5, c: CT, txt: '70%' }, { v: 63.8, c: CL, txt: '64%' }] },
+      { label: 'Crossing crowd', sub: '24 people', bars: [{ v: 59.3, c: CT, txt: '59%' }, { v: 41.3, c: CL, txt: '41%' }] },
+      { label: 'Dense crossing', sub: '32 people', bars: [{ v: 61.1, c: CT, txt: '61%' }, { v: 41.3, c: CL, txt: '41%' }] }],
+      100, { target: 81, targetLabel: 'target 81%' })
+    + legend([[CT, 'TabPFN reading the scene'], [CL, 'LightGBM, all rows']])
+    + verdictP(true, '✓ Ahead in all three crowds', '+18 points in the crossing crowd. Reading the scene alone adds 10 points over the same TabPFN without it. Still short of the target.')
+    + srcP('Simulated robot loop · 20 fresh crowds each · after the crowd turns erratic · results/inloop_claimb*.csv, docs/GENERALISATION.md');
+  if (fig === 'p2') return `<p class="chart-h">Range score at +2 s (lower is better: range width plus misses)</p>` + hbars([
+      { label: 'TabPFN', sub: '1,500 rows · 86% inside', bars: [{ v: 3.57, c: CT, txt: '3.57' }] },
+      { label: 'LightGBM, best fit', sub: '100,440 rows · 72% inside', bars: [{ v: 3.74, c: CL, txt: '3.74' }] },
+      { label: 'LightGBM, pre-set', sub: '100,440 rows · 82% inside', bars: [{ v: 4.06, c: CL2, txt: '4.06' }] },
+      { label: 'Straight line + fixed band', sub: '83% inside', bars: [{ v: 7.78, c: CG, txt: '7.78' }] }], 8)
+    + verdictP(true, '✓ Matches LightGBM with 67 times fewer rows', 'And its ranges keep their promise: 86% inside against an 81% target, where the bigger LightGBM falls to 72%.')
+    + srcP('Simulated highway traffic · 18 held-out episodes, 355 cars · results/highway_h1.csv, docs/HIGHWAY.md');
+  if (fig === 'p3') return `<p class="chart-h">Range score at +2 s, average over the five scenes (lower is better)</p>` + hbars([
+      { label: 'TabPFN', sub: '1,500 rows', bars: [{ v: 1.358, c: CT, txt: '1.36' }] },
+      { label: 'LightGBM', sub: 'same 1,500 rows', bars: [{ v: 1.489, c: CL, txt: '1.49' }] },
+      { label: 'LightGBM', sub: '15× more rows, four other scenes', bars: [{ v: 1.366, c: CL2, txt: '1.37' }] },
+      { label: 'Straight line + fixed band', sub: '', bars: [{ v: 1.723, c: CG, txt: '1.72' }] }], 1.8)
+    + verdictP(true, '✓ Learns more from each example', 'On the same rows TabPFN beats LightGBM. It ties a LightGBM given 15 times more data.')
+    + srcP('Real pedestrians: ETH, Hotel, Univ, Zara1, Zara2, each held out once · results/loso5.csv, docs/LOSO5.md');
+  if (fig === 'lead') return `<div class="end lead"><h1>We tested every claim,<br>with pass rules written before each run.</h1><div class="tag">Three did not hold. Here is how, and why.</div></div>`;
+  if (fig === 'l1') return `<p class="chart-h">Seconds slower than the simple “keep going straight” planner, at the same safety</p>` + hbars([
+      { label: 'Same closest gap', sub: 'to a person', bars: [{ v: 4.3, c: CT, txt: '+4.3 s' }] },
+      { label: 'Same collision rate', sub: '', bars: [{ v: 3.0, c: CT, txt: '+3.0 s' }] }], 5)
+    + verdictP(false, 'Why', 'Our planner only checks whether a move enters a box, so it ignores the range’s shape. At the same caution setting, TabPFN and LightGBM made it drive the same.')
+    + srcP('Expected: better ranges, goal reached sooner and just as safely · Tested: 3 crowds × 20 fresh crowds against 4 standard planners; none beaten · RESULTS.md (T5), docs/GENERALISATION.md');
+  if (fig === 'l2') return `<div class="pair"><div><h4>✓ Held: learn on Hotel, test on ETH</h4><p class="chart-h">real positions inside the range</p>` + hbars([
+      { label: 'TabPFN', bars: [{ v: 75, c: CT, txt: '75%' }] }, { label: 'LightGBM', bars: [{ v: 58, c: CL, txt: '58%' }] }], 100)
+    + `</div><div><h4>= Tie: five real scenes</h4><p class="chart-h">range score, lower is better</p>` + hbars([
+      { label: 'TabPFN', sub: '1,500 rows', bars: [{ v: 1.358, c: CT, txt: '1.36' }] }, { label: 'LightGBM', sub: '15× more rows', bars: [{ v: 1.366, c: CL2, txt: '1.37' }] }], 1.8)
+    + `</div></div>` + verdictP(false, 'Why', 'Given enough data from other places, LightGBM catches up. TabPFN’s edge is little data: a robot’s first minutes somewhere new.')
+    + srcP('Expected: honest ranges in a real place never seen · RESULTS.md (claim A), docs/LOSO5.md');
+  if (fig === 'l3') return `<p class="chart-h">Predicting cars: range score at +2 s (lower is better)</p>` + hbars([
+      { label: 'Pedestrian rows', sub: 'boxes about 50 m wide', bars: [{ v: 51.7, c: CG, txt: '51.7' }] },
+      { label: 'Pedestrian rows', sub: '+ 250 rows of this traffic', bars: [{ v: 28.2, c: CL, txt: '28.2' }] },
+      { label: 'Car rows', sub: '', bars: [{ v: 13.0, c: CT, txt: '13.0' }] }], 55)
+    + verdictP(false, 'Why', 'People and cars move differently. The code carries over; the examples don’t. So each robot type gets its own example table.')
+    + srcP('Also: the robot loop and the cars are simulated (real data: pedestrians only) · TabPFN-3.5 weights are non-commercial · docs/HIGHWAY.md (exploratory)');
+  return '';
+}
+let proofIdx = -1;
+function proofUpdate(R) {
+  let i = 0, acc = 0; while (i < PROOFS.length - 1 && R >= acc + PROOFS[i][0]) { acc += PROOFS[i][0]; i++; }
+  const [len, kick, title, fig, cap] = PROOFS[i], el = document.getElementById('proof');
+  if (i !== proofIdx) {
+    proofIdx = i;
+    let body;
+    if (fig === 'end') body = `<div class="end"><h1>Foresight</h1><div class="tag">A robot adapts by swapping examples, not retraining.</div>`
+      + `<div class="url">github.com/shiinalight/Robodetect</div><div class="small">Every number comes from a script in the repo.</div>`
+      + `<div class="small">Darshak Panseriya · Nooshin Pourkamali · Thank you, Prior Labs</div></div>`;
+    else body = figHTML(fig, cap);
+    el.innerHTML = (kick ? `<div class="step">${kick}</div>` : '') + (title ? `<h2>${title}</h2>` : '') + body;
+    el.classList.toggle('board', !!BOARD_AT[fig]);
+  }
+  if (BOARD_AT[fig]) {                                   // one steady board: columns appear in turn, bars grow, the current one is outlined
+    const L = R - acc, at = BOARD_AT[fig], cols = el.querySelectorAll('.col');
+    cols.forEach((c, j) => {
+      const u = L - at[j], cur = u >= 0 && (j === at.length - 1 || L < at[j + 1]);
+      c.style.opacity = u < 0 ? 0 : Math.min(1, u / 0.5) * (cur ? 1 : 0.62);
+      c.style.transform = `translateY(${u < 0 ? 16 : 16 * (1 - ease(Math.min(1, u / 0.5)))}px)`;
+      c.classList.toggle('on', cur);
+      const g = ease(Math.max(0, Math.min(1, (u - 0.2) / 0.9)));
+      c.querySelectorAll('.b').forEach(b => { b.style.width = `${+b.dataset.w * g}%`; });
+      c.querySelectorAll('.v, .tg').forEach(v => { v.style.opacity = g; });
+    });
+  }
+  if (fig === 'gif' && gifFrames.length) {             // the 17 s clip in 10 s, holding its last frame
+    const k = Math.min(GIF_N - 1, Math.floor((R - acc) / (len - 0.8) * GIF_N)), im = gifFrames[k];
+    const cv = document.getElementById('gifc'); if (cv && im.complete) cv.getContext('2d').drawImage(im, 0, 0, 1280, 720);
+  }
 }
 let videoT = QP.has('T') ? +QP.get('T') : 0, videoPaused = VIDEO && QP.has('pause'), lastVT = null, camSm = null;
 const fadeOp = new Map(), signs = [];
@@ -1150,7 +1361,7 @@ function sceneCam(sp, T, dt) {
 }
 const STATION_DOOR = (M.buildings || []).find(b => b.name === 'Station')?.door || [12.5, -7.5];
 function safeArea() {                                    // labels inside 5% margins and not under a card, else hidden
-  const W = innerWidth, H = innerHeight, cards = ['info', 'caption', 'panel', 'rows', 'tab', 'meter', 'speedbadge', 'pcard', 'banner']
+  const W = innerWidth, H = innerHeight, cards = ['info', 'caption', 'panel', 'rows', 'tab', 'meter', 'speedbadge', 'pcard', 'banner', 'note', 'open', 'proof']
     .map(id => document.getElementById(id)).filter(el => el && el.style.display !== 'none' && getComputedStyle(el).display !== 'none')
     .map(el => el.getBoundingClientRect());
   // never overlapping: events first, then the robot, other tags, building signs last
@@ -1168,39 +1379,45 @@ function safeArea() {                                    // labels inside 5% mar
 }
 function videoPost(part, T, dt, sp) {
   const show = (id, on) => { document.getElementById(id).style.display = on ? 'block' : 'none'; };
-  show('caption', part !== 'scene'); show('info', part === 'scene');
+  show('caption', part === 'problem' || part === 'intro'); show('info', part === 'scene');
+  show('open', part === 'open'); show('note', false); show('proof', part === 'proofs');   // the honesty note lives in the info card's subtitle
   if (part !== 'scene') { banner.style.opacity = 0; }                    // scene banners only in the scenario
   document.getElementById('speedbadge').style.display = part === 'scene' && sp && sp.speed > 1 ? 'block' : 'none';
   let dim = 0;                                           // panels fade in and out; the scene dims and blurs behind them
-  const own = { panel: 'outro', rows: 'intro', tab: 'intro', meter: 'intro', pcard: 'problem' };   // each panel only in its own part
-  for (const id of ['panel', 'rows', 'tab', 'meter', 'pcard']) {
+  const own = { panel: 'outro', rows: 'intro', tab: 'intro', meter: 'intro', pcard: 'problem', proof: 'proofs', open: 'open' };   // each panel only in its own part
+  for (const id of ['panel', 'rows', 'tab', 'meter', 'pcard', 'proof', 'open']) {
     const el = document.getElementById(id), want = part === own[id] && el.style.display !== 'none' ? 1 : 0;
     let o = fadeOp.get(id) ?? 0; o = dt > 0 && dt < 0.25 ? o + (want - o) * (1 - Math.exp(-dt / 0.2)) : want; fadeOp.set(id, o);
     el.style.display = o > 0.01 ? 'block' : 'none'; el.style.opacity = o; if (id !== 'pcard') dim = Math.max(dim, o);   // a small card needs no blur
   }
   renderer.domElement.style.filter = dim > 0.01 ? `brightness(${1 - 0.25 * dim}) blur(${(3 * dim).toFixed(2)}px)` : '';
-  labels.domElement.style.opacity = 1 - 0.4 * dim;
-  const edges = [LP, LP + LI, LP + LI + LS].filter(b => b > 0 && b < VLEN);    // a soft fade between the parts
+  labels.domElement.style.opacity = part === 'open' || part === 'proofs' ? 0 : 1 - 0.4 * dim;   // no street tags over the title and proof cards
+  const edges = [LOPEN, LOPEN + LP, LOPEN + LP + LI, LOPEN + LP + LI + LS].filter(b => b > 0 && b < VLEN);    // a soft fade between the parts
   document.getElementById('fade').style.opacity = Math.max(0, ...edges.map(b => 1 - Math.abs(T - b) / 0.45));
 }
 function videoFrame(T) {
   const dt = lastVT == null ? 0 : T - lastVT;
   let part, sp = null;
-  const U = T - LP;                                      // time after the challenge
-  if (T < LP) {
-    part = 'problem'; introOn = true; outroOn = false; t = 16 + T * 0.9; videoFocusId = null;
-    problemUpdate(T); update();
+  const Tp = T - LOPEN, U = Tp - LP;                     // time into the challenge; time after it
+  if (Tp < 0) {
+    part = 'open'; introOn = true; outroOn = false; t = 16 + Tp * 0.9; videoFocusId = null; predShow = 'none';
+    document.getElementById('open').innerHTML = OPEN_HTML; orbitCam(Tp); update();
+  } else if (Tp < LP) {
+    part = 'problem'; introOn = true; outroOn = false; t = 16 + Tp * 0.9; videoFocusId = null;
+    problemUpdate(Tp); update();
   } else if (U < LI) {
-    part = 'intro'; introOn = true; outroOn = false; introPaused = true; introT = U * SI; t = introSceneT(introT);
+    part = 'intro'; introOn = true; outroOn = false; introPaused = true; introT = I0 + U * SI; t = introSceneT(introT);
     videoFocusId = null; update(); introUpdate(introT);
   } else if (U < LI + LS) {
     part = 'scene'; if (introOn) introEnd(); introOn = false; outroOn = false; playing = false;
     sp = sceneAt(U - LI); t = sp.t; videoFocusId = sp.ev && sp.ev.agent_id >= 0 ? sp.ev.agent_id : null;
     update(); sceneCam(sp, T, dt);
   } else {
-    part = 'outro'; if (introOn) introEnd(); introOn = false; outroOn = true; outPaused = true;
-    outT = Math.min((U - LI - LS) * SO, OL.at(-1) - 1e-3); t = outroSceneT(outT); videoFocusId = null; update(); outroUpdate(outT);
+    part = 'proofs'; if (introOn) introEnd(); introOn = false; outroOn = false; playing = false;
+    const R = U - LI - LS; t = Math.min(T_END, 48 + R * 0.4); videoFocusId = null; predShow = 'all';
+    document.getElementById('note').innerHTML = NOTE_HTML; update(); orbitCam(-6 + R * 0.5); proofUpdate(R);
   }
+  if (part === 'scene') document.getElementById('note').innerHTML = NOTE_HTML;
   drawRoute(t / D.dt);
   videoPost(part, T, dt, sp);
   controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
