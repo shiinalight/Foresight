@@ -179,17 +179,22 @@ def build():
                     "against 49.3% for frozen TabPFN (+10.0 points [+8.4, +11.6]) and 41.3% for LightGBM; interval "
                     "score 5.03 vs 6.34 (−1.31 [−1.55, −1.08]); error −0.057 m. Before the switch it costs a little. "
                     "No model reaches the 81% target. Against LightGBM it holds in three crowds (open plaza +6.6, crossing "
-                    "+18.0, dense +19.7 points; GENERALISATION.md). Simulation; real data: a small gain (RESULTS.md).")
-    image(s, "fig_t5.png", max_h=Inches(5.15))
-    caption(s, "Right panel: box holds the true position at +2 s, before and after the switch (20 paired crowds)")
+                    "+18.0, dense +19.7 points; GENERALISATION.md). Simulation; real data: a small gain (RESULTS.md). The picture: crowd 3013, TabPFN split against LightGBM on "
+                    "all rows; each person's 5–95% box drawn 2 s earlier, dots where they actually were "
+                    "(media/demo/calibration_seed3013.gif). This crowd ends at 60.1% vs 45.2% inside since the change. "
+                    "Honest reading: TabPFN's boxes are wider (2.08 vs 1.48 m) and the interval score still favours it "
+                    "(5.16 vs 6.53). TabPFN lags until about 10 s, when it has refitted on the scene, so the first column "
+                    "shows LightGBM ahead (kept on purpose). Both are under the 81% nominal.")
+    image(s, "demo/calibration_seed3013_strip.png", max_h=Inches(5.15))
+    caption(s, "This crowd: 60% vs 45% inside after the change; 20 crowds: 59% vs 41%")
 
     s = slide(prs, "Calibrated, but slower", kicker="Closed loop · claim C",
               notes="Pre-registered rule, 20 paired crowds: the TabPFN planner beats no baseline (Holm, p = 1.0). At "
                     "constant velocity m0.4's safety it is 4.3 s slower (gap) and 3.0 s slower (collision rate). Even "
                     "the open-loop oracle could not beat every baseline by 2 s: the fastest baseline runs 1.5 s above "
                     "the 17.7 s time floor. Claim C is reported as a stress test.")
-    strip(s, ["demo/seed3013_paths.png"], max_h=Inches(5.0))
-    caption(s, "Showcase crowd 3013, chosen by rule (median split time): same crowd for every planner")
+    image(s, "fig_t5.png", max_h=Inches(5.15))
+    caption(s, "Left: speed against safety per planner over its dial (20 paired crowds) · right: in-loop calibration")
 
     s = slide(prs, "Why slower, and what comes next", kicker="Honest framing",
               notes="Slower, and not because of TabPFN's calibration: TabPFN with and without the scene model drove the "
