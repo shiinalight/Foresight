@@ -28,7 +28,7 @@ Video: [link: confirm] · Repository: `shiinalight/Robodetect`
 
 | Read | What it gives you |
 |---|---|
-| [`docs/explainer.html`](docs/explainer.html) | Picture-first explainer, about 5 minutes. Published as an artifact page: [link: confirm]. Also opens locally in a browser (GitHub shows HTML as source) |
+| [`docs/explainer.html`](docs/explainer.html) | Picture-first explainer, about 5 minutes. Published as an artifact page: https://claude.ai/artifact/So3d3641GrgCkkRMxyaii9 [confirm: set the page's sharing to public before submitting]. Also opens locally in a browser (GitHub shows HTML as source) |
 | [`docs/walkthrough.html`](docs/walkthrough.html) | One real planning decision, stage by stage, with the actual values (features f4, seed 6001). It shows the earlier mixed-context live planner (80 recent, 588 similar, 226 fill rows); the T5 loop uses the split setup described below |
 | [`PLAN.md`](PLAN.md) | The claims and their current status, the framework, the document map |
 | [`RESULTS.md`](RESULTS.md) | The pre-registration and its amendments, and every number with its limits. Its real-data tables are still the f1 numbers (banner: being rerun on f4); the f4 numbers are below and in the result files |
