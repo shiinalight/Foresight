@@ -1,0 +1,130 @@
+hosted calls planned: 2 variants x 5 scenes x 3 seeds x 2 axes = 60 (f4 reused from results/loso5_rows.csv if the rows match)
+baseline: test rows and persons match results/loso5_rows.csv
+server usage before: 8,070,000
+  eth: lgbm_all f4 rerun vs stored is90 max |diff| 1.78e-15
+  first fit: server delta 20,000 for 2 calls -> projected 600,000 (cap 3,000,000)
+held out eth seed 0: done (4 hosted calls this run)
+held out eth seed 1: done (8 hosted calls this run)
+held out eth seed 2: done (12 hosted calls this run)
+  hotel: lgbm_all f4 rerun vs stored is90 max |diff| 8.88e-16
+held out hotel seed 0: done (16 hosted calls this run)
+held out hotel seed 1: done (20 hosted calls this run)
+held out hotel seed 2: done (24 hosted calls this run)
+  zara1: lgbm_all f4 rerun vs stored is90 max |diff| 1.78e-15
+held out zara1 seed 0: done (28 hosted calls this run)
+held out zara1 seed 1: done (32 hosted calls this run)
+held out zara1 seed 2: done (36 hosted calls this run)
+  zara2: lgbm_all f4 rerun vs stored is90 max |diff| 3.55e-15
+held out zara2 seed 0: done (40 hosted calls this run)
+held out zara2 seed 1: done (44 hosted calls this run)
+held out zara2 seed 2: done (48 hosted calls this run)
+  univ: lgbm_all f4 rerun vs stored is90 max |diff| 3.55e-15
+held out univ seed 0: done (52 hosted calls this run)
+held out univ seed 1: done (56 hosted calls this run)
+held out univ seed 2: done (60 hosted calls this run)
+server usage after: 8,670,000
+
+is90 (mean over 3 seeds)
+scene               eth  hotel  zara1  zara2   univ  pooled
+model                                                      
+lgbm_all_compact  1.541  1.082  1.299  1.275  1.799   1.399
+lgbm_all_eng      1.506  1.046  1.243  1.260  1.767   1.364
+lgbm_all_f4       1.521  1.035  1.252  1.251  1.770   1.366
+tabpfn_compact    1.533  1.081  1.321  1.233  1.768   1.387
+tabpfn_eng        1.500  1.048  1.281  1.231  1.727   1.357
+tabpfn_f4         1.500  1.062  1.283  1.226  1.720   1.358
+
+joint90 (mean over 3 seeds)
+scene               eth  hotel  zara1  zara2   univ  pooled
+model                                                      
+lgbm_all_compact  0.779  0.849  0.851  0.836  0.725   0.808
+lgbm_all_eng      0.765  0.845  0.858  0.828  0.720   0.803
+lgbm_all_f4       0.763  0.851  0.859  0.842  0.720   0.807
+tabpfn_compact    0.808  0.864  0.854  0.829  0.782   0.827
+tabpfn_eng        0.807  0.866  0.852  0.822  0.777   0.825
+tabpfn_f4         0.820  0.870  0.856  0.821  0.775   0.828
+
+err (mean over 3 seeds)
+scene               eth  hotel  zara1  zara2   univ  pooled
+model                                                      
+lgbm_all_compact  0.410  0.270  0.317  0.283  0.451   0.346
+lgbm_all_eng      0.394  0.256  0.303  0.274  0.427   0.331
+lgbm_all_f4       0.395  0.257  0.303  0.275  0.430   0.332
+tabpfn_compact    0.407  0.275  0.321  0.284  0.443   0.346
+tabpfn_eng        0.390  0.263  0.310  0.276  0.424   0.332
+tabpfn_f4         0.389  0.263  0.310  0.277  0.424   0.333
+
+width90 (mean over 3 seeds)
+scene               eth  hotel  zara1  zara2   univ  pooled
+model                                                      
+lgbm_all_compact  1.027  0.869  0.956  0.741  0.956   0.910
+lgbm_all_eng      0.973  0.829  0.927  0.710  0.907   0.869
+lgbm_all_f4       0.973  0.823  0.930  0.732  0.922   0.876
+tabpfn_compact    1.092  0.891  0.948  0.671  1.093   0.939
+tabpfn_eng        1.071  0.862  0.909  0.646  1.052   0.908
+tabpfn_f4         1.101  0.880  0.922  0.650  1.062   0.923
+
+                       comparison  scope metric   diff     lo     hi
+           tabpfn_eng - tabpfn_f4    eth   is90 -0.000 -0.010  0.011
+           tabpfn_eng - tabpfn_f4  hotel   is90 -0.014 -0.024 -0.004
+           tabpfn_eng - tabpfn_f4  zara1   is90 -0.003 -0.013  0.009
+           tabpfn_eng - tabpfn_f4  zara2   is90  0.005 -0.005  0.014
+           tabpfn_eng - tabpfn_f4   univ   is90  0.007 -0.010  0.024
+           tabpfn_eng - tabpfn_f4 pooled   is90 -0.001 -0.006  0.004
+       tabpfn_compact - tabpfn_f4    eth   is90  0.033  0.009  0.057
+       tabpfn_compact - tabpfn_f4  hotel   is90  0.019 -0.003  0.042
+       tabpfn_compact - tabpfn_f4  zara1   is90  0.037  0.009  0.068
+       tabpfn_compact - tabpfn_f4  zara2   is90  0.007 -0.020  0.035
+       tabpfn_compact - tabpfn_f4   univ   is90  0.048  0.012  0.082
+       tabpfn_compact - tabpfn_f4 pooled   is90  0.029  0.017  0.042
+          tabpfn_f4 - lgbm_all_f4    eth   is90 -0.021 -0.057  0.014
+          tabpfn_f4 - lgbm_all_f4  hotel   is90  0.027  0.002  0.052
+          tabpfn_f4 - lgbm_all_f4  zara1   is90  0.032  0.001  0.067
+          tabpfn_f4 - lgbm_all_f4  zara2   is90 -0.025 -0.060  0.015
+          tabpfn_f4 - lgbm_all_f4   univ   is90 -0.050 -0.095 -0.005
+          tabpfn_f4 - lgbm_all_f4 pooled   is90 -0.008 -0.024  0.009
+        tabpfn_eng - lgbm_all_eng    eth   is90 -0.007 -0.044  0.027
+        tabpfn_eng - lgbm_all_eng  hotel   is90  0.002 -0.023  0.027
+        tabpfn_eng - lgbm_all_eng  zara1   is90  0.037 -0.000  0.085
+        tabpfn_eng - lgbm_all_eng  zara2   is90 -0.029 -0.064  0.010
+        tabpfn_eng - lgbm_all_eng   univ   is90 -0.040 -0.082  0.004
+        tabpfn_eng - lgbm_all_eng pooled   is90 -0.007 -0.024  0.010
+tabpfn_compact - lgbm_all_compact    eth   is90 -0.008 -0.039  0.023
+tabpfn_compact - lgbm_all_compact  hotel   is90 -0.001 -0.028  0.024
+tabpfn_compact - lgbm_all_compact  zara1   is90  0.021 -0.009  0.056
+tabpfn_compact - lgbm_all_compact  zara2   is90 -0.041 -0.068 -0.012
+tabpfn_compact - lgbm_all_compact   univ   is90 -0.031 -0.078  0.013
+tabpfn_compact - lgbm_all_compact pooled   is90 -0.012 -0.027  0.003
+       lgbm_all_eng - lgbm_all_f4    eth   is90 -0.015 -0.033  0.002
+       lgbm_all_eng - lgbm_all_f4  hotel   is90  0.011 -0.003  0.024
+       lgbm_all_eng - lgbm_all_f4  zara1   is90 -0.008 -0.023  0.005
+       lgbm_all_eng - lgbm_all_f4  zara2   is90  0.008 -0.008  0.026
+       lgbm_all_eng - lgbm_all_f4   univ   is90 -0.003 -0.025  0.018
+       lgbm_all_eng - lgbm_all_f4 pooled   is90 -0.001 -0.009  0.006
+   lgbm_all_compact - lgbm_all_f4    eth   is90  0.020 -0.008  0.046
+   lgbm_all_compact - lgbm_all_f4  hotel   is90  0.047  0.022  0.073
+   lgbm_all_compact - lgbm_all_f4  zara1   is90  0.048  0.020  0.074
+   lgbm_all_compact - lgbm_all_f4  zara2   is90  0.023 -0.001  0.048
+   lgbm_all_compact - lgbm_all_f4   univ   is90  0.029 -0.006  0.063
+   lgbm_all_compact - lgbm_all_f4 pooled   is90  0.033  0.021  0.046
+VERDICT eng (docs/FEATURES_ENG.md rule): not adopted; pooled -0.001 [-0.006, +0.004]; significantly worse scenes: []
+VERDICT compact (docs/FEATURES_ENG.md rule): not adopted; pooled +0.029 [+0.017, +0.042]; significantly worse scenes: ['eth', 'zara1', 'univ']
+
+LightGBM (all rows, eng) top features by mean gain share:
+feature
+path_speed       0.1290
+comp_relspeed    0.0639
+n0_vx            0.0601
+speed            0.0576
+a_lon            0.0470
+hist_y3          0.0344
+n0_vy            0.0336
+a_lat            0.0331
+speed_trend      0.0301
+straightness     0.0277
+n1_vx            0.0246
+hist_x4          0.0241
+n0_y             0.0224
+hist_x1          0.0217
+hist_y2          0.0210
+hosted calls this run 60
