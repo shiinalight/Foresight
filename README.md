@@ -118,7 +118,7 @@ The five real scenes and the cars have their own setup: [`docs/LOSO5.md`](docs/L
 ## Fine print
 
 - Every pass rule was written before its run, failures stay in the record, and every number comes from a script in this repository.
-- TabPFN-3.5 weights are for non-commercial use; a product needs the commercial licence or the Apache-licensed TabPFN v2 weights.
+- Code and docs: MIT licence ([`LICENSE`](LICENSE)). TabPFN itself is not covered: the TabPFN-3.5 weights are for non-commercial use; a product needs the commercial licence or the Apache-licensed TabPFN v2 weights.
 - Prepared before the event: generic utilities only (a Kalman filter, a constant-velocity baseline and timing code). Everything else was written at the event.
 
 Thanks to Prior Labs and the HackLab Berlin organisers.

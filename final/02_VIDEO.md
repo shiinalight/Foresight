@@ -1,4 +1,4 @@
-> **Copy of [`docs/VIDEO_BRIEF.md`](../docs/VIDEO_BRIEF.md)**, made by `tools/build_final.py` on 2026-11-22 15:02 (after commit `89b4099`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/VIDEO_BRIEF.md`](../docs/VIDEO_BRIEF.md)**, made by `tools/build_final.py` on 2026-11-22 15:07 (after commit `9398954`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: video brief (3 minutes)
 
@@ -186,7 +186,7 @@ Pace limit: about 2.3 spoken words per second. No numbers on camera; numbers go 
 | 1:57–2:10 | **Proof 2.** `media/demo/highway.gif` (the road before and after the switch, two models), caption "this road: 77 vs 67 of 100 forecasts held · all five roads: 77% vs 63%" (the clip's own counters; never caption it with the pooled number alone) | "Same core, simulated highway traffic. Fifteen hundred rows match LightGBM trained on sixty-seven times more. When traffic turns aggressive, reading the scene adds fourteen points." (25) |
 | 2:10–2:22 | **Proof 3.** `media/demo/scenes5.gif` for 5 s (the five scenes, people and boxes), caption "one 16 s window per scene" (its counters, 78–95%, are these windows; the test's coverage is 78–87%), then `media/fig_loso5.png` | "On five real pedestrian scenes it beats the fixed-margin guess, beats LightGBM on the same rows, and ties one trained on fifteen times more." (24) |
 | 2:22–2:44 | "Where it stops" frame (section 0: the limit, the next step, the scope footer) | "Where it stops. Our planner is simple on purpose: it only asks yes or no. At the same safety, it arrives three to four seconds behind standard planners. Next, it weighs how likely each spot is. The robot loop and the cars are simulated." (42) |
-| **2:44–2:56** | **On camera:** Nooshin and Darshak. End card: repo URL, "every number comes from a script in the repo" | "Foresight adapts by swapping examples: one example bank per body, no retraining. Every number comes from a script. Thank you, Prior Labs." (22) **The repo has no LICENSE file yet.** Add one before the freeze, or the end card and the description say "the code is public" |
+| **2:44–2:56** | **On camera:** Nooshin and Darshak. End card: repo URL, "every number comes from a script in the repo" | "Foresight adapts by swapping examples: one example bank per body, no retraining. Every number comes from a script. Thank you, Prior Labs." (22) The repo has an MIT LICENSE (added 22 Nov). |
 
 Beats: 11 + 15 + 38 (five steps) + 35 + 18 + 13 + 12 + 22 + 12 = 176 s (2:56). Fastest beats: the problem and step 4 at about 2.1 words per second; the rest are 1.4 to 2.0. If the steps' own timings differ by a second in the edit, move the step sentences with them.
 
@@ -241,6 +241,6 @@ Short form for the README, the deck notes and Q&A. Full entries in `docs/REFEREN
 - **The 3D street lives only on `nooshin/dev`.** That branch forked from the first core commit, so it is not merged before the freeze. The README points to it. No street number goes on screen unless her `features.py` has the leak fixes the core got (D-20, D-26).
 - **Editor:** the "where it stops" frame (or Nooshin re-renders it); captions burned in; the policy beat only if under 3:00; `fig_t5.png` cropped to its right panel in proof 1; the two new clips in proofs 2 and 3.
 - **If the voice-over is already recorded:** the picture fixes (crop, clips, captions) need no new audio. Re-record only the street's first and last sentence, proof 2, proof 3 and the new-place sentence; if there is no time, the two street sentences come first ("a street it never saw" is not true: it is a held-out run of the same street, and its ranges use a fixed example set).
-- **Licence:** the close says "open source" and the repo has no LICENSE file. [Darshak, shiinalight]
+- **Licence:** done. MIT `LICENSE` added 22 Nov; "open source" is now accurate for our code (TabPFN weights keep their own licences).
 - **Read the voice-over aloud once with a timer.** Every beat is at or under about 2.1 words per second, so there is a little room to slow down.
 - **Upload unlisted;** the link must open logged out; put it in the README `[confirm: video link]`.

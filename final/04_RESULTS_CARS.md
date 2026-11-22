@@ -1,4 +1,4 @@
-> **Copy of [`docs/HIGHWAY.md`](../docs/HIGHWAY.md)**, made by `tools/build_final.py` on 2026-11-22 15:02 (after commit `89b4099`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/HIGHWAY.md`](../docs/HIGHWAY.md)**, made by `tools/build_final.py` on 2026-11-22 15:07 (after commit `9398954`). Edit the source and rerun the script; do not edit this copy.
 
 # Exploratory: same core, another embodiment — highway cars (plan and pass rules: commit 34f1954, 03:38 Berlin)
 

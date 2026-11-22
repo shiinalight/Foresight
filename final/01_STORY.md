@@ -1,4 +1,4 @@
-> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 15:02 (after commit `89b4099`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 15:07 (after commit `9398954`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: the story we submit (single source of truth)
 
@@ -169,7 +169,7 @@ From the wording audit on 22 Nov at about 09:15 Berlin. Section 2 of this page i
 - `deck/Foresight.pptx` (removed 22 Nov; superseded by `deck/Foresight_finalist.pptx`, the deck we present): reordered to section 6 with 12 main slides plus 4 backup; "when to use which" no longer says "safer" (b4c00ed, 402ac6f; RoboDetect).
 
 **Open, owner a person:**
-- **No LICENSE file**, while the video close and the README say "open source". Add a licence before the freeze or say "the code is public". [Darshak, shiinalight]
+- **Licence:** done. MIT `LICENSE` added 22 Nov (code and docs only; TabPFN weights keep their own licences).
 - `README.md`: 9 `[confirm]` items (video link, artifact sharing, roles, AI-assistant line, pre-event code). [Darshak]
 - `PLAN.md`: the "second account" line (F9). Done: PLAN.md was removed on 22 Nov.
 - `media/v_limits.png` does not exist. The "where it stops" frame is specified in `docs/VIDEO_BRIEF.md` section 0. [whoever renders the video]
