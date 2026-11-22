@@ -52,3 +52,37 @@
   - split q 0.10 is dropped (T5 already covers it on seeds 3000–3039).
 - **Frozen tabpfn q 0.15 / 0.50 are dropped** from this sweep to free the GPU and CPU. T5 already compares split and frozen at q 0.15. Two to six of their episodes had printed when they were stopped; none are used.
 - **Analysis unchanged:** tabpfn_split's curve is now four dials (0.15, 0.25, 0.35, 0.50).
+
+## Results (Sun 22 Nov ~04:10 Berlin; `results/dx_split.csv`, `results/dx_lgbm.csv`, `tools/curve_compare.py --glob "*dx-*" --seeds 3100-3119 --holm`)
+
+**Points** (20 paired fresh seeds; mean time_capped s / min gap m / moving-collision rate):
+
+| Planner | Dials | Points |
+|---|---|---|
+| tabpfn_split | q 0.15 / 0.25 / 0.35 / 0.50 | 27.23 / 0.127 / 30% · 26.09 / 0.181 / 15% · **24.37 / 0.137 / 15%** · 22.63 / 0.045 / 40% |
+| lgbm_all (laptop) | q 0.10 / 0.15 / 0.25 / 0.35 / 0.50 | 27.68 / 0.251 / 15% · 26.23 / 0.163 / 25% · 26.86 / 0.051 / 35% · 23.52 / −0.038 / 35% · 22.69 / 0.100 / 35% |
+| constant velocity | m 0.2 / 0.4 / 0.6 / 0.8 | 21.88 / 0.052 / 25% · 24.69 / 0.060 / 25% · 27.51 / 0.234 / 20% · 29.61 / 0.247 / 25% |
+| reactive | m 0.2 / 0.4 / 0.6 / 0.8 | 23.91 / −0.106 / 50% · 26.23 / −0.003 / 25% · 28.03 / 0.102 / 25% · 30.06 / 0.120 / 30% |
+| velocity obstacles | w 0.5 / 1 / 2 | 19.71 / −0.068 / 50% · 21.65 / 0.051 / 40% · 22.93 / 0.093 / 30% |
+| stop_go | — | 32.56 / −0.048 / 5% |
+| open-loop oracle | m 0.2 / 0.4 / 0.6 | 20.45 / 0.208 / 0% · 23.13 / 0.353 / 0% · 25.09 / 0.481 / 0% |
+
+**Verdicts (exploratory):**
+- **tabpfn_split beats no baseline curve under Holm.** Per baseline p: cv 1.0, reactive 0.158, stop_go 1.0, vo 1.0.
+- **Lower caution brings it into the baselines' range.** At q 0.35 it is 24.37 s with 0.137 m and 15%, against cv m0.4 at 24.69 s / 0.060 m / 25%: about as fast and safer on both axes, but not significant.
+- **Against the reactive planner** it is faster at matched safety at every comparable point (+1.3 to +6.7 s; point p 0.024–0.16). The per-baseline rule (every point, Holm) still fails.
+- **Velocity obstacles stay faster** at matched safety (−0.4 to −2.9 s).
+- **lgbm_all beats no baseline curve either** (reactive p 0.378, others 1.0). Its curve is no better than split's: at about 23 s it holds −0.038 to 0.100 m with 35% collisions, against split q 0.50 at 0.045 m / 40% and q 0.35 at 0.137 m / 15%.
+- **The oracle again keeps 0% collisions at every dial.** Perfect prediction buys safety at matched time, but no learned predictor gets close.
+
+## Latency arm (pre-registered in T4 addendum part 3, run on the L4 pod; seeds 3000–3039, tabpfn_split q 0.15, batch offset)
+
+Run both ways on the pod (same device): commands applied with 0.4 s delay (one replan period, stale predictions) against no delay.
+- **Time:** 27.32 → 28.67 s, +1.35 s [+0.18, +2.50].
+- **Min gap:** 0.231 → 0.133 m, −0.098 [−0.207, +0.003].
+- **Crowds with a moving collision:** 7.5% → 30%, +22.5 pts [+10, +37.5].
+- **Reached the goal:** 100% → 97.5%.
+
+**Reading:** one step of staleness costs both time and safety. Prediction must arrive within the replan period. The L4's 71 ms does that; the laptop CPU's 452 ms would not. The safety-floor deadline takeover (DEPLOYMENT tier table) is therefore needed, not optional.
+
+Note: the no-delay arm on the pod (27.32 s / 7.5%) differs from the laptop T5 rows at the same seeds (27.20 s / 20%, 40 seeds). This is the cross-device sensitivity documented in DEPLOYMENT.md; the paired comparison above is within one device.

@@ -1,0 +1,25 @@
+a,b,axis,how,diff,lo,hi,p,beats
+tabpfn_split,stop_go:-,gap,not comparable,,,,1.0,False
+tabpfn_split,stop_go:-,mc,not comparable,,,,1.0,False
+tabpfn_split,cv:0.2,gap,interp,-0.8857217378204396,,-0.31999999999999673,0.9985,False
+tabpfn_split,cv:0.2,mc,interp,-1.793999999999997,,-0.3200000000000002,0.9985,False
+tabpfn_split,cv:0.4,gap,interp,1.7792656253942383,-1.0600321245207123,3.060250000000001,0.169,False
+tabpfn_split,cv:0.4,mc,interp,1.0160000000000053,,3.060250000000001,0.1725,False
+tabpfn_split,cv:0.6,gap,not comparable,,,,1.0,False
+tabpfn_split,cv:0.6,mc,interp,3.488000000000003,,5.841000000000001,0.1485,False
+tabpfn_split,cv:0.8,gap,not comparable,,,,1.0,False
+tabpfn_split,cv:0.8,mc,interp,5.936000000000007,,8.145025000000006,0.1175,False
+tabpfn_split,reactive:0.2,gap,dominance,1.2800000000000047,-1.3302500000000088,2.5599999999999987,0.1575,False
+tabpfn_split,reactive:0.2,mc,dominance,1.2800000000000047,-0.5653392857142904,2.5599999999999987,0.0745,False
+tabpfn_split,reactive:0.4,gap,dominance,1.860000000000003,0.06438904479747748,5.41694177813799,0.024,False
+tabpfn_split,reactive:0.4,mc,interp,2.5560000000000045,,5.400749999999994,0.0915,False
+tabpfn_split,reactive:0.6,gap,interp,4.323734814475401,,6.690219959307677,0.102,False
+tabpfn_split,reactive:0.6,mc,interp,4.356000000000005,,6.744399999999994,0.026,False
+tabpfn_split,reactive:0.8,gap,interp,6.016467393643147,,9.23049999999999,0.1045,False
+tabpfn_split,reactive:0.8,mc,interp,6.733999999999998,,9.260000000000002,0.029,False
+tabpfn_split,vo:0.5,gap,dominance,-2.9199999999999946,-4.969999999999999,-2.1000000000000014,1.0,False
+tabpfn_split,vo:0.5,mc,dominance,-2.9199999999999946,-4.360218749999996,-2.1000000000000014,1.0,False
+tabpfn_split,vo:1,gap,interp,-1.0839328139888025,-4.080173842969886,-0.08944676705726291,0.9845,False
+tabpfn_split,vo:1,mc,interp,-0.9799999999999969,-4.350250000000002,-0.09780000000000018,0.9855,False
+tabpfn_split,vo:2,gap,interp,-0.6066480846618738,-3.312492506781915,1.092642673101503,0.7365,False
+tabpfn_split,vo:2,mc,interp,-0.39599999999999724,-3.730750000000004,1.1000999999999972,0.7,False
