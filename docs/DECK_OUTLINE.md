@@ -2,7 +2,7 @@
 
 The plan for a normal PowerPoint deck we build ourselves: for each slide, the job it does, the headline, where things go, which pictures to place, and what we say. Numbers come from `docs/STORY.md`. The 3D stills in `media/stills/` are frames from Nooshin's video (`nooshin/dev`, `media/demo_full.mp4`).
 
-**Arc:** problem → the idea → watch it work → three proofs → what breaks → what it's for.
+**Arc:** problem → the idea → watch it work → three proofs → where it stops → what it's for.
 **Pace:** 10 slides at about 30 s each. One idea per slide. Numbers go on the slide only where a number is the point.
 **Speakers:** Darshak opens and takes the idea and the proofs; Nooshin takes the 3D walkthrough and the street demo. Swap if you prefer; switch speakers at most twice.
 
@@ -67,21 +67,21 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 - **Say:** ETH, Hotel, Zara 1 and 2, Univ: train on four, test on the fifth. TabPFN beats the fixed-margin guess from slide 2 in all five scenes. On the same 1,500 rows it beats LightGBM in four scenes and ties on Hotel. LightGBM catches up only with about 15 times the data.
 - **Numbers:** against the fixed margin −0.365 [−0.405, −0.328] pooled; interval score −0.130 pooled at equal rows; tie at 15×; coverage 78–87% against LightGBM's 64–79% on the same rows.
 
-### 9 · Where it breaks (30 s)
-- **Headline:** Better forecasts didn't make our robot faster.
-- **Layout:** headline on top; the chart on the left half, the four limits as a short list on the right half. No numbers besides "3–4 s".
-- **Visual:** left panel of `media/fig_t5.png` (time against closest gap per planner), plus a four-line text card (to make):
-  - 3–4 s slower than standard planners at equal safety
-  - New place: holds on two real scenes, a tie on five
-  - Each body needs its own example bank
-  - Robot loop and cars are simulated
-- **Say:** the forecast is better than a fixed margin, yet the constant-velocity planner out-drove our robot. The planner throws away the shape of the range and keeps a yes/no box. Its caution setting decided the speed, not the forecast. That is the next thing to build.
+### 9 · Where it stops (30 s)
+- **Headline:** Better forecasts, a simple planner.
+- **Layout:** headline on top; the chart on the left half, three short lines on the right half; the scope line small at the bottom. No numbers besides "3–4 s".
+- **Visual:** left panel of `media/fig_t5.png` (time against closest gap per planner), plus a three-line text card (to make):
+  - Simple yes/no planner: same safety, 3–4 s slower
+  - Next: a planner that weighs how likely each spot is
+  - Scope: robot loop and cars simulated · five real pedestrian scenes
+- **Say:** the forecasts are better, but our planner is simple on purpose: it only asks yes or no, is this move inside a range? At the same safety it arrives three to four seconds after standard planners. Next, it weighs how likely each spot is. The robot loop and the cars are simulated; the five pedestrian scenes are real.
+- **If asked:** the five-scene tie is proof 3 (15× fewer rows); "each body needs its own examples" is slide 10's per-body bank. Neither is a limit.
 
 ### 10 · What it's for (35 s)
 - **Headline:** A forecasting layer you re-target by swapping rows.
 - **Layout:** headline on top; the stack diagram in the middle; the two-line buyer's guide under it ("Few examples or a sudden change: TabPFN. Plenty of familiar data: LightGBM."); "71 ms on an L4" small in a corner.
 - **Visual:** `media/diagrams/12_deployment.png` after an edit (see "To make"), or a simple stack: sensors → Foresight (TabPFN ranges) → your planner → safety check.
-- **Say:** Foresight sits under whatever planner a team already runs. New site, new crowd behaviour, new vehicle: add rows, no training run. Few examples or a sudden change: use TabPFN. Plenty of familiar data: a well-fitted LightGBM does as well. 71 ms per replan on an NVIDIA L4. Next: a planner that uses the full range, a closed loop for cars, real robot logs.
+- **Say:** Foresight sits under whatever planner a team already runs. New site, new crowd behaviour, new vehicle: add rows, no training run. One example bank per body. Few examples or a sudden change: use TabPFN. Plenty of familiar data: a well-fitted LightGBM does as well. 71 ms per replan on an NVIDIA L4. Next: a planner that uses the full range, a closed loop for cars, real robot logs.
 - **Close:** "Every number in this talk comes from a script in the repo."
 
 ### Optional 9b · TabPFN at every learned step (20 s; use if the timing allows)
@@ -112,7 +112,7 @@ The plan for a normal PowerPoint deck we build ourselves: for each slide, the jo
 
 ## To make or fix
 
-- **"Where it breaks" text card** (slide 9). Plain text, four lines.
+- **"Where it stops" text card** (slide 9). Plain text, three lines.
 - **`media/diagrams/12_deployment.png`** is out of date: it says "size decided at 02:00" and "takes over if late" (that takeover is designed, not built). Edit it to read "2,000-row bank + 250 scene rows, every 0.4 s" and "safety check: 0.4 s straight-line veto", or draw the simple stack instead.
 - **Don't use** `media/diagrams/08_coverage.png` (the old claim A numbers), `media/diagrams/11_tests.png` (shows T2/T3 as running) or `media/diagrams/10_t1_curve.png` (the first plaza test). Their replacements are B5, B2 and B7.
 - **Two clips made on 22 Nov, 11:45:** `media/demo/highway.gif` (slide 7) and `media/demo/scenes5.gif` (slide 8). Each has a `_stats.json` next to it that says what is drawn and how the episode or window was picked.

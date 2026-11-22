@@ -1,4 +1,4 @@
-> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 11:52 (after commit `713e532`). Edit the source and rerun the script; do not edit this copy.
+> **Copy of [`docs/STORY.md`](../docs/STORY.md)**, made by `tools/build_final.py` on 2026-11-22 12:56 (after commit `bef9ae2`). Edit the source and rerun the script; do not edit this copy.
 
 # Foresight: the story we submit (single source of truth)
 
@@ -13,8 +13,9 @@ This page settles what we claim, what we sell, and from what angle. The video, t
 **The sentence.** *The robot's knowledge is a table of examples. It adapts to new behaviour, and to a new body, by swapping rows, with no training step.*
 
 **The angle: sell the forecaster, not the navigator.**
-- Everything that held is about prediction: adapting when behaviour changes, learning more per example, and carrying over to a second body.
-- Everything about driving failed or tied: our robot beat no standard planner (claim C).
+- Everything that held is about prediction: adapting when behaviour changes, learning more per example, and carrying over to a second body. TabPFN is the best forecaster we tested per example and under change, and level with models fed far more data (say "level with", never "far better").
+- TabPFN worked at every layer we tried (ranges, intent, the robot's move); it pays off most as the forecaster.
+- **One real limit: the planner** (claim C). Our planner turns each range into a yes/no box, so at the same safety it arrives 3–4 s after standard planners. It is simple on purpose; the next step weighs how likely each spot is.
 - So the product is the layer that tells a robot *where everyone will be in the next one to two seconds, and how sure it is*. It sits under whatever planner the customer already runs.
 - Re-targeting it to a new site, a new crowd behaviour or a new body is a data operation (swap the example table), not a training project.
 
@@ -34,7 +35,10 @@ This page settles what we claim, what we sell, and from what angle. The video, t
 - Plenty of familiar data: a well-fitted LightGBM is as good, and cheaper.
 - The next lever for driving is the planner, not the forecaster: one that uses the whole range instead of a box veto.
 
-**Three limits that travel with every claim.** The robot loop and the cars are simulated (the pedestrian forecasts are also tested on five real scenes). Cars are offline, with no closed loop. TabPFN-3.5 weights are non-commercial; a product needs the commercial licence or the Apache-licensed v2 weights.
+**One limit and a scope line.**
+- **The limit** is the planner (above). Say "where it stops", and say the next step in the same breath.
+- **Not limits:** the five-scene tie is data efficiency (proof 3: the same result with 15x fewer rows); each body needing its own examples is true of every method, and ours needs only a new bank, no retraining (the product point).
+- **Scope line, said once:** the robot loop and the cars are simulated (the pedestrian forecasts are also tested on five real scenes); cars are offline, with no closed loop; TabPFN-3.5 weights are non-commercial, so a product needs the commercial licence or the Apache-licensed v2 weights.
 
 **Fallback (held, not triggered).** If a review finds an error in proof 1 or proof 2, the same material is told as a case study ("we put a tabular foundation model into a robot loop, under rules written first; here is where it helps"). Nothing so far has triggered it (`docs/archive/CEO-HANDOVER.md`, section 5a).
 
@@ -104,8 +108,10 @@ Status: **holds** (passed its pre-written rule), **narrowed** (holds only in a w
 4. **Proof 1.** Adapts when behaviour changes (in the loop).
 5. **Proof 2.** Same core, another body (cars, offline).
 6. **Proof 3.** Learns more per example (five real scenes).
-7. **Where it breaks.** Slower than standard planners; each body needs its own examples; simulated loop; non-commercial weights.
-8. **Close.** What it is for (the buyer's guide in one line), open source, every number from a script.
+7. **Where it stops.** The simple yes/no planner: same safety, 3–4 s slower. Next: a planner that weighs how likely each spot is. Scope line: simulated loop and cars, five real pedestrian scenes, non-commercial weights.
+8. **Close.** One example bank per body, no retraining; the buyer's guide in one line; every number from a script.
+
+The video's frame-by-frame wording for 7 and 8 is in `docs/VIDEO_BRIEF.md` section 0.
 
 The TabPFN policy rides on proof 1 as one sentence, the first thing cut if the video runs long.
 
@@ -130,7 +136,7 @@ The 10-slide plan in `docs/archive/PRESENTATION.md` section 3 was built around c
 | 5 | Proof 2 · same core, another body | `media/fig_highway.png` | H1 match at 67x fewer rows, coverage 86% vs 69–82%; H2 +14 pts; H2b: each body needs its bank |
 | 6 | Proof 3 · learns more per example | `media/fig_loso5.png` | −0.130 vs equal rows; tie vs 15x |
 | 7 | TabPFN at every learned step | `media/demo/policy_seed3403.gif` | Policy parity on averages; intent chain on real turning people (−0.263); what stays classical |
-| 8 | Where it breaks | text | Claim C failed in three crowds; claim A a tie on five scenes; feature engineering not adopted; simulated loop; non-commercial weights |
+| 8 | Where it stops | left panel of `media/fig_t5.png` | Simple yes/no planner: same safety, 3–4 s slower (claim C, three crowds); next: weigh how likely each spot is; scope line. Claim A tie and feature engineering go to backup |
 | 9 | When to use which · the product | text | Buyer's guide; 71 ms per replan on an L4; per-body banks; licence |
 | 10 | Next | text | Risk-weighted planner; closed loop for cars; real robot logs; background rebuild for 10 Hz |
 
@@ -166,7 +172,7 @@ From the wording audit on 22 Nov at about 09:15 Berlin. Section 2 of this page i
 - **No LICENSE file**, while the video close and the README say "open source". Add a licence before the freeze or say "the code is public". [Darshak, shiinalight]
 - `README.md`: 9 `[confirm]` items (video link, artifact sharing, roles, AI-assistant line, pre-event code). [Darshak]
 - `PLAN.md`: the "second account" line (F9). [Darshak]
-- `media/v_limits.png` does not exist. The "where it breaks" card is a text card made in the video editor. [whoever cuts the video]
+- `media/v_limits.png` does not exist. The "where it stops" frame is specified in `docs/VIDEO_BRIEF.md` section 0. [whoever renders the video]
 
 **Added 22 Nov, about 11:50 (CEO check; full list in `final/CTO_CHANGES.md`):** `docs/VIDEO_BRIEF.md` section 3 and `docs/DECK_OUTLINE.md` carry seven wording and edit fixes; two clips were made, `media/demo/highway.gif` and `media/demo/scenes5.gif`; `final/` holds the short reference set.
 

@@ -39,7 +39,7 @@ Pages 01 to 06 are copies. Their sources are in `docs/`; after editing a source,
 | `media/demo_full.mp4` on branch `nooshin/dev` | 3D explainer (five steps) and the street scene | Video 0:11–1:39, deck slides 4–5 |
 | `media/demo/calibration_seed3013.gif` | The robot loop: people inside (green) or outside (red) their box, two models | Proof 1 |
 | `media/fig_t5.png`, right panel | Coverage before and after the crowd changes | Proof 1 |
-| `media/fig_t5.png`, left panel | Time against closest gap for every planner | "Where it breaks" only |
+| `media/fig_t5.png`, left panel | Time against closest gap for every planner | "Where it stops" only |
 | `media/demo/highway.gif` | The same road twice: frozen bank against bank plus scene rows; boxes turn green or red after 2 s | Proof 2 |
 | `media/fig_highway.png` | One moment of the same test, as a still | Proof 2, alternative |
 | `media/demo/scenes5.gif` | The five real scenes side by side, people and TabPFN's boxes | Proof 3 |
