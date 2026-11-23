@@ -2,10 +2,12 @@
 
 **A robot that knows where everyone around it will be in two seconds, and how sure it can be. It adapts to a new place by reading examples, not by retraining.**
 
-HackLab Berlin 2026 · Prior Labs track · Nooshin Pourkamali and Darshak Panseriya · Video (3 min): [[add link](https://youtu.be/ESSJaxRBox4)]
+HackLab Berlin 2026 · Prior Labs track · Nooshin Pourkamali and Darshak Panseriya · **[Watch the demo video (2:46)](https://youtu.be/ESSJaxRBox4)**
 
-<p align="center"><img src="media/stills/3d_range_every_agent.jpg" width="820" alt="A 3D street where every person, car and bike carries a shaded range showing where it may be in two seconds"></p>
-<p align="center"><em>Every person, car and bike gets a range: where it may be in two seconds. A simulated street the model never saw.</em></p>
+## ▶ Demo video (2:46)
+
+<p align="center"><a href="https://youtu.be/ESSJaxRBox4"><img src="https://img.youtube.com/vi/ESSJaxRBox4/maxresdefault.jpg" width="820" alt="Foresight demo video: a delivery robot crosses a 3D street while every person, car and bike carries a range showing where it may be in two seconds"></a></p>
+<p align="center"><strong><a href="https://youtu.be/ESSJaxRBox4">Watch on YouTube</a></strong> · a simulated street the model never saw, the three proofs, and where it stops</p>
 
 ## The problem
 
@@ -113,6 +115,7 @@ The five real scenes and the cars have their own setup: [`docs/LOSO5.md`](docs/L
 | [`RESULTS.md`](RESULTS.md) | The rules written before each run, and every number with its limits |
 | [`docs/DEFENSE.md`](docs/DEFENSE.md) | The hard questions, and our answers |
 | [`docs/REFERENCES.md`](docs/REFERENCES.md) | Papers and datasets |
+| [Demo video](https://youtu.be/ESSJaxRBox4) | The 2:46 video: the 3D street, the three proofs and where it stops |
 | Branch `nooshin/dev` | The 3D street behind the video |
 
 ## Fine print
