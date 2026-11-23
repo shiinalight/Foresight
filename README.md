@@ -2,7 +2,7 @@
 
 **A robot that knows where everyone around it will be in two seconds, and how sure it can be. It adapts to a new place by reading examples, not by retraining.**
 
-HackLab Berlin 2026 · Prior Labs track · Nooshin Pourkamali and Darshak Panseriya · Video (3 min): [add link]
+HackLab Berlin 2026 · Prior Labs track · Nooshin Pourkamali and Darshak Panseriya · Video (3 min): [[add link](https://youtu.be/ESSJaxRBox4)]
 
 <p align="center"><img src="media/stills/3d_range_every_agent.jpg" width="820" alt="A 3D street where every person, car and bike carries a shaded range showing where it may be in two seconds"></p>
 <p align="center"><em>Every person, car and bike gets a range: where it may be in two seconds. A simulated street the model never saw.</em></p>
